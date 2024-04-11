@@ -31,7 +31,7 @@ func TestTree(t *testing.T) {
 	Tassert(t, intervals[0].End().Equal(end1), fmt.Sprintf("Expected end1, got %v", intervals[0].End()))
 }
 
-// Ensure that the tree is actually a tree, with a root node and children
+// Ensure that the tree is actually a tree node with children
 func TestTreeStructure(t *testing.T) {
 	tree := NewTree()
 	start1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
@@ -48,9 +48,9 @@ func TestTreeStructure(t *testing.T) {
 	interval2 := NewInterval(start2, end2)
 	tree.Insert(interval2)
 
-	Tassert(t, tree.Root().Left() != nil, "Expected left child")
-	Tassert(t, tree.Root().Right() != nil, "Expected right child")
+	Tassert(t, tree.left != nil, "Expected left child")
+	Tassert(t, tree.right != nil, "Expected right child")
 
-	Tassert(t, tree.Root().Left().Interval().Start().Equal(start1), fmt.Sprintf("Expected start1, got %v", tree.Root().Left().Interval().Start()))
-	Tassert(t, tree.Root().Right().Interval().Start().Equal(start2), fmt.Sprintf("Expected start2, got %v", tree.Root().Right().Interval().Start()))
+	Tassert(t, tree.left.Start().Equal(start1), fmt.Sprintf("Expected start1, got %v", tree.left.Start()))
+	Tassert(t, tree.right.Start().Equal(start2), fmt.Sprintf("Expected start2, got %v", tree.right.Start()))
 }

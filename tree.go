@@ -1,33 +1,61 @@
 package interval
 
+// TreeNode represents a node in the interval tree.
+type TreeNode struct {
+    Interval *Interval // The interval stored in this node
+    Left     *TreeNode // Pointer to the left child
+    Right    *TreeNode // Pointer to the right child
+}
+
 // Tree represents an interval tree.
-// For this simplified implementation, we'll not implement a full interval tree.
-// Instead, we will use a slice to demonstrate the concept.
 type Tree struct {
-	intervals []*Interval // Change from value to pointer to match the Interval pointer used in tests
+    Root *TreeNode // Root node of the tree
 }
 
 // NewTree creates and returns a new Tree.
 func NewTree() *Tree {
-	return &Tree{}
+    return &Tree{}
+}
+
+// insertNode is a recursive helper function for inserting a new node into the tree.
+func insertNode(node, newNode *TreeNode) *TreeNode {
+    if node == nil {
+        return newNode
+    }
+    // This is a simplified insertion based on start time only, for demonstration purposes.
+    if newNode.Interval.Start().Before(node.Interval.Start()) {
+        node.Left = insertNode(node.Left, newNode)
+    } else {
+        node.Right = insertNode(node.Right, newNode)
+    }
+    return node
 }
 
 // Insert adds a new interval to the tree.
-// It does not check for duplicates or overlaps; this method simply adds the interval.
-func (t *Tree) Insert(interval *Interval) { // Accept a pointer to Interval
-	t.intervals = append(t.intervals, interval)
+func (t *Tree) Insert(interval *Interval) {
+    newNode := &TreeNode{Interval: interval}
+    if t.Root == nil {
+        t.Root = newNode
+    } else {
+        t.Root = insertNode(t.Root, newNode)
+    }
 }
 
 // Conflicts checks if the given interval conflicts with any interval in the tree.
 // It returns a slice of intervals that conflict.
-// This is a very basic implementation for demonstration purposes.
-func (t *Tree) Conflicts(interval *Interval) []*Interval { // Return slice of pointer to Interval
-	var conflicts []*Interval
-	for _, i := range t.intervals {
-		if i.Conflicts(interval) {
-			conflicts = append(conflicts, i)
-		}
-	}
-	return conflicts
+func (t *Tree) Conflicts(interval *Interval) []*Interval {
+    var conflicts []*Interval
+    var check func(node *TreeNode)
+    check = func(node *TreeNode) {
+        if node == nil {
+            return
+        }
+        if node.Interval.Conflicts(interval) {
+            conflicts = append(conflicts, node.Interval)
+        }
+        check(node.Left)
+        check(node.Right)
+    }
+    check(t.Root)
+    return conflicts
 }
-
