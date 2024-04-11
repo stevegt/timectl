@@ -42,3 +42,20 @@ func TestConflict(t *testing.T) {
 	interval2 := NewInterval(start2, end2)
 	Tassert(t, interval1.Conflicts(interval2), "expected conflict, got no conflict")
 }
+
+// TestNoConflict tests two intervals for no conflict.  Two intervals do
+// not conflict if they do not overlap in time.
+func TestNoConflict(t *testing.T) {
+	// Two intervals do not conflict if they do not overlap in time.
+	start1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
+	Ck(err)
+	end1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
+	Ck(err)
+	interval1 := NewInterval(start1, end1)
+	start2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
+	Ck(err)
+	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T12:00:00")
+	Ck(err)
+	interval2 := NewInterval(start2, end2)
+	Tassert(t, !interval1.Conflicts(interval2), "expected no conflict, got conflict")
+}
