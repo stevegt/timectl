@@ -21,31 +21,24 @@ func (t *Tree) Insert(newInterval *Interval) {
         return
     }
 
-    if t.interval != nil && (t.left == nil && t.right == nil) {
-        // The current node is a leaf node with an interval, split it.
-        if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
-            t.left = &Tree{interval: newInterval}
+    if t.interval != nil {
+        // Decide to insert left or right based on the start time
+        if newInterval.Start().Before(t.interval.Start()) {
+            if t.left == nil {
+                t.left = &Tree{interval: newInterval}
+            } else {
+                t.left.Insert(newInterval)
+            }
         } else {
-            t.left = &Tree{interval: t.interval}
-            t.right = &Tree{interval: newInterval}
-            t.interval = nil
+            if t.right == nil {
+                t.right = &Tree{interval: newInterval}
+            } else {
+                t.right.Insert(newInterval)
+            }
         }
-        t.updateSpanningInterval()
-        return
     }
 
-    // Decide where to insert the new interval in the subtree.
-    if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
-        if t.left == nil {
-            t.left = &Tree{}
-        }
-        t.left.Insert(newInterval)
-    } else {
-        if t.right == nil {
-            t.right = &Tree{}
-        }
-        t.right.Insert(newInterval)
-    }
+    // After inserting, update the interval of the current node to ensure it spans its children.
     t.updateSpanningInterval()
 }
 
@@ -67,29 +60,17 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 // updateSpanningInterval updates the interval for the node to span its children,
 // creating a new interval that covers both child intervals when necessary.
 func (t *Tree) updateSpanningInterval() {
-    var minStart, maxEnd time.Time
-    var first = true
+    if t.left != nil || t.right != nil {
+        var minStart, maxEnd time.Time = t.interval.Start(), t.interval.End()
 
-    if t.left != nil && t.left.interval != nil {
-        if first {
-            minStart, maxEnd = t.left.interval.Start(), t.left.interval.End()
-            first = false
-        } else {
+        if t.left != nil {
             minStart = minTime(minStart, t.left.interval.Start())
             maxEnd = maxTime(maxEnd, t.left.interval.End())
         }
-    }
-
-    if t.right != nil && t.right.interval != nil {
-        if first {
-            minStart, maxEnd = t.right.interval.Start(), t.right.interval.End()
-        } else {
+        if t.right != nil {
             minStart = minTime(minStart, t.right.interval.Start())
             maxEnd = maxTime(maxEnd, t.right.interval.End())
         }
-    }
-
-    if !first { // if not the first run (i.e., if there was any child)
         t.interval = NewInterval(minStart, maxEnd)
     }
 }
