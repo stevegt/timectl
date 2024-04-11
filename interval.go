@@ -28,3 +28,9 @@ func (i *Interval) Start() time.Time {
 func (i *Interval) End() time.Time {
 	return i.end
 }
+
+// Conflicts checks if the current interval conflicts with the given interval.
+// Two intervals conflict if they overlap in time.
+func (i *Interval) Conflicts(other *Interval) bool {
+	return i.start.Before(other.end) && other.start.Before(i.end)
+}
