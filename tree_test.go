@@ -34,6 +34,7 @@ func TestTree(t *testing.T) {
 // Ensure that the tree is actually a tree node with children
 func TestTreeStructure(t *testing.T) {
 	tree := NewTree()
+	// insert a left interval
 	start1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
 	Ck(err)
 	end1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
@@ -41,6 +42,7 @@ func TestTreeStructure(t *testing.T) {
 	interval1 := NewInterval(start1, end1)
 	tree.Insert(interval1)
 
+	// insert a right interval
 	start2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:30:00")
 	Ck(err)
 	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T12:30:00")
