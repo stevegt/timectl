@@ -19,24 +19,27 @@ func NewTree() *Tree {
 
 // Insert inserts a new interval into the tree.
 func (t *Tree) Insert(interval *Interval) {
-	if t.interval == nil { // If the tree is empty
+	// Setting up the initial node if the tree is empty
+	if t.interval == nil {
 		t.interval = interval
 		t.maxEnd = interval.End()
 		return
 	}
 
-	// Always update maxEnd if the current interval's end is later than the current maxEnd
+	// Update maxEnd if the current interval ends later
 	if interval.End().After(t.maxEnd) {
 		t.maxEnd = interval.End()
 	}
 
-	// Decide on the left or right subtree based on the start time comparison
+	// Insert based purely on start time comparison might be oversimplifying,
+	// inserting to the left if it starts before the current interval
 	if interval.Start().Before(t.interval.Start()) {
 		if t.left == nil {
 			t.left = &Tree{}
 		}
 		t.left.Insert(interval)
 	} else {
+		// And to the right if it starts at the same time or after
 		if t.right == nil {
 			t.right = &Tree{}
 		}
@@ -56,12 +59,12 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 		conflicts = append(conflicts, t.interval)
 	}
 
-	// Traverse the left subtree if it exists and could contain a conflict
+	// Traverse the left subtree if it exists and might intersect
 	if t.left != nil && t.left.maxEnd.After(interval.Start()) {
 		conflicts = append(conflicts, t.left.Conflicts(interval)...)
 	}
 
-	// Traverse the right subtree if it exists and could contain a conflict
+	// And the right subtree
 	if t.right != nil && interval.End().After(t.interval.Start()) {
 		conflicts = append(conflicts, t.right.Conflicts(interval)...)
 	}
