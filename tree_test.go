@@ -51,6 +51,6 @@ func TestTreeStructure(t *testing.T) {
 	Tassert(t, tree.left != nil, "Expected left child")
 	Tassert(t, tree.right != nil, "Expected right child")
 
-	Tassert(t, tree.left.Start().Equal(start1), fmt.Sprintf("Expected start1, got %v", tree.left.Start()))
-	Tassert(t, tree.right.Start().Equal(start2), fmt.Sprintf("Expected start2, got %v", tree.right.Start()))
+	Tassert(t, tree.left.interval.Start().Equal(start1), fmt.Sprintf("Expected start1, got %v", tree.left.interval.Start()))
+	Tassert(t, tree.right.interval.Start().Equal(start2), fmt.Sprintf("Expected start2, got %v", tree.right.interval.Start()))
 }
