@@ -21,25 +21,30 @@ func (t *Tree) Insert(newInterval *Interval) {
         return
     }
 
-    if t.interval != nil {
-        // Decide to insert left or right based on the start time
+    if t.left == nil && t.right == nil {
         if newInterval.Start().Before(t.interval.Start()) {
+            t.left = &Tree{interval: newInterval}
+            t.right = &Tree{interval: t.interval}
+        } else {
+            t.left = &Tree{interval: t.interval}
+            t.right = &Tree{interval: newInterval}
+        }
+        t.interval = nil // Clear current node's interval as it's now an internal node.
+    } else {
+        // Determine whether to insert into left or right subtree.
+        if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
             if t.left == nil {
-                t.left = &Tree{interval: newInterval}
-            } else {
-                t.left.Insert(newInterval)
+                t.left = &Tree{}
             }
+            t.left.Insert(newInterval)
         } else {
             if t.right == nil {
-                t.right = &Tree{interval: newInterval}
-            } else {
-                t.right.Insert(newInterval)
+                t.right = &Tree{}
             }
+            t.right.Insert(newInterval)
         }
     }
-
-    // After inserting, update the interval of the current node to ensure it spans its children.
-    t.updateSpanningInterval()
+    t.updateSpanningInterval() // Update the interval to span its children.
 }
 
 // Conflicts finds and returns intervals in the tree that overlap with the given interval.
@@ -57,21 +62,14 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
     return conflicts
 }
 
-// updateSpanningInterval updates the interval for the node to span its children,
-// creating a new interval that covers both child intervals when necessary.
+// updateSpanningInterval updates the interval of this node to span its children.
 func (t *Tree) updateSpanningInterval() {
-    if t.left != nil || t.right != nil {
-        var minStart, maxEnd time.Time = t.interval.Start(), t.interval.End()
-
-        if t.left != nil {
-            minStart = minTime(minStart, t.left.interval.Start())
-            maxEnd = maxTime(maxEnd, t.left.interval.End())
-        }
-        if t.right != nil {
-            minStart = minTime(minStart, t.right.interval.Start())
-            maxEnd = maxTime(maxEnd, t.right.interval.End())
-        }
-        t.interval = NewInterval(minStart, maxEnd)
+    if t.left != nil && t.right != nil {
+        t.interval = NewInterval(minTime(t.left.interval.Start(), t.right.interval.Start()), maxTime(t.left.interval.End(), t.right.interval.End()))
+    } else if t.left != nil {
+        t.interval = t.left.interval
+    } else if t.right != nil {
+        t.interval = t.right.interval
     }
 }
 
