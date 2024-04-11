@@ -49,6 +49,11 @@ func TestConflict(t *testing.T) {
 	interval3 := NewInterval(start3, end3)
 	Tassert(t, interval1.Conflicts(interval3), "expected conflict, got no conflict")
 	Tassert(t, interval3.Conflicts(interval1), "expected conflict, got no conflict")
+
+	// check identical intervals
+	interval3b := NewInterval(start3, end3)
+	Tassert(t, interval3.Conflicts(interval3b), "expected conflict, got no conflict")
+	Tassert(t, interval3b.Conflicts(interval3), "expected conflict, got no conflict")
 }
 
 // TestNoConflict tests two intervals for no conflict.  Two intervals do
