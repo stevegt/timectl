@@ -41,6 +41,12 @@ func TestConflict(t *testing.T) {
 	Ck(err)
 	interval2 := NewInterval(start2, end2)
 	Tassert(t, interval1.Conflicts(interval2), "expected conflict, got no conflict")
+
+	start3, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T09:00:00")
+	Ck(err)
+	end3, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:30:00")
+	interval3 := NewInterval(start3, end3)
+	Tassert(t, interval1.Conflicts(interval3), "expected conflict, got no conflict")
 }
 
 // TestNoConflict tests two intervals for no conflict.  Two intervals do
