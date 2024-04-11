@@ -87,22 +87,23 @@ func TestTreeStructure(t *testing.T) {
 	err := insertExpect(tree, "", "2024-01-01T10:00:00", "2024-01-01T11:00:00")
 	Tassert(t, err == nil, err)
 
-	// insert a right interval -- this should cause the root interval
-	// to move to the left child and the right interval to move to the
-	// right child, and the root interval to be replaced with a new interval
-	// that spans the two children
+	// insert a right interval -- this should cause the new interval
+	// to be inserted into the right child
 	err = insertExpect(tree, "r", "2024-01-01T12:00:00", "2024-01-01T13:00:00")
 	Tassert(t, err == nil, err)
+	// the root interval should move to the left child
 	err = expect(tree, "l", "2024-01-01T10:00:00", "2024-01-01T11:00:00")
 	Tassert(t, err == nil, err)
+	// the root interval should be replaced with a new interval
+	// that spans the two children
 	err = expect(tree, "", "2024-01-01T10:00:00", "2024-01-01T13:00:00")
 	Tassert(t, err == nil, err)
 
 	// insert a interval earlier than all other intervals -- this should
-	// cause the new interval to insert at tree.left.left and
-	// tree.left to move to tree.left.right.
+	// cause the new interval to insert at tree.left.left
 	err = insertExpect(tree, "ll", "2024-01-01T09:00:00", "2024-01-01T09:30:00")
 	Tassert(t, err == nil, err)
+	// tree.left should move to tree.left.right.
 	err = expect(tree, "lr", "2024-01-01T10:00:00", "2024-01-01T11:00:00")
 	Tassert(t, err == nil, err)
 	// tree.left should span tree.left.left and tree.left.right
