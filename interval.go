@@ -1,4 +1,4 @@
-package main
+package interval
 
 import (
 	"time"
@@ -27,11 +27,4 @@ func (i *Interval) Start() time.Time {
 // End returns the end time of the interval.
 func (i *Interval) End() time.Time {
 	return i.end
-}
-
-// Main function, required for a runnable Go program.
-func main() {
-	// This is just a placeholder function to keep the Go compiler happy.
-	// In real-world scenarios, the main function would contain
-	// implementation logic for the program utilizing the Interval type.
 }
