@@ -20,6 +20,6 @@ func TestInterval(t *testing.T) {
 	end, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
 	Ck(err)
 	interval := NewInterval(start, end)
-	Tassert(interval.Start() == start, "start time: expected %v, got %v", start, interval.Start())
-	Tassert(interval.End() == end, "end time: expected %v, got %v", end, interval.End())
+	Tassert(t, interval.Start() == start, "start time: expected %v, got %v", start, interval.Start())
+	Tassert(t, interval.End() == end, "end time: expected %v, got %v", end, interval.End())
 }
