@@ -16,40 +16,25 @@ func NewTree() *Tree {
 
 // Insert adds a new interval to the tree, adjusting the structure as necessary.
 func (t *Tree) Insert(newInterval *Interval) {
-	if t.interval == nil {
+	if t.interval == nil && t.left == nil && t.right == nil {
 		t.interval = newInterval
 		return
 	}
 
-	// If this node is a leaf node, convert it into an internal node and push the existing interval down.
-	if t.left == nil && t.right == nil {
-		if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
-			t.left = &Tree{interval: newInterval}
-		} else {
-			t.left = &Tree{interval: t.interval}
-			t.right = &Tree{interval: newInterval}
-			t.interval = NewInterval(minTime(t.interval.Start(), newInterval.Start()), maxTime(t.interval.End(), newInterval.End()))
-			return
-		}
-		t.interval = NewInterval(minTime(t.interval.Start(), newInterval.Start()), maxTime(t.interval.End(), newInterval.End()))
-	}
-
-	// Decide whether to insert into left or right subtree.
-	if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
+	// Decide whether to insert into left or right subtree based on the start time.
+	start := newInterval.Start()
+	if start.Before(t.interval.Start()) || start.Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End()) {
 		if t.left == nil {
-			t.left = &Tree{interval: newInterval}
-		} else {
-			t.left.Insert(newInterval)
+			t.left = NewTree()
 		}
+		t.left.Insert(newInterval)
 	} else {
 		if t.right == nil {
-			t.right = &Tree{interval: newInterval}
-		} else {
-			t.right.Insert(newInterval)
+			t.right = NewTree()
 		}
+		t.right.Insert(newInterval)
 	}
-
-	t.updateSpanningInterval()
+	t.updateSpanningInterval() // Make sure to update the spanning interval to include new child nodes.
 }
 
 // Conflicts finds and returns intervals in the tree that overlap with the given interval.
@@ -60,32 +45,43 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 	}
 
 	if t.interval.Conflicts(interval) {
-		if t.left == nil && t.right == nil {
-			conflicts = append(conflicts, t.interval)
-		}
-		if t.left != nil {
-			conflicts = append(conflicts, t.left.Conflicts(interval)...)
-		}
-		if t.right != nil {
-			conflicts = append(conflicts, t.right.Conflicts(interval)...)
-		}
+		conflicts = append(conflicts, t.interval)
+	}
+
+	if t.left != nil {
+		conflicts = append(conflicts, t.left.Conflicts(interval)...)
+	}
+	if t.right != nil {
+		conflicts = append(conflicts, t.right.Conflicts(interval)...)
 	}
 
 	return conflicts
 }
 
-// updateSpanningInterval updates the interval for the node to span its children.
+// updateSpanningInterval updates the interval for the node to span its children,
+// creating a new interval that covers both child intervals when necessary.
 func (t *Tree) updateSpanningInterval() {
-	if t.left != nil && t.right != nil {
-		t.interval = NewInterval(minTime(t.left.interval.Start(), t.right.interval.Start()), maxTime(t.left.interval.End(), t.right.interval.End()))
-	} else if t.left != nil {
-		t.interval = t.left.interval
-	} else if t.right != nil {
-		t.interval = t.right.interval
+	// Only need to update if the node is not a leaf node.
+	if t.left != nil || t.right != nil {
+		var start, end time.Time
+
+		if t.left != nil && t.right != nil {
+			start = minTime(t.left.interval.Start(), t.right.interval.Start())
+			end = maxTime(t.left.interval.End(), t.right.interval.End())
+		} else if t.left != nil {
+			start = t.left.interval.Start()
+			end = t.left.interval.End()
+		} else if t.right != nil {
+			start = t.right.interval.Start()
+			end = t.right.interval.End()
+		}
+
+		// Update the node's interval.
+		t.interval = NewInterval(start, end)
 	}
 }
 
-// minTime returns the minimum between two time.Time values
+// minTime returns the earlier of two time.Time values.
 func minTime(a, b time.Time) time.Time {
 	if a.Before(b) {
 		return a
@@ -93,7 +89,7 @@ func minTime(a, b time.Time) time.Time {
 	return b
 }
 
-// maxTime returns the maximum between two time.Time values
+// maxTime returns the latter of two time.Time values.
 func maxTime(a, b time.Time) time.Time {
 	if a.After(b) {
 		return a
