@@ -21,30 +21,35 @@ func (t *Tree) Insert(newInterval *Interval) {
 		return
 	}
 
-	startNew := newInterval.Start()
-	endNew := newInterval.End()
-
+	// If this node is a leaf node, convert it into an internal node and push the existing interval down.
 	if t.left == nil && t.right == nil {
-		t.left = &Tree{interval: t.interval}
-		if startNew.Before(t.interval.Start()) || (startNew.Equal(t.interval.Start()) && endNew.Before(t.interval.End())) {
-			t.left.interval = newInterval
-			t.interval = NewInterval(startNew, maxTime(t.interval.End(), endNew))
+		if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
+			t.left = &Tree{interval: newInterval}
 		} else {
+			t.left = &Tree{interval: t.interval}
 			t.right = &Tree{interval: newInterval}
-			t.interval = NewInterval(t.interval.Start(), maxTime(endNew, t.interval.End()))
+			t.interval = NewInterval(minTime(t.interval.Start(), newInterval.Start()), maxTime(t.interval.End(), newInterval.End()))
+			return
 		}
-		return
+		t.interval = NewInterval(minTime(t.interval.Start(), newInterval.Start()), maxTime(t.interval.End(), newInterval.End()))
 	}
 
-	if t.left != nil && startNew.Before(t.interval.Start()) {
-		t.left.Insert(newInterval)
-	} else if t.right != nil {
-		t.right.Insert(newInterval)
+	// Decide whether to insert into left or right subtree.
+	if newInterval.Start().Before(t.interval.Start()) || (newInterval.Start().Equal(t.interval.Start()) && newInterval.End().Before(t.interval.End())) {
+		if t.left == nil {
+			t.left = &Tree{interval: newInterval}
+		} else {
+			t.left.Insert(newInterval)
+		}
 	} else {
-		t.right = &Tree{interval: newInterval}
+		if t.right == nil {
+			t.right = &Tree{interval: newInterval}
+		} else {
+			t.right.Insert(newInterval)
+		}
 	}
 
-	t.interval = NewInterval(minTime(t.left.interval.Start(), t.right.interval.Start()), maxTime(t.left.interval.End(), t.right.interval.End()))
+	t.updateSpanningInterval()
 }
 
 // Conflicts finds and returns intervals in the tree that overlap with the given interval.
@@ -67,6 +72,17 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 	}
 
 	return conflicts
+}
+
+// updateSpanningInterval updates the interval for the node to span its children.
+func (t *Tree) updateSpanningInterval() {
+	if t.left != nil && t.right != nil {
+		t.interval = NewInterval(minTime(t.left.interval.Start(), t.right.interval.Start()), maxTime(t.left.interval.End(), t.right.interval.End()))
+	} else if t.left != nil {
+		t.interval = t.left.interval
+	} else if t.right != nil {
+		t.interval = t.right.interval
+	}
 }
 
 // minTime returns the minimum between two time.Time values
