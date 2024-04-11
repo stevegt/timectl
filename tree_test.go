@@ -41,9 +41,9 @@ func TestTreeStructure(t *testing.T) {
 	interval1 := NewInterval(start1, end1)
 	tree.Insert(interval1)
 
-	start2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:30:00")
+	start2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:30:00")
 	Ck(err)
-	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:30:00")
+	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T12:30:00")
 	Ck(err)
 	interval2 := NewInterval(start2, end2)
 	tree.Insert(interval2)
