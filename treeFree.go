@@ -2,44 +2,41 @@ package interval
 
 import "time"
 
-// FirstFree searches for the first available time slot of a given duration within the specified start 
-// and end time. It returns the earliest interval of the specified duration that 
-// is free (i.e., does not overlap with any existing intervals in the tree).
-func (t *Tree) FirstFree(searchStart, searchEnd time.Time, duration time.Duration) *Interval {
-    // Early return if the tree is empty, search times are inverted, or duration is non-positive.
-    if t == nil || !searchStart.Before(searchEnd) || duration <= 0 {
-        return nil
-    }
+// FirstFree finds the first available time slot within the given start and end times
+// that is at least of the given duration. It returns nil if no slot is found.
+func (t *Tree) FirstFree(startTime, endTime time.Time, duration time.Duration) *Interval {
 
-    return t.findFirstFreeRecursive(searchStart, searchEnd, duration)
-}
+	var walk func(*Tree, time.Time) *time.Time
+	walk = func(node *Tree, currentStart time.Time) *time.Time {
+		if node == nil {
+			return nil
+		}
 
-// findFirstFreeRecursive is a helper method that recursively searches for the first free interval.
-func (t *Tree) findFirstFreeRecursive(searchStart, searchEnd time.Time, duration time.Duration) *Interval {
-    // Base case: If there is no conflict with an existing interval and the duration fits within the search range,
-    // then this time slot is free.
-    freeInterval := NewInterval(searchStart, searchStart.Add(duration))
-    if searchStart.Add(duration).After(searchEnd) {
-        return nil // No sufficient slot found within the search constraints
-    }
+		// Base case: if current interval starts after currentStart and there's enough room
+		if node.interval != nil && node.interval.Start().After(currentStart) && node.interval.Start().Sub(currentStart) >= duration {
+			return &currentStart
+		}
 
-    if len(t.Conflicts(freeInterval)) == 0 { // Check if the interval is indeed free
-        return freeInterval
-    }
+		leftResult := walk(node.left, currentStart)
+		if leftResult != nil {
+			return leftResult
+		}
 
-    // If a conflict is found, find the next potential start time by checking the end time of overlapping intervals
-    conflictingIntervals := t.Conflicts(NewInterval(searchStart, searchEnd))
-    for _, interval := range conflictingIntervals {
-        if interval.End().After(searchStart) {
-            // Adjust search start to the end of the current conflicting interval
-            nextSearchStart := interval.End()
-            // Recursively search for free interval with the new start time 
-            nextFreeInterval := t.findFirstFreeRecursive(nextSearchStart, searchEnd, duration)
-            if nextFreeInterval != nil {
-                return nextFreeInterval
-            }
-        }
-    }
-    
-    return nil
+		// After visiting left, check if the gap between this node's interval and the next allows for duration
+		if node.interval != nil {
+			newCurrentStart := node.interval.End()
+			if newCurrentStart.Before(endTime) {
+				return walk(node.right, newCurrentStart)
+			}
+		}
+
+		return nil
+	}
+
+	freeStartTime := walk(t, startTime)
+	if freeStartTime != nil && freeStartTime.Add(duration).Before(endTime) {
+		return NewInterval(*freeStartTime, freeStartTime.Add(duration))
+	}
+
+	return nil
 }

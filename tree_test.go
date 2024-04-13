@@ -168,6 +168,11 @@ func TestFree(t *testing.T) {
 	Ck(err)
 	searchEnd, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T17:30:00")
 	Ck(err)
+	// FirstFree walks the tree to find the first free interval that
+	// is at least the given duration.  The searchStart and searchEnd
+	// times are inclusive.  The duration is exclusive.  The search
+	// uses an internal walk() function that recursively walks the
+	// tree in a depth-first manner, following the left child first.
 	freeInterval := tree.FirstFree(searchStart, searchEnd, 30*time.Minute)
 	Tassert(t, freeInterval != nil, "Expected non-nil free interval")
 	expectStart, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T09:30:00")
