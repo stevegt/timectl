@@ -34,3 +34,9 @@ func (i *Interval) End() time.Time {
 func (i *Interval) Conflicts(other *Interval) bool {
 	return i.start.Before(other.end) && other.start.Before(i.end)
 }
+
+// Equal checks if the current interval is equal to the given interval.
+// Two intervals are equal if their start and end times are the same.
+func (i *Interval) Equal(other *Interval) bool {
+	return i.start.Equal(other.start) && i.end.Equal(other.end)
+}
