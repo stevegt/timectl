@@ -21,7 +21,7 @@ func (t *Tree) Insert(newInterval *Interval) {
 		return
 	}
 
-	if t.left == nil && t.right == nil {
+	if t.interval != nil {
 		if newInterval.Start().Before(t.interval.Start()) {
 			t.left = &Tree{interval: newInterval}
 			t.right = &Tree{interval: t.interval}
@@ -60,6 +60,44 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 		conflicts = append(conflicts, t.right.Conflicts(interval)...)
 	}
 	return conflicts
+}
+
+// FirstFree finds the first free interval of a given duration between start and end times.
+func (t *Tree) FirstFree(start, end time.Time, duration time.Duration) *Interval {
+	// Traverse the tree to find the first interval that fits the duration.
+	return t.firstFreeRecursive(start, end, duration)
+}
+
+// firstFreeRecursive is a recursive helper function to find free intervals.
+func (t *Tree) firstFreeRecursive(start, end time.Time, duration time.Duration) *Interval {
+	if t == nil {
+		return NewInterval(start, start.Add(duration))
+	}
+	if t.interval != nil {
+		// If the current interval ends before the search start or starts after the search end, it can be ignored.
+		if t.interval.End().Before(start) || t.interval.Start().After(end) {
+			return NewInterval(start, start.Add(duration))
+		}
+
+		// Check for space before the current interval.
+		if start.Add(duration).Before(t.interval.Start()) {
+			return NewInterval(start, start.Add(duration))
+		}
+
+		// Adjust search start to the end of the current interval and search in the right subtree.
+		newStart := t.interval.End()
+		if newStart.Add(duration).After(end) {
+			return nil // Not enough room in the search interval.
+		}
+		return t.right.firstFreeRecursive(newStart, end, duration)
+	}
+
+	// If no interval is found, try both subtrees.
+	leftResult := t.left.firstFreeRecursive(start, end, duration)
+	if leftResult != nil && leftResult.End().Before(end) {
+		return leftResult
+	}
+	return t.right.firstFreeRecursive(start, end, duration)
 }
 
 // updateSpanningInterval updates the interval of this node to span its children.
