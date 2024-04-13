@@ -4,9 +4,12 @@ import "time"
 
 // Tree represents a node in an interval tree.
 type Tree struct {
-	interval *Interval // The interval represented by this node
-	left     *Tree     // Pointer to the left child
-	right    *Tree     // Pointer to the right child
+	// If this is not a leaf node, interval is the interval that spans
+	// all child nodes -- i.e. the minimum start time and maximum end time
+	// of all intervals in the subtree rooted at this node.
+	interval *Interval
+	left     *Tree // Pointer to the left child
+	right    *Tree // Pointer to the right child
 }
 
 // NewTree creates and returns a new Tree node with a nil interval.
