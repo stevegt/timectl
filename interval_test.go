@@ -73,3 +73,27 @@ func TestNoConflict(t *testing.T) {
 	Tassert(t, !interval1.Conflicts(interval2), "expected no conflict, got conflict")
 	Tassert(t, !interval2.Conflicts(interval1), "expected no conflict, got conflict")
 }
+
+// TestEqual tests two intervals for equality.  Two intervals are equal
+// if their start and end times are equal.
+func TestEqual(t *testing.T) {
+	// Two intervals are equal if their start and end times are equal.
+	start1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
+	Ck(err)
+	end1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
+	Ck(err)
+	interval1 := NewInterval(start1, end1)
+	interval1a := NewInterval(start1, end1)
+	Tassert(t, interval1.Equal(interval1a), "expected equal, got not equal")
+	Tassert(t, interval1a.Equal(interval1), "expected equal, got not equal")
+
+	start2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:01:00")
+	Ck(err)
+	interval2 := NewInterval(start2, end1)
+	Tassert(t, !interval1.Equal(interval2), "expected not equal, got equal")
+
+	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:50:00")
+	Ck(err)
+	interval3 := NewInterval(start1, end2)
+	Tassert(t, !interval1.Equal(interval3), "expected not equal, got equal")
+}

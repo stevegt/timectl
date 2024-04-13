@@ -150,3 +150,28 @@ func TestConflicts(t *testing.T) {
 	Tassert(t, intervals[0].Start().Equal(start1), fmt.Sprintf("Expected start1, got %v", intervals[0].Start()))
 	Tassert(t, intervals[0].End().Equal(end1), fmt.Sprintf("Expected end1, got %v", intervals[0].End()))
 }
+
+/*
+func TestFree(t *testing.T) {
+	tree := NewTree()
+
+	// a tree node maintains a set of free times between intervals
+	err := insertExpect(tree, "", "2024-01-01T10:00:00", "2024-01-01T11:00:00")
+	Tassert(t, err == nil, err)
+	err = insertExpect(tree, "r", "2024-01-01T12:00:00", "2024-01-01T13:00:00")
+	Tassert(t, err == nil, err)
+	err = insertExpect(tree, "ll", "2024-01-01T09:00:00", "2024-01-01T09:30:00")
+
+	// Fetch the first free time between the given start and end times
+	// that is the given duration.  The resulting free interval should
+	// be 9:30 to 10:00.  As with any interval, the end time is
+	// exclusive.
+	freeInterval := tree.FirstFree("2024-01-01T09:00:00", "2024-01-01T17:30:00", 30*time.Minute)
+	Tassert(t, freeInterval != nil, "Expected non-nil free interval")
+	expectStart := time.Parse("2006-01-02T15:04:05", "2024-01-01T09:30:00")
+	expectEnd := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
+	expectInterval := NewInterval(expectStart, expectEnd)
+	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %v, got %v", expectInterval, freeInterval))
+
+}
+*/
