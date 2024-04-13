@@ -151,7 +151,6 @@ func TestConflicts(t *testing.T) {
 	Tassert(t, intervals[0].End().Equal(end1), fmt.Sprintf("Expected end1, got %v", intervals[0].End()))
 }
 
-/*
 func TestFree(t *testing.T) {
 	tree := NewTree()
 
@@ -174,4 +173,3 @@ func TestFree(t *testing.T) {
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %v, got %v", expectInterval, freeInterval))
 
 }
-*/
