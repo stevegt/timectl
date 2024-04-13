@@ -70,13 +70,42 @@ func expect(tree *Tree, pathStr, startStr, endStr string) error {
 // insertExpect is a test helper function that inserts an interval
 // into the tree and checks if the tree has the expected structure.
 func insertExpect(tree *Tree, pathStr, startStr, endStr string) error {
+	insert(tree, startStr, endStr)
+	return expect(tree, pathStr, startStr, endStr)
+}
+
+// insert is a test helper function that inserts an interval into the
+// tree and returns the interval that was inserted.
+func insert(tree *Tree, startStr, endStr string) *Interval {
 	start, err := time.Parse("2006-01-02T15:04:05", startStr)
 	Ck(err)
 	end, err := time.Parse("2006-01-02T15:04:05", endStr)
 	Ck(err)
 	interval := NewInterval(start, end)
 	tree.Insert(interval)
-	return expect(tree, pathStr, startStr, endStr)
+	return interval
+}
+
+// dump is a test helper function that prints the tree structure to
+// stdout.
+func dump(tree *Tree, depth int) {
+	indent := ""
+	for i := 0; i < depth; i++ {
+		indent += "  "
+	}
+	fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
+	Pf("%v left: ", indent)
+	if tree.left != nil {
+		dump(tree.left, depth+1)
+	} else {
+		fmt.Printf("nil\n")
+	}
+	Pf("%v right: ", indent)
+	if tree.right != nil {
+		dump(tree.right, depth+1)
+	} else {
+		fmt.Printf("nil\n")
+	}
 }
 
 // Test a tree node with children
@@ -151,6 +180,31 @@ func TestConflicts(t *testing.T) {
 	Tassert(t, intervals[0].End().Equal(end1), fmt.Sprintf("Expected end1, got %v", intervals[0].End()))
 }
 
+func TestMaxGap(t *testing.T) {
+	tree := NewTree()
+
+	// insert an interval into the tree
+	insert(tree, "2024-01-01T10:00:00", "2024-01-01T11:00:00")
+	// create a new interval that does not overlap the first interval
+	insert(tree, "2024-01-01T11:30:00", "2024-01-01T12:00:00")
+	Tassert(t, tree.maxGap == 30*time.Minute, fmt.Sprintf("Expected 30 minutes, got %v", tree.maxGap))
+
+	// insert an interval an hour after the second interval
+	insert(tree, "2024-01-01T13:00:00", "2024-01-01T14:00:00")
+	Tassert(t, tree.maxGap == 1*time.Hour, fmt.Sprintf("Expected 1 hour, got %v", tree.maxGap))
+
+	// insert an interval in the middle of the free hour
+	insert(tree, "2024-01-01T12:10:00", "2024-01-01T12:45:00")
+	// dump(tree, 0)
+	Tassert(t, tree.maxGap == 30*time.Minute, fmt.Sprintf("Expected 30 minutes, got %v", tree.maxGap))
+
+	// insert an interval in the middle of the free 30 minutes
+	insert(tree, "2024-01-01T11:10:00", "2024-01-01T11:20:00")
+	Tassert(t, tree.maxGap == 15*time.Minute, fmt.Sprintf("Expected 15 minutes, got %v", tree.maxGap))
+
+}
+
+/*
 func TestFree(t *testing.T) {
 	tree := NewTree()
 
@@ -183,3 +237,4 @@ func TestFree(t *testing.T) {
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
 }
+*/

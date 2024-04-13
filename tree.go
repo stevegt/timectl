@@ -1,6 +1,9 @@
 package interval
 
-import "time"
+import (
+	"time"
+	// . "github.com/stevegt/goadapt"
+)
 
 // Tree represents a node in an interval tree.
 type Tree struct {
@@ -8,8 +11,11 @@ type Tree struct {
 	// all child nodes -- i.e. the minimum start time and maximum end time
 	// of all intervals in the subtree rooted at this node.
 	interval *Interval
-	left     *Tree // Pointer to the left child
-	right    *Tree // Pointer to the right child
+	// maxGap is the maximum gap between left end and right start times
+	// for all children in the subtree rooted at this node
+	maxGap time.Duration
+	left   *Tree // Pointer to the left child
+	right  *Tree // Pointer to the right child
 }
 
 // NewTree creates and returns a new Tree node with a nil interval.
@@ -48,6 +54,7 @@ func (t *Tree) Insert(newInterval *Interval) {
 		}
 	}
 	t.updateSpanningInterval() // Update the interval to span its children.
+	t.updateMaxGap()           // Update the maximum gap between left end and right start times.
 }
 
 // Conflicts finds and returns intervals in the tree that overlap with the given interval.
@@ -76,6 +83,16 @@ func (t *Tree) updateSpanningInterval() {
 	}
 }
 
+// updateMaxGap updates the maximum gap between left end and right start times.
+func (t *Tree) updateMaxGap() {
+	if t.left != nil && t.right != nil {
+		gap := t.right.interval.Start().Sub(t.left.interval.End())
+		t.maxGap = maxDuration(gap, maxDuration(t.left.maxGap, t.right.maxGap))
+		// Pf("updateMaxGap: gap=%v, maxGap=%v\n", gap, t.maxGap)
+		// Pf("updateMaxGap: left=%v, right=%v\n", t.left.interval, t.right.interval)
+	}
+}
+
 // minTime returns the earlier of two time.Time values.
 func minTime(a, b time.Time) time.Time {
 	if a.Before(b) {
@@ -87,6 +104,14 @@ func minTime(a, b time.Time) time.Time {
 // maxTime returns the later of two time.Time values.
 func maxTime(a, b time.Time) time.Time {
 	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+// maxDuration returns the longer of two time.Duration values.
+func maxDuration(a, b time.Duration) time.Duration {
+	if a > b {
 		return a
 	}
 	return b
