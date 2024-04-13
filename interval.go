@@ -19,6 +19,11 @@ func NewInterval(start, end time.Time) *Interval {
 	}
 }
 
+// String returns a string representation of the interval.
+func (i *Interval) String() string {
+	return i.start.Format(time.RFC3339) + " - " + i.end.Format(time.RFC3339)
+}
+
 // Start returns the start time of the interval.
 func (i *Interval) Start() time.Time {
 	return i.start

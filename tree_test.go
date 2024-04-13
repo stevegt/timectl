@@ -175,6 +175,6 @@ func TestFree(t *testing.T) {
 	expectEnd, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
 	Ck(err)
 	expectInterval := NewInterval(expectStart, expectEnd)
-	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %v, got %v", expectInterval, freeInterval))
+	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
 }
