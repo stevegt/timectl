@@ -245,3 +245,19 @@ func (t *Tree) Interval() *Interval {
 	}
 	return NewInterval(t.Start(), t.End(), t.Busy())
 }
+
+// Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
+func (t *Tree) Conflicts(interval *Interval) []*Interval {
+	var conflicts []*Interval
+	if t.leafInterval != nil && t.leafInterval.Conflicts(interval) {
+		conflicts = append(conflicts, t.leafInterval)
+	} else {
+		if t.left != nil {
+			conflicts = append(conflicts, t.left.Conflicts(interval)...)
+		}
+		if t.right != nil {
+			conflicts = append(conflicts, t.right.Conflicts(interval)...)
+		}
+	}
+	return conflicts
+}

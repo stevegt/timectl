@@ -263,7 +263,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 // stdout.
 func dump(tree *Tree, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	fmt.Sprintf("%v: %v\n", path, tree.leafInterval)
+	fmt.Printf("%v: %v\n", path, tree.leafInterval)
 	if tree.left != nil {
 		dump(tree.left, path+"l")
 	}
