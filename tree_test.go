@@ -204,7 +204,6 @@ func TestMaxGap(t *testing.T) {
 
 }
 
-/*
 func TestFree(t *testing.T) {
 	tree := NewTree()
 
@@ -237,4 +236,3 @@ func TestFree(t *testing.T) {
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
 }
-*/
