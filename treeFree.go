@@ -213,10 +213,14 @@ func (t *Tree) genSlots(first bool, minStart, maxEnd time.Time) (out chan *Inter
 // the right child first.
 func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free *Interval) {
 
+	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
+	// Pf("busy: %v\n", t.Busy())
 	if !t.Busy() {
 		start := maxTime(minStart, t.Start())
 		end := minTime(t.End(), maxEnd)
-		return subInterval(first, start, end, duration)
+		sub := subInterval(first, start, end, duration)
+		// Pf("sub: %v\n", sub)
+		return sub
 	}
 
 	var children []*Tree
@@ -263,7 +267,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 // stdout.
 func dump(tree *Tree, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	fmt.Printf("%v: %v\n", path, tree.leafInterval)
+	fmt.Printf("%-10v: %v\n", path, tree.leafInterval)
 	if tree.left != nil {
 		dump(tree.left, path+"l")
 	}

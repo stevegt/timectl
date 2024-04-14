@@ -2,6 +2,7 @@ package interval
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -370,7 +371,6 @@ func TestFind(t *testing.T) {
 
 }
 
-/*
 func TestFindFreeMany(t *testing.T) {
 	// This test creates a large tree with a large number of random intervals and then
 	// finds free intervals of varying durations.
@@ -382,22 +382,29 @@ func TestFindFreeMany(t *testing.T) {
 		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
 		// ignore return value
-		insert(tree, start.Format("2006-01-02T15:04:05"), end.Format("2006-01-02T15:04:05"), true)
+		insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), true)
 	}
 
+	dump(tree, "")
+
 	// find a large number of free intervals of varying durations
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1000; i++ {
 		minStart := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 		maxEnd := minStart.Add(time.Duration(rand.Intn(1440)) * time.Minute)
-		duration := time.Duration(rand.Intn(60)) * time.Minute
+		duration := time.Duration(rand.Intn(60)+1) * time.Minute
 		first := rand.Intn(2) == 0
+		// t.Logf("minStart: %v, maxEnd: %v, duration: %v, first: %v", minStart, maxEnd, duration, first)
 		freeInterval := tree.FindFree(first, minStart, maxEnd, duration)
 		if freeInterval == nil {
 			// sanity check -- try a bunch of times to see if we can find a free interval
 			for j := 0; j < 100; j++ {
-				start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
-				end := start.Add(duration)
+				start := maxTime(minStart, time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC))
+				end := minTime(maxEnd, start.Add(duration))
+				if end.Sub(start) < duration {
+					continue
+				}
 				ckInterval := NewInterval(start, end, true)
+				// t.Logf("Trying to find free interval: %v\n", ckInterval)
 				if tree.Conflicts(ckInterval) == nil {
 					t.Logf("Found free interval: %v", ckInterval)
 					t.Logf("first: %v, minStart: %v, maxEnd: %v, duration: %v", first, minStart, maxEnd, duration)
@@ -407,6 +414,7 @@ func TestFindFreeMany(t *testing.T) {
 					t.Fatalf("Expected conflict, got nil")
 				}
 			}
+			continue
 		}
 
 		if freeInterval.Duration() < duration {
@@ -420,10 +428,9 @@ func TestFindFreeMany(t *testing.T) {
 			for _, interval := range conflicts {
 				t.Logf("%v", interval)
 			}
-			dump(tree, 0)
+			dump(tree, "")
 			t.Fatalf("Expected free interval, got conflict")
 		}
 
 	}
 }
-*/
