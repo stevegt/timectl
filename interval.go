@@ -2,6 +2,7 @@ package interval
 
 import (
 	"time"
+	// . "github.com/stevegt/goadapt"
 )
 
 // An Interval represents a time interval with a start and end time.
@@ -13,6 +14,9 @@ type Interval struct {
 
 // NewInterval creates and returns a new Interval with the specified start and end times.
 func NewInterval(start, end time.Time) *Interval {
+	if end.Sub(start) <= 0 {
+		return nil
+	}
 	return &Interval{
 		start: start,
 		end:   end,
@@ -37,6 +41,7 @@ func (i *Interval) End() time.Time {
 // Conflicts checks if the current interval conflicts with the given interval.
 // Two intervals conflict if they overlap in time.
 func (i *Interval) Conflicts(other *Interval) bool {
+	// Pf("i = %v, other = %v\n", i, other)
 	if i.start.Before(other.end) && i.end.After(other.start) {
 		return true
 	}
@@ -64,4 +69,9 @@ func (i *Interval) Wraps(other *Interval) bool {
 		return false
 	}
 	return true
+}
+
+// Duration returns the duration of the interval.
+func (i *Interval) Duration() time.Duration {
+	return i.end.Sub(i.start)
 }
