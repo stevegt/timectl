@@ -14,10 +14,10 @@ import (
 // It returns the first free interval that it finds, or nil if
 // no free interval is found.
 func (t *Tree) FirstFree(minStart, maxEnd time.Time, duration time.Duration) *Interval {
-	return find(t, minStart, maxEnd, duration)
+	return findFirst(t, minStart, maxEnd, duration)
 }
 
-func find(node *Tree, start, end time.Time, duration time.Duration) *Interval {
+func findFirst(node *Tree, start, end time.Time, duration time.Duration) *Interval {
 	if start.Add(duration).After(end) {
 		// if the duration is longer than the time between start and end,
 		// then we can't find a free interval
@@ -42,12 +42,12 @@ func find(node *Tree, start, end time.Time, duration time.Duration) *Interval {
 	isFull := node.maxGap < duration
 	if isLeaf || isFull {
 		// try fitting a free interval before the busy interval
-		before := find(nil, start, busyStart, duration)
+		before := findFirst(nil, start, busyStart, duration)
 		if before != nil {
 			return before
 		}
 		// try fitting a free interval after the busy interval
-		after := find(nil, busyEnd, end, duration)
+		after := findFirst(nil, busyEnd, end, duration)
 		if after != nil {
 			return after
 		}
@@ -60,11 +60,20 @@ func find(node *Tree, start, end time.Time, duration time.Duration) *Interval {
 	rightStart := node.right.interval.Start()
 
 	// drill down the left subtree
-	leftResult := find(node.left, start, rightStart, duration)
+	leftResult := findFirst(node.left, start, rightStart, duration)
 	if leftResult != nil {
 		return leftResult
 	}
 
 	// drill down the right subtree
-	return find(node.right, rightStart, end, duration)
+	return findFirst(node.right, rightStart, end, duration)
 }
+
+// find returns an interval that has the given duration.  The interval
+// starts as early as possible if first is true, and as late as possible
+// if first is false.  The minStart and maxEnd times are inclusive.
+// The duration is exclusive.
+//
+// This function works by walking the tree in a depth-first manner,
+// following the left child first if first is set, otherwise following
+// the right child first.

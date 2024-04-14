@@ -97,3 +97,28 @@ func TestEqual(t *testing.T) {
 	interval3 := NewInterval(start1, end2)
 	Tassert(t, !interval1.Equal(interval3), "expected not equal, got equal")
 }
+
+func TestWraps(t *testing.T) {
+	t1000, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
+	Ck(err)
+	t1100, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
+	Ck(err)
+
+	t1001, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:01:00")
+	Ck(err)
+	t1050, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:50:00")
+	Ck(err)
+
+	interval1 := NewInterval(t1000, t1100)
+	interval1a := NewInterval(t1000, t1100)
+	Tassert(t, interval1.Wraps(interval1a), "expected interval1 to wrap interval1a")
+
+	interval2 := NewInterval(t1000, t1050)
+	Tassert(t, !interval2.Wraps(interval1), "expected interval2 to not wrap interval1")
+
+	interval3 := NewInterval(t1001, t1100)
+	Tassert(t, !interval3.Wraps(interval1), "expected interval3 to not wrap interval1")
+
+	interval4 := NewInterval(t1001, t1050)
+	Tassert(t, !interval4.Wraps(interval1), "expected interval4 to not wrap interval1")
+}

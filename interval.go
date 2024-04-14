@@ -51,3 +51,17 @@ func (i *Interval) Conflicts(other *Interval) bool {
 func (i *Interval) Equal(other *Interval) bool {
 	return i.start.Equal(other.start) && i.end.Equal(other.end)
 }
+
+// Wraps returns true if the current interval completely contains the
+// other interval.  In other words, the current interval's start time is
+// before or equal to the other interval's start time, and the current
+// interval's end time is after or equal to the other interval's end time.
+func (i *Interval) Wraps(other *Interval) bool {
+	if other.start.Before(i.start) {
+		return false
+	}
+	if other.end.After(i.end) {
+		return false
+	}
+	return true
+}
