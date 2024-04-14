@@ -204,6 +204,31 @@ func TestMaxGap(t *testing.T) {
 
 }
 
+func TestFreeSlots(t *testing.T) {
+	tree := NewTree()
+
+	// insert an interval into the tree
+	i1000_1100 := insert(tree, "2024-01-01T10:00:00", "2024-01-01T11:00:00")
+	// create a new interval that does not overlap the first interval
+	i1130_1200 := insert(tree, "2024-01-01T11:30:00", "2024-01-01T12:00:00")
+
+	t0900, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T09:00:00")
+	Ck(err)
+	t1300, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T13:00:00")
+	Ck(err)
+	slots := tree.freeSlots(t0900, t1300)
+	Tassert(t, len(slots) == 3, "Expected 3 slots, got %d", len(slots))
+
+	e0900_1000 := NewInterval(t0900, i1000_1100.Start())
+	e1100_1130 := NewInterval(i1000_1100.End(), i1130_1200.Start())
+	e1200_1300 := NewInterval(i1130_1200.End(), t1300)
+
+	Tassert(t, slots[0].Equal(e0900_1000), fmt.Sprintf("Expected %s, got %s", e0900_1000, slots[0]))
+	Tassert(t, slots[1].Equal(e1100_1130), fmt.Sprintf("Expected %s, got %s", e1100_1130, slots[1]))
+	Tassert(t, slots[2].Equal(e1200_1300), fmt.Sprintf("Expected %s, got %s", e1200_1300, slots[2]))
+
+}
+
 func TestFree(t *testing.T) {
 	tree := NewTree()
 
