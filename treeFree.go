@@ -1,7 +1,6 @@
 package interval
 
 import (
-	"fmt"
 	"time"
 
 	. "github.com/stevegt/goadapt"
@@ -111,6 +110,7 @@ func (node *Tree) freeSlots(minStart, maxEnd time.Time) (intervals []*Interval) 
 }
 */
 
+/*
 // genslots returns a channel of free intervals that are generated
 // by walking the tree in a depth-first manner.  The minStart and
 // maxEnd times are inclusive.  The duration is exclusive. If first
@@ -129,8 +129,8 @@ func (t *Tree) genSlots(first bool, minStart, maxEnd time.Time) (out chan *Inter
 		// if the given node or its interval is nil, then there are no
 		// intervals in this subtree, so we can create a free interval
 		// at the start time
-		if t == nil || t.interval == nil {
-			out <- NewInterval(minStart, maxEnd)
+		if t == nil || t.leafInterval == nil {
+			out <- NewInterval(minStart, maxEnd, nil)
 			return
 		}
 
@@ -146,13 +146,13 @@ func (t *Tree) genSlots(first bool, minStart, maxEnd time.Time) (out chan *Inter
 			switch dir {
 			case "pre":
 				start := minStart
-				end := minTime(t.interval.Start(), maxEnd)
-				slot = NewInterval(start, end)
+				end := minTime(t.leafInterval.Start(), maxEnd)
+				slot = NewInterval(start, end, nil)
 				out <- slot
 			case "left":
 				if t.left != nil {
-					start := maxTime(minStart, t.left.interval.Start())
-					end := minTime(t.left.interval.End(), maxEnd)
+					start := maxTime(minStart, t.left.leafInterval.Start())
+					end := minTime(t.left.leafInterval.End(), maxEnd)
 					for slot := range t.left.genSlots(first, start, end) {
 						if slot == nil {
 							continue
@@ -167,15 +167,15 @@ func (t *Tree) genSlots(first bool, minStart, maxEnd time.Time) (out chan *Inter
 				}
 			case "gap":
 				if t.left != nil && t.right != nil {
-					start := maxTime(minStart, t.left.interval.End())
-					end := minTime(t.right.interval.Start(), maxEnd)
-					slot = NewInterval(start, end)
+					start := maxTime(minStart, t.left.leafInterval.End())
+					end := minTime(t.right.leafInterval.Start(), maxEnd)
+					slot = NewInterval(start, end, nil)
 					out <- slot
 				}
 			case "right":
 				if t.right != nil {
-					start := maxTime(minStart, t.right.interval.Start())
-					end := minTime(t.right.interval.End(), maxEnd)
+					start := maxTime(minStart, t.right.leafInterval.Start())
+					end := minTime(t.right.leafInterval.End(), maxEnd)
 					for slot := range t.right.genSlots(first, start, end) {
 						if slot == nil {
 							continue
@@ -192,44 +192,50 @@ func (t *Tree) genSlots(first bool, minStart, maxEnd time.Time) (out chan *Inter
 					}
 				}
 			case "post":
-				start := maxTime(minStart, t.interval.End())
+				start := maxTime(minStart, t.leafInterval.End())
 				end := maxEnd
-				slot = NewInterval(start, end)
+				slot = NewInterval(start, end, nil)
 				out <- slot
 			}
 		}
 	}()
 	return
 }
+*/
 
-// FindFree returns an interval that has the given duration.  The interval
-// starts as early as possible if first is true, and as late as possible
-// if first is false.  The minStart and maxEnd times are inclusive.
-// The duration is exclusive.
+// FindFree returns a free interval that has the given duration.  The
+// interval starts as early as possible if first is true, and as late
+// as possible if first is false.  The minStart and maxEnd times are
+// inclusive. The duration is exclusive.
 //
 // This function works by walking the tree in a depth-first manner,
 // following the left child first if first is set, otherwise following
-// the right child first.  For each node, it uses freeSlots() to
-// create free intervals.  These intervals are then sorted based on
-// the value of first.  Then they are checked, in order, to see if
-// they have the required duration.  The first one that does
-// is used to create the resulting interval for return.
+// the right child first.
 func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free *Interval) {
-	// get the free slots for this subtree
-	for slot := range t.genSlots(first, minStart, maxEnd) {
-		// skip nil slots
-		if slot == nil {
+
+	if !t.Busy() {
+		start := maxTime(minStart, t.Start())
+		end := minTime(t.End(), maxEnd)
+		return subInterval(first, start, end, duration)
+	}
+
+	var children []*Tree
+	var start, end time.Time
+	if first {
+		children = []*Tree{t.left, t.right}
+	} else {
+		children = []*Tree{t.right, t.left}
+	}
+
+	for _, child := range children {
+		if child == nil {
 			continue
 		}
-		// create a trial interval
-		if first {
-			free = NewInterval(slot.Start(), slot.Start().Add(duration))
-		} else {
-			free = NewInterval(slot.End().Add(-duration), slot.End())
-		}
-		// if the slot wraps the interval, then we have found a free interval
-		if slot.Wraps(free) {
-			return
+		start = maxTime(minStart, child.Start())
+		end = minTime(child.End(), maxEnd)
+		slot := child.FindFree(first, start, end, duration)
+		if slot != nil {
+			return slot
 		}
 	}
 
@@ -238,24 +244,30 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	return nil
 }
 
+// subInterval returns a free interval that starts as early as possible
+// if first is true, and as late as possible if first is false.  The
+// minStart and maxEnd times are inclusive. The duration is exclusive.
+// If the duration is longer than the time between minStart and maxEnd,
+// then this function returns nil.
+func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration) *Interval {
+	if maxEnd.Sub(minStart) < duration {
+		return nil
+	}
+	if first {
+		return NewInterval(minStart, minStart.Add(duration), nil)
+	}
+	return NewInterval(maxEnd.Add(-duration), maxEnd, nil)
+}
+
 // dump is a helper function that prints the tree structure to
 // stdout.
-func dump(tree *Tree, depth int) {
-	indent := ""
-	for i := 0; i < depth; i++ {
-		indent += "  "
-	}
-	fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	Pf("%v left: ", indent)
+func dump(tree *Tree, path string) {
+	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
+	Pf("%v: %v\n", path, tree.leafInterval)
 	if tree.left != nil {
-		dump(tree.left, depth+1)
-	} else {
-		fmt.Printf("nil\n")
+		dump(tree.left, path+"l")
 	}
-	Pf("%v right: ", indent)
 	if tree.right != nil {
-		dump(tree.right, depth+1)
-	} else {
-		fmt.Printf("nil\n")
+		dump(tree.right, path+"r")
 	}
 }
