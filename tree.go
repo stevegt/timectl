@@ -5,11 +5,16 @@ import (
 	// . "github.com/stevegt/goadapt"
 )
 
-// TreeStart and TreeEnd are the minimum and maximum time values that can be
-// represented by a Tree node.
+// TreeStart is the minimum time value that can be represented by a Tree node.
 var TreeStart = time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+
+// TreeEnd is the maximum time value that can be represented by a Tree node.
 var TreeEnd = time.Date(9999, 12, 31, 23, 59, 59, 999999999, time.UTC)
+
+// TreeStartStr is the string representation of TreeStart.
 var TreeStartStr = TreeStart.Format(time.RFC3339)
+
+// TreeEndStr is the string representation of TreeEnd.
 var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
 // Tree represents a node in an interval tree.

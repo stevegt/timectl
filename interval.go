@@ -1,9 +1,8 @@
 package interval
 
 import (
+	"fmt"
 	"time"
-
-	. "github.com/stevegt/goadapt"
 )
 
 // An Interval represents a time interval with a start and end time.
@@ -30,7 +29,7 @@ func NewInterval(start, end time.Time, event any) *Interval {
 
 // String returns a string representation of the interval.
 func (i *Interval) String() string {
-	return Spf("%v - %v %v", i.start.Format(time.RFC3339), i.end.Format(time.RFC3339), i.event)
+	return fmt.Sprintf("%v - %v %v", i.start.Format(time.RFC3339), i.end.Format(time.RFC3339), i.event)
 }
 
 // Start returns the start time of the interval.

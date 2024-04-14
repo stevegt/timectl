@@ -1,9 +1,9 @@
 package interval
 
 import (
+	"fmt"
 	"time"
-
-	. "github.com/stevegt/goadapt"
+	// . "github.com/stevegt/goadapt"
 )
 
 /*
@@ -263,7 +263,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 // stdout.
 func dump(tree *Tree, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	Pf("%v: %v\n", path, tree.leafInterval)
+	fmt.Sprintf("%v: %v\n", path, tree.leafInterval)
 	if tree.left != nil {
 		dump(tree.left, path+"l")
 	}
