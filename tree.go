@@ -125,20 +125,36 @@ func maxDuration(a, b time.Duration) time.Duration {
 	return b
 }
 
-// Intervals returns a slice of all intervals in all leaf nodes of the tree.
-func (t *Tree) Intervals() []*Interval {
+// BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
+func (t *Tree) BusyIntervals() (intervals []*Interval) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+	for _, i := range t.allIntervals() {
+		if i.Busy() {
+			intervals = append(intervals, i)
+		}
+	}
+	return
+}
 
+// AllIntervals returns a slice of all intervals in all leaf nodes of the tree.
+func (t *Tree) AllIntervals() []*Interval {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.allIntervals()
+}
+
+// allIntervals is a non-threadsafe version of AllIntervals for internal use.
+func (t *Tree) allIntervals() []*Interval {
 	var intervals []*Interval
 	if t.left == nil && t.right == nil {
 		intervals = append(intervals, t.leafInterval)
 	}
 	if t.left != nil {
-		intervals = append(intervals, t.left.Intervals()...)
+		intervals = append(intervals, t.left.AllIntervals()...)
 	}
 	if t.right != nil {
-		intervals = append(intervals, t.right.Intervals()...)
+		intervals = append(intervals, t.right.AllIntervals()...)
 	}
 	return intervals
 }
