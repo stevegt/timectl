@@ -1,6 +1,7 @@
 package interval
 
 import (
+	"fmt"
 	"time"
 	// . "github.com/stevegt/goadapt"
 )
@@ -260,4 +261,77 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 		}
 	}
 	return conflicts
+}
+
+// FindFree returns a free interval that has the given duration.  The
+// interval starts as early as possible if first is true, and as late
+// as possible if first is false.  The minStart and maxEnd times are
+// inclusive. The duration is exclusive.
+//
+// This function works by walking the tree in a depth-first manner,
+// following the left child first if first is set, otherwise following
+// the right child first.
+func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free *Interval) {
+
+	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
+	// Pf("busy: %v\n", t.Busy())
+	if !t.Busy() {
+		start := maxTime(minStart, t.Start())
+		end := minTime(t.End(), maxEnd)
+		sub := subInterval(first, start, end, duration)
+		// Pf("sub: %v\n", sub)
+		return sub
+	}
+
+	var children []*Tree
+	var start, end time.Time
+	if first {
+		children = []*Tree{t.left, t.right}
+	} else {
+		children = []*Tree{t.right, t.left}
+	}
+
+	for _, child := range children {
+		if child == nil {
+			continue
+		}
+		start = maxTime(minStart, child.Start())
+		end = minTime(child.End(), maxEnd)
+		slot := child.FindFree(first, start, end, duration)
+		if slot != nil {
+			return slot
+		}
+	}
+
+	// if we get here, then we didn't find a free interval anywhere
+	// under this node
+	return nil
+}
+
+// subInterval returns a free interval that starts as early as possible
+// if first is true, and as late as possible if first is false.  The
+// minStart and maxEnd times are inclusive. The duration is exclusive.
+// If the duration is longer than the time between minStart and maxEnd,
+// then this function returns nil.
+func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration) *Interval {
+	if maxEnd.Sub(minStart) < duration {
+		return nil
+	}
+	if first {
+		return NewInterval(minStart, minStart.Add(duration), nil)
+	}
+	return NewInterval(maxEnd.Add(-duration), maxEnd, nil)
+}
+
+// dump is a helper function that prints the tree structure to
+// stdout.
+func dump(tree *Tree, path string) {
+	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
+	fmt.Printf("%-10v: %v\n", path, tree.leafInterval)
+	if tree.left != nil {
+		dump(tree.left, path+"l")
+	}
+	if tree.right != nil {
+		dump(tree.right, path+"r")
+	}
 }
