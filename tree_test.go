@@ -44,24 +44,24 @@ func get(tree *Tree, pathStr string) *Tree {
 }
 
 // expect is a test helper function that checks if the given tree
-// node's interval has the expected start and end times and event
+// node's interval has the expected start and end times and payload
 // content. pathStr is the path to the node in the tree, where 'l'
 // means to go left and 'r' means to go right.  An empty pathStr means
 // to check the root node.
-func expect(tree *Tree, pathStr, startStr, endStr string, event any) error {
+func expect(tree *Tree, pathStr, startStr, endStr string, payload any) error {
 	node := get(tree, pathStr)
 	if node == nil {
 		return fmt.Errorf("no node at path: %v", pathStr)
 	}
 	nodeInterval := node.Interval()
-	if nodeInterval.Event() != event {
-		return fmt.Errorf("Expected event=%v, got event=%v", event, nodeInterval.Event())
+	if nodeInterval.Payload() != payload {
+		return fmt.Errorf("Expected payload=%v, got payload=%v", payload, nodeInterval.Payload())
 	}
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
-	ev := NewInterval(start, end, event)
+	ev := NewInterval(start, end, payload)
 	if !node.Interval().Equal(ev) {
 		return fmt.Errorf("Expected %v, got %v", ev, node.Interval())
 	}
@@ -70,28 +70,28 @@ func expect(tree *Tree, pathStr, startStr, endStr string, event any) error {
 
 // insertExpect is a test helper function that inserts an interval
 // into the tree and checks if the tree has the expected structure.
-func insertExpect(tree *Tree, pathStr, startStr, endStr string, event any) error {
-	interval := insert(tree, startStr, endStr, event)
+func insertExpect(tree *Tree, pathStr, startStr, endStr string, payload any) error {
+	interval := insert(tree, startStr, endStr, payload)
 	if interval == nil {
 		return fmt.Errorf("Failed to insert interval")
 	}
-	return expect(tree, pathStr, startStr, endStr, event)
+	return expect(tree, pathStr, startStr, endStr, payload)
 }
 
 // newInterval is a test helper function that creates a new interval
-// with the given start and end times and event content.
-func newInterval(startStr, endStr string, event any) *Interval {
+// with the given start and end times and payload content.
+func newInterval(startStr, endStr string, payload any) *Interval {
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
-	return NewInterval(start, end, event)
+	return NewInterval(start, end, payload)
 }
 
 // insert is a test helper function that inserts an interval into the
 // tree and returns the interval that was inserted.
-func insert(tree *Tree, startStr, endStr string, event any) *Interval {
-	interval := newInterval(startStr, endStr, event)
+func insert(tree *Tree, startStr, endStr string, payload any) *Interval {
+	interval := newInterval(startStr, endStr, payload)
 	// Insert adds a new interval to the tree, adjusting the structure as
 	// necessary.  Insertion fails if the new interval conflicts with any
 	// existing interval in the tree.
