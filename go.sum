@@ -1,2 +1,8 @@
+github.com/emersion/go-ical v0.0.0-20240127095438-fc1c9d8fb2b6 h1:kHoSgklT8weIDl6R6xFpBJ5IioRdBU1v2X2aCZRVCcM=
+github.com/emersion/go-ical v0.0.0-20240127095438-fc1c9d8fb2b6/go.mod h1:BEksegNspIkjCQfmzWgsgbu6KdeJ/4LwUZs7DMBzjzw=
+github.com/graham/rrule v0.0.0-20230601170954-d30ed24b726c h1:69GpuqwWdsjFASaVItosiEbHpghSjrJP64nTbpW2ILY=
+github.com/graham/rrule v0.0.0-20230601170954-d30ed24b726c/go.mod h1:ue/aYmUNOuiLsNI7o1GAe19HVlnqhkvmR9to7btU7g8=
 github.com/stevegt/goadapt v0.7.0 h1:brUmaaA4mr3hqQfglDAQh7/MVSWak52mEAOzfbSoMDg=
 github.com/stevegt/goadapt v0.7.0/go.mod h1:vquRbAl0Ek4iJHCvFUEDxziTsETR2HOT7r64NolhDKs=
+github.com/teambition/rrule-go v1.8.2 h1:lIjpjvWTj9fFUZCmuoVDrKVOtdiyzbzc93qTmRVe/J8=
+github.com/teambition/rrule-go v1.8.2/go.mod h1:Ieq5AbrKGciP1V//Wq8ktsTXwSwJHDD5mD/wLBGl3p4=
