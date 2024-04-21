@@ -2,6 +2,7 @@ package interval
 
 import (
 	"fmt"
+	"sync"
 	"time"
 	// . "github.com/stevegt/goadapt"
 )
@@ -27,22 +28,29 @@ type Tree struct {
 	// maxGap time.Duration
 	left  *Tree // Pointer to the left child
 	right *Tree // Pointer to the right child
+
+	mu sync.RWMutex
 }
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Tree {
-	return &Tree{leafInterval: NewInterval(TreeStart, TreeEnd, nil)}
+	return &Tree{
+		leafInterval: NewInterval(TreeStart, TreeEnd, nil),
+	}
 }
 
 // Insert adds a new interval to the tree, adjusting the structure as
 // necessary.  Insertion fails if the new interval conflicts with any
 // existing interval in the tree.  The new interval must be busy.
 func (t *Tree) Insert(newInterval *Interval) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	if !newInterval.Busy() {
 		return false
 	}
 
-	if t.Busy() {
+	if t.busy() {
 		if t.left != nil && newInterval.Start().Before(t.left.End()) {
 			if t.left.Insert(newInterval) {
 				return true
@@ -59,7 +67,7 @@ func (t *Tree) Insert(newInterval *Interval) bool {
 	// this is a free node, possibly with children -- we're going to
 	// completely replace it with the results of punching a hole in
 	// this node's interval
-	newIntervals := t.Interval().Punch(newInterval)
+	newIntervals := t.interval().Punch(newInterval)
 	switch len(newIntervals) {
 	case 0:
 		// newInterval doesn't fit in this node's interval
@@ -93,82 +101,6 @@ func (t *Tree) Insert(newInterval *Interval) bool {
 	}
 }
 
-/*
-// conflicts returns a channel containing intervals in leaf nodes that overlap with the given interval.
-func (t *Tree) conflicts(left bool, interval *Interval) (out chan *Interval) {
-	out = make(chan *Interval)
-	go func(in *Interval) {
-		defer close(out)
-		// Pf("conflicts: in=%v, left=%v, right=%v\n", in, t.left, t.right)
-		if t.leafInterval == nil {
-			return
-		}
-		if t.left == nil && t.right == nil && t.leafInterval.Conflicts(in) {
-			out <- t.leafInterval
-			return
-		}
-		// Pf("conflicts: left=%v, right=%v\n", t.left, t.right)
-		children := []*Tree{t.left, t.right}
-		if !left {
-			children = []*Tree{t.right, t.left}
-		}
-		for _, child := range children {
-			if child == nil {
-				continue
-			}
-			for conflict := range child.conflicts(left, in) {
-				out <- conflict
-			}
-		}
-	}(interval)
-	return
-}
-
-// Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
-func (t *Tree) Conflicts(interval *Interval) []*Interval {
-	var conflicts []*Interval
-	for conflict := range t.conflicts(true, interval) {
-		conflicts = append(conflicts, conflict)
-	}
-	return conflicts
-}
-
-// Conflict returns true if the given interval conflicts with any interval in the tree.
-// If left is true, the left child is searched first; otherwise the right child is searched first.
-func (t *Tree) Conflict(left bool, interval *Interval) bool {
-	for range t.conflicts(left, interval) {
-		return true
-	}
-	return false
-}
-*/
-
-/*
-// updateSpanningInterval updates the interval of this node to span its children.
-func (t *Tree) updateSpanningInterval() {
-	if t.left != nil && t.right != nil {
-		busy := t.left.interval.Busy() || t.right.interval.Busy()
-		t.interval = NewInterval(minTime(t.left.interval.Start(), t.right.interval.Start()), maxTime(t.left.interval.End(), t.right.interval.End()), busy)
-	} else if t.left != nil {
-		t.interval = t.left.interval
-	} else if t.right != nil {
-		t.interval = t.right.interval
-	}
-}
-*/
-
-/*
-// updateMaxGap updates the maximum gap between left end and right start times.
-func (t *Tree) updateMaxGap() {
-	if t.left != nil && t.right != nil {
-		gap := t.right.interval.Start().Sub(t.left.interval.End())
-		t.maxGap = maxDuration(gap, maxDuration(t.left.maxGap, t.right.maxGap))
-		// Pf("updateMaxGap: gap=%v, maxGap=%v\n", gap, t.maxGap)
-		// Pf("updateMaxGap: left=%v, right=%v\n", t.left.interval, t.right.interval)
-	}
-}
-*/
-
 // minTime returns the earlier of two time.Time values.
 func minTime(a, b time.Time) time.Time {
 	if a.Before(b) {
@@ -195,6 +127,9 @@ func maxDuration(a, b time.Duration) time.Duration {
 
 // Intervals returns a slice of all intervals in all leaf nodes of the tree.
 func (t *Tree) Intervals() []*Interval {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
 	var intervals []*Interval
 	if t.left == nil && t.right == nil {
 		intervals = append(intervals, t.leafInterval)
@@ -210,6 +145,13 @@ func (t *Tree) Intervals() []*Interval {
 
 // Busy returns true if any interval in the tree is busy.
 func (t *Tree) Busy() bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.busy()
+}
+
+// busy is a non-threadsafe version of Busy for internal use.
+func (t *Tree) busy() bool {
 	if t.leafInterval != nil && t.leafInterval.Busy() {
 		return true
 	}
@@ -224,6 +166,9 @@ func (t *Tree) Busy() bool {
 
 // Start returns the start time of the interval spanning all child nodes.
 func (t *Tree) Start() time.Time {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
 	if t.leafInterval != nil {
 		return t.leafInterval.Start()
 	}
@@ -232,6 +177,9 @@ func (t *Tree) Start() time.Time {
 
 // End returns the end time of the interval spanning all child nodes.
 func (t *Tree) End() time.Time {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
 	if t.leafInterval != nil {
 		return t.leafInterval.End()
 	}
@@ -241,6 +189,13 @@ func (t *Tree) End() time.Time {
 // Interval returns the node's interval if interval is a leaf node, or
 // returns a synthetic interval spanning all child nodes.
 func (t *Tree) Interval() *Interval {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.interval()
+}
+
+// interval is a non-threadsafe version of Interval for internal use.
+func (t *Tree) interval() *Interval {
 	if t.left == nil && t.right == nil {
 		return t.leafInterval
 	}
@@ -249,6 +204,9 @@ func (t *Tree) Interval() *Interval {
 
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
 func (t *Tree) Conflicts(interval *Interval) []*Interval {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
 	var conflicts []*Interval
 	if t.leafInterval != nil && t.leafInterval.Conflicts(interval) {
 		conflicts = append(conflicts, t.leafInterval)
@@ -272,6 +230,8 @@ func (t *Tree) Conflicts(interval *Interval) []*Interval {
 // following the left child first if first is set, otherwise following
 // the right child first.
 func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free *Interval) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())

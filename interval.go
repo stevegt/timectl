@@ -98,7 +98,7 @@ func (i *Interval) Busy() bool {
 // Punch creates one to three new intervals by punching a hole in the
 // current interval.  The current interval must not be busy and must
 // completely contain the hole interval.  The hole interval must be
-// busy.
+// busy. Punch does not modify the current interval.
 func (i *Interval) Punch(hole *Interval) (intervals []*Interval) {
 	if i.Busy() || !i.Wraps(hole) || !hole.Busy() {
 		return nil
