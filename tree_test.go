@@ -3,6 +3,7 @@ package interval
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -204,7 +205,7 @@ func TestFindFree(t *testing.T) {
 }
 
 func TestFindFreeMany(t *testing.T) {
-	// This test creates a large tree with a large number of random intervals and then
+	// This test creates a tree with a number of random intervals and then
 	// finds free intervals of varying durations.
 	rand.Seed(1)
 	tree := NewTree()
@@ -264,5 +265,68 @@ func TestFindFreeMany(t *testing.T) {
 			t.Fatalf("Expected free interval, got conflict")
 		}
 
+	}
+}
+
+func TestConcurrent(t *testing.T) {
+	// This test creates a tree with a number of random intervals and then
+	// finds free intervals of varying durations.  It does this in
+	// multiple goroutines in order to test thread safety.
+	rand.Seed(1)
+	tree := NewTree()
+
+	size := 1
+
+	// insert several random intervals in multiple goroutines
+	insertMap := sync.Map{}
+	wgInsert := sync.WaitGroup{}
+	for i := 0; i < size; i++ {
+		wgInsert.Add(1)
+		go func(i int) {
+			// wait a random amount of time
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+			start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+			end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
+			interval := insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), true)
+			insertMap.Store(i, interval)
+			wgInsert.Done()
+		}(i)
+	}
+
+	// find free intervals in multiple goroutines while the tree is being
+	// modified by the insert goroutines
+	foundCount := 0
+	for i := 0; i < 1000; i++ {
+		minStart := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+		maxEnd := minStart.Add(time.Duration(rand.Intn(1440)) * time.Minute)
+		duration := time.Duration(rand.Intn(60)+1) * time.Minute
+		first := rand.Intn(2) == 0
+		// ignore return value
+		freeInterval := tree.FindFree(first, minStart, maxEnd, duration)
+		if freeInterval != nil {
+			foundCount++
+		}
+	}
+	Tassert(t, foundCount > 0, "Expected at least one free interval")
+
+	// wait for all insert goroutines to finish
+	wgInsert.Wait()
+
+	// copy the intervals from insertMap to a slice
+	inserted := make([]*Interval, size)
+	insertMap.Range(func(key, value any) bool {
+		inserted[key.(int)] = value.(*Interval)
+		return true
+	})
+
+	// check that all intervals were inserted
+	Tassert(t, len(inserted) == size, "Expected %d intervals, got %d", size, len(inserted))
+	Tassert(t, len(tree.Intervals()) == size, "Expected %d intervals, got %d", size, len(tree.Intervals()))
+	for _, expect := range inserted {
+		// we expect 1 conflict for each interval
+		conflicts := tree.Conflicts(expect)
+		Tassert(t, len(conflicts) == 1, "Expected 1 conflict, got %d", len(conflicts))
+		// check that the conflict is the expected interval
+		Tassert(t, conflicts[0].Equal(expect), fmt.Sprintf("Expected %v, got %v", expect, conflicts[0]))
 	}
 }
