@@ -101,16 +101,16 @@ func (t *Tree) Insert(newInterval *Interval) bool {
 	}
 }
 
-// minTime returns the earlier of two time.Time values.
-func minTime(a, b time.Time) time.Time {
+// MinTime returns the earlier of two time.Time values.
+func MinTime(a, b time.Time) time.Time {
 	if a.Before(b) {
 		return a
 	}
 	return b
 }
 
-// maxTime returns the later of two time.Time values.
-func maxTime(a, b time.Time) time.Time {
+// MaxTime returns the later of two time.Time values.
+func MaxTime(a, b time.Time) time.Time {
 	if a.After(b) {
 		return a
 	}
@@ -252,8 +252,8 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
 	if !t.Busy() {
-		start := maxTime(minStart, t.Start())
-		end := minTime(t.End(), maxEnd)
+		start := MaxTime(minStart, t.Start())
+		end := MinTime(t.End(), maxEnd)
 		sub := subInterval(first, start, end, duration)
 		// Pf("sub: %v\n", sub)
 		return sub
@@ -271,8 +271,8 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		if child == nil {
 			continue
 		}
-		start = maxTime(minStart, child.Start())
-		end = minTime(child.End(), maxEnd)
+		start = MaxTime(minStart, child.Start())
+		end = MinTime(child.End(), maxEnd)
 		slot := child.FindFree(first, start, end, duration)
 		if slot != nil {
 			return slot

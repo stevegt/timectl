@@ -238,8 +238,8 @@ func TestFindFreeMany(t *testing.T) {
 		if freeInterval == nil {
 			// sanity check -- try a bunch of times to see if we can find a free interval
 			for j := 0; j < 100; j++ {
-				start := maxTime(minStart, time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC))
-				end := minTime(maxEnd, start.Add(duration))
+				start := MaxTime(minStart, time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC))
+				end := MinTime(maxEnd, start.Add(duration))
 				if end.Sub(start) < duration {
 					continue
 				}
