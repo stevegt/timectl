@@ -2,96 +2,61 @@ package timectl
 
 import (
 	"time"
-
-	. "github.com/stevegt/goadapt"
 )
 
-// FindFreePriority works similarly to FindFree, but it returns a
-// contiguous set of intervals that are either free or have a lower
-// priority than the given priority.  The intervals are returned in
-// order of start time.  The minStart and maxEnd times are inclusive.
+// FindFreePriority searches the tree to find one or more contiguous intervals
+// that are either free or have a priority less than the given priority, and
+// which together satisfy the given duration.
 func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) (intervals []Interval) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	Pf("FindFreePriority: first: %v minStart: %v maxEnd: %v duration: %v priority: %v\n", first, minStart, maxEnd, duration, priority)
-
-	if t.left == nil && t.right == nil {
-		// this is a leaf node
-		interval := t.interval()
-		if interval.Priority() >= priority {
-			// this interval has higher priority than we're looking for
-			Pf("priority too high for interval: %v\n", interval)
-			return nil
+	// Recursive function to traverse and collect intervals.
+	var collect func(node *Tree, start time.Time, end time.Time) bool
+	collect = func(node *Tree, start time.Time, end time.Time) bool {
+		if node == nil || duration <= 0 {
+			return false
 		}
-		intervals = append(intervals, interval)
-		Pf("returning interval: %v\n", interval)
-		return
-	}
 
-	var children []*Tree
-	var start, end time.Time
-	if first {
-		children = []*Tree{t.left, t.right}
-	} else {
-		children = []*Tree{t.right, t.left}
-	}
+		// Adjust search range based on the node's interval.
+		start = MaxTime(start, node.Start())
+		end = MinTime(end, node.End())
+		if end.Sub(start) < duration {
+			return false
+		}
 
-	needDuration := duration
-	done := false
-	for _, child := range children {
-		if child == nil {
-			continue
-		}
-		start = MaxTime(minStart, child.Start())
-		end = MinTime(child.End(), maxEnd)
-		span := end.Sub(start)
-		need := needDuration
-		if span < need {
-			need = span
-		}
-		candidates := child.FindFreePriority(first, start, end, need, priority)
-		for _, candidate := range candidates {
-			Pf("candidate: %v\n", candidate)
-			if needDuration <= 0 {
-				Pf("needDuration <= 0\n")
-				done = true
-				break
+		if node.leafInterval != nil && node.leafInterval.Priority() < priority {
+			// Found a suitable interval. Adjust its duration and add it to the results.
+			if !first && duration < end.Sub(start) {
+				start = end.Add(-duration)
+			} else if duration < end.Sub(start) {
+				end = start.Add(duration)
 			}
-			// find the intersection of the candidate interval and the
-			// start/end range
-			start = MaxTime(start, candidate.Start())
-			end = MinTime(candidate.End(), end)
-			duration := end.Sub(start)
-			if duration < 0 {
-				// candidate interval is outside of minStart/maxEnd range
-				if first {
-					if candidate.Start().After(maxEnd) {
-						done = true
-						Pf("candidate.Start().After(maxEnd)\n")
-						break
-					}
-				} else {
-					if candidate.End().Before(minStart) {
-						done = true
-						Pf("candidate.End().Before(minStart)\n")
-						break
-					}
-				}
-				// we're not yet at the minStart/maxEnd range, so continue
-				Pf("candidate interval not yet at minStart/maxEnd range\n")
-				continue
+			interval := NewInterval(start, end, node.leafInterval.Priority())
+			intervals = append(intervals, interval)
+			duration -= interval.Duration()
+			return true
+		}
+
+		if first {
+			if collect(node.left, start, end) {
+				return true // Found a suitable interval in the left subtree.
 			}
-			Pf("adding candidate to intervals: %v\n", candidate)
-			needDuration -= duration
-			Pf("needDuration: %v\n", needDuration)
-			intervals = append(intervals, candidate)
+			return collect(node.right, start, end) // Continue searching in the right subtree.
 		}
-		if done {
-			Pf("done\n")
-			break
+
+		if collect(node.right, start, end) {
+			return true // Found a suitable interval in the right subtree.
 		}
+		return collect(node.left, start, end) // Continue searching in the left subtree.
 	}
-	Pf("returning intervals at end: %v\n", intervals)
+
+	minStart, maxEnd = MaxTime(t.Start(), minStart), MinTime(t.End(), maxEnd)
+
+	if !collect(t, minStart, maxEnd) && len(intervals) == 0 {
+		// If no intervals were found that meet the criteria, return nil.
+		return nil
+	}
+
 	return intervals
 }
