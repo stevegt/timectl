@@ -12,73 +12,69 @@ func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration
 	defer t.mu.RUnlock()
 
 	results := make([]Interval, 0)
+
 	var tempStart time.Time
-	accumulatedDuration := time.Duration(0)
+	var accumulatedDuration time.Duration
 
-	// Helper to add an interval to results if it satisfies conditions
-	addIntervalIfNeeded := func(intervalEnd time.Time) {
-		if tempStart.IsZero() {
-			return // No interval to add
+	// Verify if an interval (or accumulated intervals) can be added to results
+	considerAddInterval := func(curEnd time.Time, curPriority float64) bool {
+		if tempStart.IsZero() || accumulatedDuration < duration {
+			return false
 		}
-
-		// First check accumulated duration against required duration.
-		if accumulatedDuration >= duration {
-			results = append(results, NewInterval(tempStart, intervalEnd, priority))
-		}
-
-		// Reset accumulators
-		tempStart = time.Time{}
+		results = append(results, NewInterval(tempStart, curEnd, curPriority))
 		accumulatedDuration = 0
+		tempStart = time.Time{}
+		return true
 	}
 
-	// Recursive function to traverse tree and find suitable intervals
-	var search func(node *Tree)
-	search = func(node *Tree) {
+	var search func(node *Tree, depth int)
+	search = func(node *Tree, depth int) {
 		if node == nil {
 			return
 		}
 
 		if first {
-			search(node.left)
+			search(node.left, depth+1)
 		} else {
-			search(node.right)
+			search(node.right, depth+1)
 		}
 
-		// Process current node
-		if node.leafInterval != nil {
-			currentInterval := node.leafInterval
-			if currentInterval.Priority() <= priority {
-				// Check if this interval can contribute to the required duration
-				curStart := MaxTime(currentInterval.Start(), minStart)
-				curEnd := MinTime(currentInterval.End(), maxEnd)
-				if curStart.Before(curEnd) {
-					if tempStart.IsZero() {
-						tempStart = curStart
-					}
-					accumulatedDuration += curEnd.Sub(curStart)
-					if accumulatedDuration >= duration {
-						addIntervalIfNeeded(curEnd)
+		if node.leafInterval != nil && node.leafInterval.Start().Before(maxEnd) && node.leafInterval.End().After(minStart) {
+			curStart := MaxTime(node.leafInterval.Start(), minStart)
+			curEnd := MinTime(node.leafInterval.End(), maxEnd)
+			curDuration := curEnd.Sub(curStart)
+
+			if node.leafInterval.Priority() < priority {
+				if tempStart.IsZero() {
+					tempStart = curStart
+				}
+				accumulatedDuration += curDuration
+				if accumulatedDuration >= duration {
+					if considerAddInterval(curEnd, node.leafInterval.Priority()) {
+						return // If duration met and added, stop searching further
 					}
 				}
 			} else {
-				// Current interval has higher priority. Check if we have collected enough duration.
-				addIntervalIfNeeded(currentInterval.Start())
+				// Current interval has a priority that is not lower than the search priority
+				// Check if accumulated intervals till now meet required duration and add them
+				considerAddInterval(curStart, priority)
 			}
 		}
 
 		if first {
-			search(node.right)
+			search(node.right, depth+1)
 		} else {
-			search(node.left)
+			search(node.left, depth+1)
 		}
 	}
 
-	search(t)
+	search(t, 0)
 
-	// Check at the end of traversal if there's an unfinished interval accumulation
-	if !tempStart.IsZero() && accumulatedDuration < duration {
-		// If accumulated duration at the end is insufficient, discard it by excluding the addition
+	// After traversal, check if the last accumulation meets the criteria
+	// This handles the case where search ends with accumulated intervals satisfying the duration requirement
+	if !tempStart.IsZero() && accumulatedDuration >= duration {
+		considerAddInterval(maxEnd, priority) // Use maxEnd, as it's the end of the search range
 	}
-
+	
 	return results
 }
