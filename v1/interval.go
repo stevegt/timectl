@@ -3,6 +3,7 @@ package timectl
 import (
 	"fmt"
 	"time"
+	// . "github.com/stevegt/goadapt"
 )
 
 // An Interval represents a time interval with a start and end time.
@@ -104,8 +105,8 @@ func (i *IntervalBase) Duration() time.Duration {
 	return i.End().Sub(i.Start())
 }
 
-// Busy returns true if the interval is associated with a payload.  The
-// interval is free if the payload is nil or false, or busy otherwise.
+// Busy returns true if the interval is not free.  The interval is
+// free if the priority is zero.
 func (i *IntervalBase) Busy() bool {
 	if i.Priority() == 0 {
 		return false

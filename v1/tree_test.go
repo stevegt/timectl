@@ -351,17 +351,12 @@ func TestConcurrent(t *testing.T) {
 
 // ConcreteInterval tests the Interval interface and IntervalBase type.
 type ConcreteInterval struct {
-	IntervalBase
-	start    time.Time
-	end      time.Time
-	priority float64
+	*IntervalBase
 }
 
 func NewConcreteInterval(start, end time.Time, priority float64) *ConcreteInterval {
 	interval := &ConcreteInterval{
-		start:    start,
-		end:      end,
-		priority: priority,
+		IntervalBase: NewInterval(start, end, priority).(*IntervalBase),
 	}
 	return interval
 }
@@ -384,6 +379,8 @@ func TestInterface(t *testing.T) {
 	ok := tree.Insert(interval)
 	Tassert(t, ok, "Failed to insert interval")
 
+	// dump(tree, "")
+
 	// check that the interval is in the tree
 	intervals := tree.BusyIntervals()
 	Tassert(t, len(intervals) == 1, "Expected 1 interval, got %d", len(intervals))
@@ -391,7 +388,7 @@ func TestInterface(t *testing.T) {
 
 	// check that the interval is returned by AllIntervals
 	intervals = tree.AllIntervals()
-	Tassert(t, len(intervals) == 1, "Expected 1 interval, got %d", len(intervals))
-	Tassert(t, intervals[0].Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, intervals[0]))
+	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
+	Tassert(t, intervals[1].Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, intervals[1]))
 
 }
