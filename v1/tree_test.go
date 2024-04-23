@@ -502,6 +502,9 @@ func TestDeleteComplex(t *testing.T) {
   else clear the candidate list
 - If the candidate list has intervals that span the given duration,
   return the candidate list
+- Do not trim intervals -- return the full interval.  The caller can
+  trim the interval if necessary.  The returned intervals must total
+  at least the given duration, and may be longer.
 */
 func TestFindFreePriority(t *testing.T) {
 	tree := NewTree()
