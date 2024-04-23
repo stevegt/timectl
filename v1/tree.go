@@ -5,7 +5,8 @@ import (
 	"math"
 	"sync"
 	"time"
-	// . "github.com/stevegt/goadapt"
+
+	. "github.com/stevegt/goadapt"
 )
 
 // TreeStart is the minimum time value that can be represented by a Tree node.
@@ -244,6 +245,96 @@ func (t *Tree) Conflicts(interval Interval) []Interval {
 	return conflicts
 }
 
+// FindFreePriority works similarly to FindFree, but it returns a
+// contiguous set of intervals that are either free or have a lower
+// priority than the given priority.  The intervals are returned in
+// order of start time.  The minStart and maxEnd times are inclusive.
+func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) (intervals []Interval) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	Pf("FindFreePriority: first: %v minStart: %v maxEnd: %v duration: %v priority: %v\n", first, minStart, maxEnd, duration, priority)
+
+	if t.left == nil && t.right == nil {
+		// this is a leaf node
+		interval := t.interval()
+		if interval.Priority() >= priority {
+			// this interval has higher priority than we're looking for
+			Pf("priority too high for interval: %v\n", interval)
+			return nil
+		}
+		intervals = append(intervals, interval)
+		Pf("returning interval: %v\n", interval)
+		return
+	}
+
+	var children []*Tree
+	var start, end time.Time
+	if first {
+		children = []*Tree{t.left, t.right}
+	} else {
+		children = []*Tree{t.right, t.left}
+	}
+
+	needDuration := duration
+	done := false
+	for _, child := range children {
+		if child == nil {
+			continue
+		}
+		start = MaxTime(minStart, child.Start())
+		end = MinTime(child.End(), maxEnd)
+		span := end.Sub(start)
+		need := needDuration
+		if span < need {
+			need = span
+		}
+		candidates := child.FindFreePriority(first, start, end, need, priority)
+		for _, candidate := range candidates {
+			Pf("candidate: %v\n", candidate)
+			if needDuration <= 0 {
+				Pf("needDuration <= 0\n")
+				done = true
+				break
+			}
+			// find the intersection of the candidate interval and the
+			// start/end range
+			start = MaxTime(start, candidate.Start())
+			end = MinTime(candidate.End(), end)
+			duration := end.Sub(start)
+			if duration < 0 {
+				// candidate interval is outside of minStart/maxEnd range
+				if first {
+					if candidate.Start().After(maxEnd) {
+						done = true
+						Pf("candidate.Start().After(maxEnd)\n")
+						break
+					}
+				} else {
+					if candidate.End().Before(minStart) {
+						done = true
+						Pf("candidate.End().Before(minStart)\n")
+						break
+					}
+				}
+				// we're not yet at the minStart/maxEnd range, so continue
+				Pf("candidate interval not yet at minStart/maxEnd range\n")
+				continue
+			}
+			Pf("adding candidate to intervals: %v\n", candidate)
+			needDuration -= duration
+			Pf("needDuration: %v\n", needDuration)
+			intervals = append(intervals, candidate)
+		}
+		if done {
+			Pf("done\n")
+			break
+		}
+	}
+	Pf("returning intervals at end: %v\n", intervals)
+	return intervals
+}
+
 // FindFree returns a free interval that has the given duration.  The
 // interval starts as early as possible if first is true, and as late
 // as possible if first is false.  The minStart and maxEnd times are
@@ -317,4 +408,77 @@ func dump(tree *Tree, path string) {
 	if tree.right != nil {
 		dump(tree.right, path+"r")
 	}
+}
+
+// Delete removes an interval from the tree, adjusting the structure as
+// necessary.  Deletion fails if the interval is not found in the tree.
+func (t *Tree) Delete(interval Interval) bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if t.leafInterval != nil && t.leafInterval.Equal(interval) {
+		t.leafInterval = nil
+		t.left = nil
+		t.right = nil
+		return true
+	}
+
+	// check children for interval
+	found := false
+	for _, child := range []*Tree{t.left, t.right} {
+		if child != nil && child.Delete(interval) {
+			// interval was found and deleted in child or descendant
+			found = true
+			if child.leafInterval == nil && child.left == nil && child.right == nil {
+				// child is a leaf node with no children, so remove it
+				if child == t.left {
+					t.left = nil
+				}
+				if child == t.right {
+					t.right = nil
+				}
+			}
+		}
+	}
+	if !found {
+		return false
+	}
+
+	// see if we can promote a child
+	if t.leafInterval == nil && t.left == nil && t.right != nil {
+		// promote right child
+		t.leafInterval = t.right.leafInterval
+		t.left = t.right.left
+		t.right = t.right.right
+	}
+	if t.leafInterval == nil && t.right == nil && t.left != nil {
+		// promote left child
+		t.leafInterval = t.left.leafInterval
+		t.left = t.left.left
+		t.right = t.left.right
+	}
+
+	// see if we can merge children
+	if t.left != nil && t.right != nil {
+		if !t.left.Busy() && !t.right.Busy() {
+			// both children are free, so replace them with a single free node
+			t.leafInterval = NewInterval(t.left.Start(), t.right.End(), 0)
+			t.left = nil
+			t.right = nil
+		}
+	}
+
+	return true
+}
+
+// FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
+func (t *Tree) FreeIntervals() (intervals []Interval) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	for _, i := range t.allIntervals() {
+		if !i.Busy() {
+			intervals = append(intervals, i)
+		}
+	}
+	return
 }

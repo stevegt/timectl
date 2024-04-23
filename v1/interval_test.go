@@ -126,3 +126,29 @@ func TestWraps(t *testing.T) {
 	interval4 := NewInterval(t1001, t1050, 1)
 	Tassert(t, !interval4.Wraps(interval1), "expected interval4 to not wrap interval1")
 }
+
+// Intersection returns an interval that is the intersection of two
+// intervals.  The intersection is the interval that overlaps both
+// intervals.
+func TestIntersection(t *testing.T) {
+	t1000, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
+	Ck(err)
+	t1100, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
+	Ck(err)
+	t1030, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:30:00")
+	Ck(err)
+	t1130, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:30:00")
+	Ck(err)
+	t1200, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T12:00:00")
+
+	i1000_1100 := NewInterval(t1000, t1100, 1)
+	i1030_1130 := NewInterval(t1030, t1130, 1)
+	i1030_1100 := i1000_1100.Intersection(i1030_1130)
+	Tassert(t, i1030_1100.Start() == t1030, "expected start time %v, got %v", t1030, i1030_1100.Start())
+	Tassert(t, i1030_1100.End() == t1100, "expected end time %v, got %v", t1100, i1030_1100.End())
+
+	i1130_1200 := NewInterval(t1130, t1200, 1)
+	iNil := i1000_1100.Intersection(i1130_1200)
+	Tassert(t, iNil == nil, "expected nil, got %v", iNil)
+
+}

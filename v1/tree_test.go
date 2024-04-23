@@ -102,6 +102,20 @@ func insert(tree *Tree, startStr, endStr string, priority float64) Interval {
 	return interval
 }
 
+// match is a test helper function that checks if the given interval
+// has the expected start and end times and priority.
+func match(interval Interval, startStr, endStr string, priority float64) error {
+	start, err := time.Parse(time.RFC3339, startStr)
+	Ck(err)
+	end, err := time.Parse(time.RFC3339, endStr)
+	Ck(err)
+	ev := NewInterval(start, end, priority)
+	if !interval.Equal(ev) {
+		return fmt.Errorf("Expected %v, got %v", ev, interval)
+	}
+	return nil
+}
+
 // Test a tree node with children.
 // A tree is a tree of busy and free intervals that
 // span the entire range from treeStart to treeEnd.
@@ -391,4 +405,116 @@ func TestInterface(t *testing.T) {
 	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
 	Tassert(t, intervals[1].Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, intervals[1]))
 
+}
+
+// test delete
+func TestDelete(t *testing.T) {
+	tree := NewTree()
+
+	// insert an interval into the tree
+	err := insertExpect(tree, "rl", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+
+	// delete the interval
+	interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	ok := tree.Delete(interval)
+	Tassert(t, ok, "Failed to delete interval")
+
+	// check that the interval is no longer in the tree
+	intervals := tree.BusyIntervals()
+	Tassert(t, len(intervals) == 0, "Expected 0 intervals, got %d", len(intervals))
+}
+
+// test complex delete
+func TestDeleteComplex(t *testing.T) {
+	rand.Seed(1)
+	tree := NewTree()
+
+	// insert several random intervals
+	for i := 0; i < 10; i++ {
+		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
+		// ignore return value
+		insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
+	}
+
+	// loop until all busy intervals are deleted
+	busyCount := len(tree.BusyIntervals())
+	for i := busyCount; i > 0; i-- {
+		busyIntervals := tree.BusyIntervals()
+		Tassert(t, len(busyIntervals) == i, "Expected %d intervals, got %d", i, len(busyIntervals))
+		// delete a random interval
+		interval := busyIntervals[rand.Intn(len(busyIntervals))]
+		ok := tree.Delete(interval)
+		Tassert(t, ok, "Failed to delete interval")
+		// check that the interval is no longer in the tree
+		for _, busyInterval := range tree.BusyIntervals() {
+			Tassert(t, !busyInterval.Equal(interval), fmt.Sprintf("Expected interval to be deleted, got %v", interval))
+		}
+		// check that the interval has no conflicts
+		conflicts := tree.Conflicts(interval)
+		Tassert(t, len(conflicts) == 0, "Expected 0 conflicts, got %d", len(conflicts))
+		// check that there are no adjacent free intervals
+		freeIntervals := tree.FreeIntervals()
+		prev := freeIntervals[0]
+		for j := 1; j < len(freeIntervals); j++ {
+			if prev.End().Equal(freeIntervals[j].Start()) {
+				t.Logf("prev: %v", prev)
+				t.Logf("next: %v", freeIntervals[j])
+				t.Fatalf("Expected no adjacent free intervals")
+			}
+			prev = freeIntervals[j]
+		}
+	}
+
+	// check that all busy intervals are deleted
+	busyIntervals := tree.BusyIntervals()
+	Tassert(t, len(busyIntervals) == 0, "Expected 0 intervals, got %d", len(busyIntervals))
+
+	// check that there is one big free interval
+	freeIntervals := tree.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
+	start, err := time.Parse(time.RFC3339, TreeStartStr)
+	Ck(err)
+	end, err := time.Parse(time.RFC3339, TreeEndStr)
+	Ck(err)
+	Tassert(t, freeIntervals[0].Start().Equal(start), fmt.Sprintf("Expected %v, got %v", start, freeIntervals[0].Start()))
+	// XXX we use After here instead of Equal because the end time is not exact
+	Tassert(t, freeIntervals[0].End().After(end), fmt.Sprintf("Expected %v, got %v", end, freeIntervals[0].End()))
+	Tassert(t, freeIntervals[0].Priority() == 0, fmt.Sprintf("Expected %v, got %v", 0, freeIntervals[0].Priority()))
+}
+
+// FindFreePriority works similarly to FindFree, but it returns a
+// contiguous set of intervals that are either free or have a lower
+// priority than the given priority.  The intervals are returned in
+// order of start time.  The minStart and maxEnd times are inclusive.
+func TestFindFreePriority(t *testing.T) {
+	tree := NewTree()
+
+	// insert several intervals into the tree
+	i1000_1100 := insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
+	i1130_1200 := insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
+	i0900_0930 := insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
+
+	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
+	Ck(err)
+	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
+	Ck(err)
+
+	dump(tree, "")
+
+	// find intervals for a 60 minute duration and priority 2 near the start time
+	intervals := tree.FindFreePriority(true, searchStart, searchEnd, 60*time.Minute, 2)
+	for _, interval := range intervals {
+		t.Logf("%v", interval)
+	}
+	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
+	err = match(intervals[0], "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = match(intervals[1], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
 }

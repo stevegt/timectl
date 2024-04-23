@@ -16,6 +16,8 @@ type Interval interface {
 	Conflicts(other Interval) bool
 	// Equal checks if the current interval is equal to the given interval.
 	Equal(other Interval) bool
+	// Intersection returns an interval that is the intersection of two intervals.
+	Intersection(other Interval) Interval
 	// Wraps returns true if the current interval completely contains the other interval.
 	Wraps(other Interval) bool
 	// Duration returns the duration of the interval.
@@ -132,7 +134,20 @@ func (i *IntervalBase) Punch(hole Interval) (intervals []Interval) {
 	return intervals
 }
 
-// Payload returns the payload associated with the interval.
+// Priority returns the priority of the interval.  Priority zero is the
+// lowest priority, and means that the interval is free.
 func (i *IntervalBase) Priority() float64 {
 	return i.priority
+}
+
+// Intersection returns an interval that is the intersection of two
+// intervals.  The intersection is the interval that overlaps both
+// intervals.
+func (i *IntervalBase) Intersection(other Interval) Interval {
+	start := MaxTime(i.Start(), other.Start())
+	end := MinTime(i.End(), other.End())
+	if start.Before(end) {
+		return NewInterval(start, end, 0)
+	}
+	return nil
 }
