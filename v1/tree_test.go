@@ -572,7 +572,7 @@ func TestFindFreePriority(t *testing.T) {
 	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
 	err = match(intervals[0], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
-	Tassert(t, intervals[0] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
+	Tassert(t, intervals[0] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[0])
 	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
 	err = match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)
