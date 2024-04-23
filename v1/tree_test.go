@@ -515,9 +515,10 @@ func TestFindFreePriority(t *testing.T) {
 	for _, interval := range intervals {
 		t.Logf("%v", interval)
 	}
-	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
+	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
 	err = match(intervals[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 	Tassert(t, err == nil, err)
+	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
 	err = match(intervals[1], "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
 	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
@@ -531,9 +532,10 @@ func TestFindFreePriority(t *testing.T) {
 	for _, interval := range intervals {
 		t.Logf("%v", interval)
 	}
-	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
+	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
 	err = match(intervals[0], "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
+	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
 	err = match(intervals[1], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])

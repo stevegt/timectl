@@ -4,75 +4,81 @@ import (
 	"time"
 )
 
-// Correcting the access to properties and methods based on the provided error feedback.
-
-// FindFreePriority finds intervals within the specified time range that are free
-// or have a priority lower than the given priority value and satisfy
-// the specified duration. It considers the priority to determine if an interval
-// is "free enough". This method leverages the structure and logic already
-// present in the codebase, thus assuming Tree and Interval are correctly defined previously.
+// FindFreePriority finds a sequence of contiguous intervals within the specified range
+// that are free or have a priority lower than the given priority, and collectively meet
+// the required duration. It returns these intervals as a slice.
 func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	// Setup placeholders for results and a recursive search function.
-	var results []Interval
-	var search func(node *Tree, required time.Duration) bool
+	results := make([]Interval, 0)
+	var tempStart time.Time
+	accumulatedDuration := time.Duration(0)
 
-	search = func(node *Tree, required time.Duration) bool {
-		if node == nil || required <= 0 {
-			return false
+	// Helper to add an interval to results if it satisfies conditions
+	addIntervalIfNeeded := func(intervalEnd time.Time) {
+		if tempStart.IsZero() {
+			return // No interval to add
 		}
 
-		start := maxTime(node.Interval().Start(), minStart)
-		end := minTime(node.Interval().End(), maxEnd)
-		currentDuration := minDuration(end.Sub(start), required)
+		// First check accumulated duration against required duration.
+		if accumulatedDuration >= duration {
+			results = append(results, NewInterval(tempStart, intervalEnd, priority))
+		}
+		
+		// Reset accumulators
+		tempStart = time.Time{}
+		accumulatedDuration = 0
+	}
 
-		// Check for sufficient priority and room.
-		if start.Before(end) && node.Interval().Priority() <= priority && currentDuration >= required {
-			results = append(results, NewInterval(start, start.Add(required), node.Interval().Priority()))
-			required -= currentDuration
-			return required <= 0
+	// Recursive function to traverse tree and find suitable intervals
+	var search func(node *Tree)
+	search = func(node *Tree) {
+		if node == nil {
+			return
 		}
 
-		// Recursively search children.
 		if first {
-			if search(node.left, required) {
-				return true
-			}
-			return search(node.right, required)
+			search(node.left)
 		} else {
-			if search(node.right, required) {
-				return true
+			search(node.right)
+		}
+
+		// Process current node
+		if node.leafInterval != nil {
+			currentInterval := node.leafInterval
+			if currentInterval.Priority() <= priority {
+				// Check if this interval can contribute to the required duration
+				curStart := maxTime(currentInterval.Start(), minStart)
+				curEnd := minTime(currentInterval.End(), maxEnd)
+				if curStart.Before(curEnd) {
+					if tempStart.IsZero() {
+						tempStart = curStart
+					}
+					accumulatedDuration += curEnd.Sub(curStart)
+					if accumulatedDuration >= duration {
+						addIntervalIfNeeded(curEnd)
+					}
+				}
+			} else {
+				// Current interval has higher priority. Check if we have collected enough duration.
+				addIntervalIfNeeded(currentInterval.Start())
 			}
-			return search(node.left, required)
+		}
+
+		if first {
+			search(node.right)
+		} else {
+			search(node.left)
 		}
 	}
 
-	search(t, duration)
+	search(t)
+
+	// Check at the end of traversal if there's an unfinished interval accumulation
+	if !tempStart.IsZero() && accumulatedDuration < duration {
+		// If accumulated duration at the end is insufficient, discard it by excluding the addition
+	}
+
 	return results
 }
-
-// Assuming these utility functions are defined elsewhere in your codebase or are provided here for completion.
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
-	}
-	return b
-}
-
-func minTime(a, b time.Time) time.Time {
-	if b.Before(a) {
-		return b
-	}
-	return a
-}
-
-func minDuration(a, b time.Duration) time.Duration {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-
