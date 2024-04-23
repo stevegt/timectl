@@ -488,6 +488,21 @@ func TestDeleteComplex(t *testing.T) {
 // contiguous set of intervals that are either free or have a lower
 // priority than the given priority.  The intervals are returned in
 // order of start time.  The minStart and maxEnd times are inclusive.
+//
+// FindFreePriority pseudocode:
+/*
+- Start the search at `minStart` and iterate through the tree in order
+  (or start at maxEnd and traverse in reverse order if `first` is false)
+- If the current interval has a lower priority than the given
+  priority, add it to a candidate list
+- If the current interval has a higher priority than the given
+  priority, clear the candidate list
+- If the candidate list has intervals that are contiguous with the
+  current interval, add the current interval to the candidate list,
+  else clear the candidate list
+- If the candidate list has intervals that span the given duration,
+  return the candidate list
+*/
 func TestFindFreePriority(t *testing.T) {
 	tree := NewTree()
 
