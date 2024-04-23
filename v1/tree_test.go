@@ -557,21 +557,21 @@ func TestFindFreePriority(t *testing.T) {
 	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
 
 	// find intervals for a 60 minute duration and priority 2 near the
-	// end time.  because priority 2 is not higher than the priority of
-	// the interval at 11:30, FindFreePriority should return the free
-	// interval from 11:00 to 11:30 followed by the priority 1 interval
-	// from 10:00 to 11:00.
+	// end time.  because priority 2 is not higher than the priority
+	// of the interval at 11:30, FindFreePriority should return the
+	// priority 1 interval from 10:00 to 11:00 followed by the free
+	// interval from 11:00 to 11:30
 	intervals = tree.FindFreePriority(false, searchStart, searchEnd, 60*time.Minute, 2)
 	t.Logf("intervals found that are lower priority than 2 near end:")
 	for _, interval := range intervals {
 		t.Logf("%v", interval)
 	}
 	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
+	err = match(intervals[0], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	Tassert(t, intervals[0] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
 	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = match(intervals[0], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)
 
 }
