@@ -7,62 +7,52 @@ import (
 // FindFreePriority searches for a sequence of contiguous intervals within the specified range
 // that have a priority lower than the given priority, and collectively meet
 // the required duration. It returns these intervals in chronological order.
-func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []Interval {
+func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, targetPriority float64) []Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	candidateIntervals := []Interval{}
-	var accumulatedDuration time.Duration
+	var accumulateIntervals func(node *Tree, accumulated []Interval, accumulatedDuration time.Duration) ([]Interval, time.Duration)
 
-	checkAndAppend := func(interval Interval) {
-		if interval.Start().Before(minStart) || interval.End().After(maxEnd) || interval.Priority() >= priority {
-			return // Outside of search range or does not satisfy priority constraint
-		}
-
-		if len(candidateIntervals) == 0 || interval.Start().Equal(candidateIntervals[len(candidateIntervals)-1].End()) {
-			// Interval is continuous with the last one or is the first interval
-			candidateIntervals = append(candidateIntervals, interval)
-			accumulatedDuration += interval.End().Sub(interval.Start())
-			if accumulatedDuration >= duration {
-				// Enough intervals found; stop adding more
-				return
-			}
-		} else {
-			// Non-continuous interval, reset candidates
-			candidateIntervals = []Interval{interval}
-			accumulatedDuration = interval.End().Sub(interval.Start())
-		}
-	}
-
-	var walk func(node *Tree)
-	walk = func(node *Tree) {
+	accumulateIntervals = func(node *Tree, accumulated []Interval, accumulatedDuration time.Duration) ([]Interval, time.Duration) {
 		if node == nil || accumulatedDuration >= duration {
-			return // Base case or enough duration found
+			return accumulated, accumulatedDuration
 		}
+
 		if first {
-			// Traverse in chronological order
-			walk(node.left)
-			if node.leafInterval != nil {
-				checkAndAppend(node.leafInterval)
+			accumulated, accumulatedDuration = accumulateIntervals(node.left, accumulated, accumulatedDuration)
+			if node.leafInterval != nil && (node.leafInterval.Priority() < targetPriority) && (node.leafInterval.Start().After(minStart) || node.leafInterval.Start().Equal(minStart)) && node.leafInterval.End().Before(maxEnd) {
+				if len(accumulated) == 0 || accumulated[len(accumulated)-1].End().Equal(node.leafInterval.Start()) {
+					accumulated = append(accumulated, node.leafInterval)
+					accumulatedDuration += node.leafInterval.End().Sub(node.leafInterval.Start())
+				} else {
+					accumulated = []Interval{node.leafInterval}
+					accumulatedDuration = node.leafInterval.End().Sub(node.leafInterval.Start())
+				}
 			}
-			walk(node.right)
+			accumulated, accumulatedDuration = accumulateIntervals(node.right, accumulated, accumulatedDuration)
 		} else {
-			// Traverse in reverse chronological order
-			walk(node.right)
-			if node.leafInterval != nil {
-				checkAndAppend(node.leafInterval)
+			accumulated, accumulatedDuration = accumulateIntervals(node.right, accumulated, accumulatedDuration)
+			if node.leafInterval != nil && (node.leafInterval.Priority() < targetPriority) && (node.leafInterval.Start().After(minStart) || node.leafInterval.Start().Equal(minStart)) && node.leafInterval.End().Before(maxEnd) {
+				if len(accumulated) == 0 || accumulated[len(accumulated)-1].Start().Equal(node.leafInterval.End()) {
+					prepended := make([]Interval, 1, len(accumulated)+1)
+					prepended[0] = node.leafInterval
+					accumulated = append(prepended, accumulated...)
+					accumulatedDuration += node.leafInterval.End().Sub(node.leafInterval.Start())
+				} else {
+					accumulated = []Interval{node.leafInterval}
+					accumulatedDuration = node.leafInterval.End().Sub(node.leafInterval.Start())
+				}
 			}
-			walk(node.left)
+			accumulated, accumulatedDuration = accumulateIntervals(node.left, accumulated, accumulatedDuration)
 		}
+
+		return accumulated, accumulatedDuration
 	}
 
-	walk(t)
-
-	if accumulatedDuration < duration {
-		// Not enough continuous time found; discard partial results
-		return nil
+	foundIntervals, foundDuration := accumulateIntervals(t, nil, 0)
+	if foundDuration >= duration {
+		return foundIntervals
 	}
 
-	// Return the sequence of intervals that meet the criteria
-	return candidateIntervals
+	return nil
 }
