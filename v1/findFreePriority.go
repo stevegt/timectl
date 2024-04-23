@@ -12,50 +12,42 @@ func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration
 	defer t.mu.RUnlock()
 
 	// Recursive function to traverse and collect intervals.
-	var collect func(node *Tree, start time.Time, end time.Time) bool
-	collect = func(node *Tree, start time.Time, end time.Time) bool {
-		if node == nil || duration <= 0 {
-			return false
+	var collect func(node *Tree, start time.Time, end time.Time, remaining time.Duration) time.Duration
+	collect = func(node *Tree, start time.Time, end time.Time, remaining time.Duration) time.Duration {
+		if node == nil || remaining <= 0 {
+			return remaining
 		}
 
-		// Adjust search range based on the node's interval.
-		start = MaxTime(start, node.Start())
-		end = MinTime(end, node.End())
-		if end.Sub(start) < duration {
-			return false
-		}
+		// Verify node's interval falls within the time range.
+		if node.Interval() != nil && node.Start().Before(maxEnd) && node.End().After(minStart) {
+			adjStart := MaxTime(start, node.Start())
+			adjEnd := MinTime(end, node.End())
 
-		if node.leafInterval != nil && node.leafInterval.Priority() < priority {
-			// Found a suitable interval. Adjust its duration and add it to the results.
-			if !first && duration < end.Sub(start) {
-				start = end.Add(-duration)
-			} else if duration < end.Sub(start) {
-				end = start.Add(duration)
+			if node.leafInterval != nil && node.leafInterval.Priority() < priority {
+				availDuration := adjEnd.Sub(adjStart)
+				if availDuration > remaining {
+					availDuration = remaining
+				}
+
+				intervals = append(intervals, NewInterval(adjStart, adjStart.Add(availDuration), node.leafInterval.Priority()))
+				remaining -= availDuration
+				if remaining <= 0 {
+					return 0
+				}
 			}
-			interval := NewInterval(start, end, node.leafInterval.Priority())
-			intervals = append(intervals, interval)
-			duration -= interval.Duration()
-			return true
 		}
 
-		if first {
-			if collect(node.left, start, end) {
-				return true // Found a suitable interval in the left subtree.
-			}
-			return collect(node.right, start, end) // Continue searching in the right subtree.
-		}
-
-		if collect(node.right, start, end) {
-			return true // Found a suitable interval in the right subtree.
-		}
-		return collect(node.left, start, end) // Continue searching in the left subtree.
+		// Continue search in children nodes.
+		remaining = collect(node.left, start, end, remaining)
+		remaining = collect(node.right, start, end, remaining)
+		return remaining
 	}
 
-	minStart, maxEnd = MaxTime(t.Start(), minStart), MinTime(t.End(), maxEnd)
+	// Start with full search time range and requested duration.
+	remaining := collect(t, minStart, maxEnd, duration)
 
-	if !collect(t, minStart, maxEnd) && len(intervals) == 0 {
-		// If no intervals were found that meet the criteria, return nil.
-		return nil
+	if remaining == duration {
+		return nil // No suitable intervals found.
 	}
 
 	return intervals
