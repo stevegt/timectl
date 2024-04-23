@@ -506,7 +506,11 @@ func TestFindFreePriority(t *testing.T) {
 
 	dump(tree, "")
 
-	// find intervals for a 60 minute duration and priority 2 near the start time
+	// find intervals for a 60 minute duration and priority 2 near the
+	// start time.  because priority 2 is not higher than the priority of
+	// the busy interval at 9:00, FindFreePriority should return the free
+	// interval from 9:30 to 10:00 followed by the priotity 1 interval
+	// from 10:00 to 11:00.
 	intervals := tree.FindFreePriority(true, searchStart, searchEnd, 60*time.Minute, 2)
 	for _, interval := range intervals {
 		t.Logf("%v", interval)

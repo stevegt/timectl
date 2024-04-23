@@ -4,51 +4,75 @@ import (
 	"time"
 )
 
-// FindFreePriority searches the tree to find one or more contiguous intervals
-// that are either free or have a priority less than the given priority, and
-// which together satisfy the given duration.
-func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) (intervals []Interval) {
+// Correcting the access to properties and methods based on the provided error feedback.
+
+// FindFreePriority finds intervals within the specified time range that are free
+// or have a priority lower than the given priority value and satisfy
+// the specified duration. It considers the priority to determine if an interval
+// is "free enough". This method leverages the structure and logic already
+// present in the codebase, thus assuming Tree and Interval are correctly defined previously.
+func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	// Recursive function to traverse and collect intervals.
-	var collect func(node *Tree, start time.Time, end time.Time, remaining time.Duration) time.Duration
-	collect = func(node *Tree, start time.Time, end time.Time, remaining time.Duration) time.Duration {
-		if node == nil || remaining <= 0 {
-			return remaining
+	// Setup placeholders for results and a recursive search function.
+	var results []Interval
+	var search func(node *Tree, required time.Duration) bool
+
+	search = func(node *Tree, required time.Duration) bool {
+		if node == nil || required <= 0 {
+			return false
 		}
 
-		// Verify node's interval falls within the time range.
-		if node.Interval() != nil && node.Start().Before(maxEnd) && node.End().After(minStart) {
-			adjStart := MaxTime(start, node.Start())
-			adjEnd := MinTime(end, node.End())
+		start := maxTime(node.Interval().Start(), minStart)
+		end := minTime(node.Interval().End(), maxEnd)
+		currentDuration := minDuration(end.Sub(start), required)
 
-			if node.leafInterval != nil && node.leafInterval.Priority() < priority {
-				availDuration := adjEnd.Sub(adjStart)
-				if availDuration > remaining {
-					availDuration = remaining
-				}
+		// Check for sufficient priority and room.
+		if start.Before(end) && node.Interval().Priority() <= priority && currentDuration >= required {
+			results = append(results, NewInterval(start, start.Add(required), node.Interval().Priority()))
+			required -= currentDuration
+			return required <= 0
+		}
 
-				intervals = append(intervals, NewInterval(adjStart, adjStart.Add(availDuration), node.leafInterval.Priority()))
-				remaining -= availDuration
-				if remaining <= 0 {
-					return 0
-				}
+		// Recursively search children.
+		if first {
+			if search(node.left, required) {
+				return true
 			}
+			return search(node.right, required)
+		} else {
+			if search(node.right, required) {
+				return true
+			}
+			return search(node.left, required)
 		}
-
-		// Continue search in children nodes.
-		remaining = collect(node.left, start, end, remaining)
-		remaining = collect(node.right, start, end, remaining)
-		return remaining
 	}
 
-	// Start with full search time range and requested duration.
-	remaining := collect(t, minStart, maxEnd, duration)
-
-	if remaining == duration {
-		return nil // No suitable intervals found.
-	}
-
-	return intervals
+	search(t, duration)
+	return results
 }
+
+// Assuming these utility functions are defined elsewhere in your codebase or are provided here for completion.
+func maxTime(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
+}
+
+func minTime(a, b time.Time) time.Time {
+	if b.Before(a) {
+		return b
+	}
+	return a
+}
+
+func minDuration(a, b time.Duration) time.Duration {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+
