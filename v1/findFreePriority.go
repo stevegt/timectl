@@ -25,7 +25,7 @@ func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration
 		if accumulatedDuration >= duration {
 			results = append(results, NewInterval(tempStart, intervalEnd, priority))
 		}
-		
+
 		// Reset accumulators
 		tempStart = time.Time{}
 		accumulatedDuration = 0
@@ -49,8 +49,8 @@ func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration
 			currentInterval := node.leafInterval
 			if currentInterval.Priority() <= priority {
 				// Check if this interval can contribute to the required duration
-				curStart := maxTime(currentInterval.Start(), minStart)
-				curEnd := minTime(currentInterval.End(), maxEnd)
+				curStart := MaxTime(currentInterval.Start(), minStart)
+				curEnd := MinTime(currentInterval.End(), maxEnd)
 				if curStart.Before(curEnd) {
 					if tempStart.IsZero() {
 						tempStart = curStart
