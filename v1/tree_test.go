@@ -130,6 +130,7 @@ func TestTreeStructure(t *testing.T) {
 	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
 	err = expect(tree, "rr", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	Tassert(t, err == nil, err)
 
 }
 
@@ -522,7 +523,7 @@ func TestFindFreePriority(t *testing.T) {
 	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
 	Ck(err)
 
-	dump(tree, "")
+	// dump(tree, "")
 
 	// find intervals for a 60 minute duration and priority 3 near the
 	// start time.  because priority 3 is higher than the priority of
@@ -578,3 +579,48 @@ func TestFindFreePriority(t *testing.T) {
 	Tassert(t, err == nil, err)
 
 }
+
+/*
+func TestShuffle(t *testing.T) {
+
+	// Shuffle inserts a new interval into the tree.  It finds one or
+	// more lower-priority intervals using findFreePriority, removes
+	// and returns them, adjusts the start and end times of the new
+	// interval to fit within the free time, and inserts the new
+	// interval into the tree.  Shuffle returns the new interval and
+	// the removed intervals if successful, otherwise it returns nil,
+	// nil. The 'first' parameter determines whether to start
+	// searching for free time at the beginning or end of the given
+	// time range.  Shuffle does not return intervals that are
+	// marked as free (priority 0) -- it instead adjusts free intervals
+	// to fill gaps in the tree.
+
+	// insert several intervals into the tree
+	i0900_0930 := insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
+	i1000_1100 := insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
+	i1130_1200 := insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
+	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
+
+	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
+	Ck(err)
+	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
+	Ck(err)
+
+	dump(tree, "")
+
+	// shuffle a 60 minute interval with priority 3 into the tree
+	// near the start time.  because priority 3 is higher than the
+	// priority of the busy interval at 9:00, Shuffle should return
+	// the priority 2 interval from 9:00 to 9:30 and the free interval
+	// from 9:30 to 10:00.  the new interval should be inserted into
+	// the tree.
+	start, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
+	Ck(err)
+	end, err := time.Parse(time.RFC3339, "2024-01-01T09:30:00Z")
+	Ck(err)
+	newInterval := NewInterval(time.Time{}, time.Time{}, 3)
+
+}
+*/

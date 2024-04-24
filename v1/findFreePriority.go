@@ -10,6 +10,12 @@ import (
 func (t *Tree) FindFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, targetPriority float64) []Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+	return t.findFreePriority(first, minStart, maxEnd, duration, targetPriority)
+}
+
+// findFreePriority is a non-locking version of FindFreePriority for
+// internal use by locking methods.
+func (t *Tree) findFreePriority(first bool, minStart, maxEnd time.Time, duration time.Duration, targetPriority float64) []Interval {
 
 	var accumulateIntervals func(node *Tree, accumulated []Interval, accumulatedDuration time.Duration) ([]Interval, time.Duration)
 

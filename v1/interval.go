@@ -85,7 +85,19 @@ func (i *IntervalBase) Conflicts(other Interval) bool {
 // Equal checks if the current interval is equal to the given interval.
 // Two intervals are equal if their start and end times are the same.
 func (i *IntervalBase) Equal(other Interval) bool {
-	return i.Start().Equal(other.Start()) && i.End().Equal(other.End())
+	// this is too strict
+	// return i.Start().Equal(other.Start()) && i.End().Equal(other.End())
+	// XXX tolerance should be an argument
+	tolerance := time.Second
+	startDiff := i.Start().Sub(other.Start())
+	endDiff := i.End().Sub(other.End())
+	if startDiff < -tolerance || startDiff > tolerance {
+		return false
+	}
+	if endDiff < -tolerance || endDiff > tolerance {
+		return false
+	}
+	return true
 }
 
 // Wraps returns true if the current interval completely contains the
