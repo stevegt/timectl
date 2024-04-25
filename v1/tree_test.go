@@ -675,3 +675,6 @@ func TestShuffle(t *testing.T) {
 	// Shuffle exits in case of failure
 
 }
+
+// XXX implement Clone() and use it in Shuffle() to ensure that the
+// original interval is not modified

@@ -1,6 +1,10 @@
 package timectl
 
-import "time"
+import (
+	"time"
+
+	. "github.com/stevegt/goadapt"
+)
 
 // Shuffle inserts a new interval into the tree. It finds one or
 // more lower-priority intervals using FindFreePriority, removes
@@ -23,35 +27,35 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 		return nil, nil, false
 	}
 
-	// find and remove any lower-priority intervals that overlap with the new interval
-	var conflicts []Interval
-	for _, f := range free {
-		conflicts = append(conflicts, t.conflicts(f)...)
-	}
-	for _, conflict := range conflicts {
-		if conflict.Priority() < interval.Priority() {
-			t.delete(conflict)
-			removed = append(removed, conflict)
-		}
-	}
+	// find and remove any intervals that overlap with the new interval
+	start := MaxTime(minStart, free[0].Start())
+	end := MinTime(maxEnd, free[len(free)-1].End())
+	removed = t.RemoveRange(start, end)
 
 	// adjust the start and end times of the new interval to fit within the found free time
-	newStart := free[0].Start()
-	var durationAccumulated time.Duration = 0
-	for _, f := range free {
-		durationAccumulated += f.Duration()
-		if durationAccumulated >= interval.Duration() {
-			break
-		}
-	}
-	newEnd := free[0].Start().Add(interval.Duration())
-
-	newInterval = NewInterval(newStart, newEnd, interval.Priority())
+	newStart := start
+	newEnd := newStart.Add(interval.Duration())
+	newInterval = interval.Clone()
+	newInterval.SetStart(newStart)
+	newInterval.SetEnd(newEnd)
 
 	// insert the new interval into the tree
 	if !t.insert(newInterval) {
+		// XXX re-insert removed intervals
 		return nil, nil, false
 	}
 
 	return newInterval, removed, true
+}
+
+func (t *Tree) RemoveRange(start, end time.Time) (removed []Interval) {
+
+	interval := NewInterval(start, end, 0)
+	removed = t.conflicts(interval)
+
+	for _, conflict := range removed {
+		ok := t.delete(conflict)
+		Assert(ok, "failed to delete interval")
+	}
+	return removed
 }

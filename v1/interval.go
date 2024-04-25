@@ -29,6 +29,12 @@ type Interval interface {
 	// Priority returns the priority of the interval.  Priority zero
 	// is the lowest priority, and means that the interval is free.
 	Priority() float64
+	// SetStart sets the start time of the interval.
+	SetStart(time.Time)
+	// SetEnd sets the end time of the interval.
+	SetEnd(time.Time)
+	// Clone returns a deep copy of the interval.
+	Clone() Interval
 }
 
 // IntervalBase is the base type for all interval types.
@@ -162,4 +168,19 @@ func (i *IntervalBase) Intersection(other Interval) Interval {
 		return NewInterval(start, end, 0)
 	}
 	return nil
+}
+
+// SetStart sets the start time of the interval.
+func (i *IntervalBase) SetStart(start time.Time) {
+	i.start = start
+}
+
+// SetEnd sets the end time of the interval.
+func (i *IntervalBase) SetEnd(end time.Time) {
+	i.end = end
+}
+
+// Clone returns a deep copy of the interval.
+func (i *IntervalBase) Clone() Interval {
+	return NewInterval(i.Start(), i.End(), i.Priority())
 }
