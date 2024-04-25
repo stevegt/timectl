@@ -596,7 +596,9 @@ func TestRemoveRange(t *testing.T) {
 	// return intervals that are marked as free (priority 0) -- it
 	// instead adjusts free intervals to fill gaps in the tree.
 	start, err := time.Parse(time.RFC3339, "2024-01-01T09:15:00Z")
+	Ck(err)
 	end, err := time.Parse(time.RFC3339, "2024-01-01T10:30:00Z")
+	Ck(err)
 	removed := tree.RemoveRange(start, end)
 	Tassert(t, len(removed) > 0, "Expected at least 1 interval, got %d", len(removed))
 	Tassert(t, removed[0].Equal(i0900_0930), fmt.Sprintf("Expected %v, got %v", i0900_0930, removed[0]))
