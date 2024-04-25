@@ -1,6 +1,7 @@
 package timectl
 
 import (
+	"fmt"
 	"time"
 
 	. "github.com/stevegt/goadapt"
@@ -17,14 +18,14 @@ import (
 // time range. Shuffle does not return intervals that are
 // marked as free (priority 0) -- it instead adjusts free intervals
 // to fill gaps in the tree.
-func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval) (newInterval Interval, removed []Interval, ok bool) {
+func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval) (newInterval Interval, removed []Interval, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	// find free time to fit the new interval -- use the non-locking version
 	free := t.findFreePriority(first, minStart, maxEnd, interval.Duration(), interval.Priority())
 	if len(free) == 0 {
-		return nil, nil, false
+		return nil, nil, fmt.Errorf("no free slots found between %s and %s below priority %f", minStart, maxEnd, interval.Priority())
 	}
 
 	// find and remove any intervals that overlap with the new interval
@@ -39,13 +40,19 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	newInterval.SetStart(newStart)
 	newInterval.SetEnd(newEnd)
 
+	// ensure the new interval is busy
+	if newInterval.Priority() == 0 {
+		return nil, nil, fmt.Errorf("new interval must have a priority greater than 0")
+	}
+
 	// insert the new interval into the tree
 	if !t.insert(newInterval) {
 		// XXX re-insert removed intervals
-		return nil, nil, false
+		Pf("removed: %v\n", removed)
+		return nil, nil, fmt.Errorf("failed to insert new interval")
 	}
 
-	return newInterval, removed, true
+	return newInterval, removed, nil
 }
 
 func (t *Tree) RemoveRange(start, end time.Time) (removed []Interval) {
