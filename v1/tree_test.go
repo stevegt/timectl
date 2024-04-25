@@ -580,6 +580,49 @@ func TestFindFreePriority(t *testing.T) {
 
 }
 
+func TestRemoveRange(t *testing.T) {
+	tree := NewTree()
+
+	// insert several intervals into the tree
+	i0900_0930 := insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
+	i1000_1100 := insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
+	i1130_1200 := insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
+	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
+
+	// RemoveRange removes all intervals that start or end within the
+	// given time range.  It returns the removed intervals.  It does not
+	// return intervals that are marked as free (priority 0) -- it
+	// instead adjusts free intervals to fill gaps in the tree.
+	start, err := time.Parse(time.RFC3339, "2024-01-01T09:15:00Z")
+	end, err := time.Parse(time.RFC3339, "2024-01-01T10:30:00Z")
+	removed := tree.RemoveRange(start, end)
+	Tassert(t, len(removed) > 0, "Expected at least 1 interval, got %d", len(removed))
+	Tassert(t, removed[0].Equal(i0900_0930), fmt.Sprintf("Expected %v, got %v", i0900_0930, removed[0]))
+	Tassert(t, len(removed) == 2, "Expected 2 intervals, got %d", len(removed))
+	Tassert(t, removed[1].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, removed[1]))
+
+	// check that the 11:30 interval is still in the tree
+	intervals := tree.BusyIntervals()
+	Tassert(t, len(intervals) == 1, "Expected 1 interval, got %d", len(intervals))
+	Tassert(t, intervals[0].Equal(i1130_1200), fmt.Sprintf("Expected %v, got %v", i1130_1200, intervals[0]))
+
+	// check that the free intervals are correct
+	freeIntervals := tree.FreeIntervals()
+	Tassert(t, len(freeIntervals) > 0, "Expected at least 1 free interval, got %d", len(freeIntervals))
+	freeExpect := NewInterval(TreeStart, i1130_1200.Start(), 0)
+	Tassert(t, freeIntervals[0].Equal(freeExpect), fmt.Sprintf("Expected %v, got %v", freeExpect, freeIntervals[0]))
+	Tassert(t, len(freeIntervals) == 2, "Expected 2 free intervals, got %d", len(freeIntervals))
+	freeExpect = NewInterval(i1130_1200.End(), TreeEnd, 0)
+	Tassert(t, freeIntervals[1].Equal(freeExpect), fmt.Sprintf("Expected %v, got %v", freeExpect, freeIntervals[1]))
+
+	// check that the total number of intervals is correct
+	intervals = tree.AllIntervals()
+	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
+
+}
+
 func TestShuffle(t *testing.T) {
 
 	tree := NewTree()
