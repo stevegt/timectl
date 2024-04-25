@@ -580,8 +580,9 @@ func TestFindFreePriority(t *testing.T) {
 
 }
 
-/*
 func TestShuffle(t *testing.T) {
+
+	tree := NewTree()
 
 	// Shuffle inserts a new interval into the tree.  It finds one or
 	// more lower-priority intervals using findFreePriority, removes
@@ -610,17 +611,19 @@ func TestShuffle(t *testing.T) {
 
 	dump(tree, "")
 
-	// shuffle a 60 minute interval with priority 3 into the tree
-	// near the start time.  because priority 3 is higher than the
-	// priority of the busy interval at 9:00, Shuffle should return
-	// the priority 2 interval from 9:00 to 9:30 and the free interval
-	// from 9:30 to 10:00.  the new interval should be inserted into
-	// the tree.
+	// Shuffle a 60 minute interval with priority 3 into the tree near
+	// the start time.  Because priority 3 is higher than the priority
+	// of the busy interval at 9:00, Shuffle should return the
+	// priority 2 interval from 9:00 to 9:30.  The new interval should
+	// be inserted into the tree.
 	start, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, "2024-01-01T09:30:00Z")
 	Ck(err)
 	newInterval := NewInterval(time.Time{}, time.Time{}, 3)
+	removed, ok := tree.Shuffle(true, start, end, newInterval)
+	Tassert(t, ok, "Failed to shuffle interval")
+	Tassert(t, len(removed) == 1, "Expected 1 interval, got %d", len(removed))
+	err = match(removed[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
 }
-*/
