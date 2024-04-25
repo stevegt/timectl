@@ -30,7 +30,7 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	}
 	for _, conflict := range conflicts {
 		if conflict.Priority() < interval.Priority() {
-			t.Delete(conflict)
+			t.delete(conflict)
 			removed = append(removed, conflict)
 		}
 	}
@@ -49,7 +49,7 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	newInterval = NewInterval(newStart, newEnd, interval.Priority())
 
 	// insert the new interval into the tree
-	if !t.Insert(newInterval) {
+	if !t.insert(newInterval) {
 		return nil, nil, false
 	}
 

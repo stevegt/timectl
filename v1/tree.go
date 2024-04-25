@@ -46,6 +46,11 @@ func NewTree() *Tree {
 func (t *Tree) Insert(newInterval Interval) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	return t.insert(newInterval)
+}
+
+// insert is a non-threadsafe version of Insert for internal use.
+func (t *Tree) insert(newInterval Interval) bool {
 
 	if !newInterval.Busy() {
 		return false
