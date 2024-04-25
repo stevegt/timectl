@@ -26,7 +26,7 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	// find and remove any lower-priority intervals that overlap with the new interval
 	var conflicts []Interval
 	for _, f := range free {
-		conflicts = append(conflicts, t.Conflicts(f)...)
+		conflicts = append(conflicts, t.conflicts(f)...)
 	}
 	for _, conflict := range conflicts {
 		if conflict.Priority() < interval.Priority() {

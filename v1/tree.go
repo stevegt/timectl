@@ -234,6 +234,11 @@ func (t *Tree) interval() Interval {
 func (t *Tree) Conflicts(interval Interval) []Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
+	return t.conflicts(interval)
+}
+
+// conflicts is a non-threadsafe version of Conflicts for internal use.
+func (t *Tree) conflicts(interval Interval) []Interval {
 
 	var conflicts []Interval
 	if t.leafInterval != nil && t.leafInterval.Conflicts(interval) {
