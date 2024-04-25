@@ -17,8 +17,8 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// find free time to fit the new interval
-	free := t.FindFreePriority(first, minStart, maxEnd, interval.Duration(), interval.Priority())
+	// find free time to fit the new interval -- use the non-locking version
+	free := t.findFreePriority(first, minStart, maxEnd, interval.Duration(), interval.Priority())
 	if len(free) == 0 {
 		return nil, nil, false
 	}

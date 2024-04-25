@@ -626,4 +626,7 @@ func TestShuffle(t *testing.T) {
 	Tassert(t, len(removed) == 1, "Expected 1 interval, got %d", len(removed))
 	err = match(removed[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
+	// XXX ensure that any removed intervals get-re-added before
+	// Shuffle exits in case of failure
+
 }
