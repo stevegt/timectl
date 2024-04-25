@@ -324,7 +324,12 @@ func dump(tree *Tree, path string) {
 func (t *Tree) Delete(interval Interval) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	return t.delete(interval)
+}
 
+// delete is a non-threadsafe version of Delete for internal use.
+func (t *Tree) delete(interval Interval) bool {
+	// check leaf node for interval
 	if t.leafInterval != nil && t.leafInterval.Equal(interval) {
 		t.leafInterval = nil
 		t.left = nil
