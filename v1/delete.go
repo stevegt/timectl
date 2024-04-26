@@ -21,12 +21,34 @@ func (t *Tree) delete(interval Interval) bool {
 		return false // The leaf node's interval does not match.
 	}
 
+	// If the interval matches exactly the node's interval (which could be a synthetic interval encompassing child nodes),
+	// and both child nodes are leaf or nil, we can collapse this node.
+	if t.interval().Equal(interval) && (t.left == nil || t.left.isLeaf()) && (t.right == nil || t.right.isLeaf()) {
+		t.leafInterval = nil // Clear the interval assuming it's a synthetic interval covering the whole node.
+		if t.left != nil && t.left.leafInterval != nil {
+			t.promoteChild(t.left) // Promote the left child
+		} else if t.right != nil && t.right.leafInterval != nil {
+			t.promoteChild(t.right) // Promote the right child
+		}
+		return true
+	}
+
 	foundInLeft, foundInRight := false, false
 	if t.left != nil {
 		foundInLeft = t.left.delete(interval)
 	}
 	if t.right != nil {
 		foundInRight = t.right.delete(interval)
+	}
+
+	// After a deletion, check if either child became empty and remove it.
+	if foundInLeft || foundInRight {
+		if t.left != nil && t.left.isEmpty() {
+			t.left = nil
+		}
+		if t.right != nil && t.right.isEmpty() {
+			t.right = nil
+		}
 	}
 
 	if !foundInLeft && !foundInRight {
@@ -38,6 +60,11 @@ func (t *Tree) delete(interval Interval) bool {
 	t.balanceOrSimplify()
 
 	return true
+}
+
+// isEmpty checks if the tree node is empty, which is true if it has no interval and no children.
+func (t *Tree) isEmpty() bool {
+	return t.leafInterval == nil && t.left == nil && t.right == nil
 }
 
 // balanceOrSimplify tries to simplify the tree structure after a deletion
@@ -71,3 +98,4 @@ func (t *Tree) promoteChild(child *Tree) {
 func (t *Tree) isLeaf() bool {
 	return t.leafInterval != nil && t.left == nil && t.right == nil
 }
+
