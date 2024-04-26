@@ -13,7 +13,7 @@ type Interval interface {
 	// End returns the end time of the interval.
 	End() time.Time
 	// Conflicts checks if the current interval conflicts with the given interval.
-	Conflicts(other Interval) bool
+	Conflicts(other Interval, includeFree bool) bool
 	// Equal checks if the current interval is equal to the given interval.
 	Equal(other Interval) bool
 	// Intersection returns an interval that is the intersection of two intervals.
@@ -74,10 +74,15 @@ func (i *IntervalBase) End() time.Time {
 }
 
 // Conflicts checks if the current interval conflicts with the given interval.
-// Two intervals conflict if they overlap in time.
-func (i *IntervalBase) Conflicts(other Interval) bool {
-	if i.Priority() == 0 || other.Priority() == 0 {
-		return false
+// Two intervals conflict if they overlap in time.  If the includeFree
+// parameter is true, then a conflict is also detected if either interval
+// is free (priority 0).  If the includeFree parameter is false, then
+// a conflict is only detected if both intervals are busy (priority > 0).
+func (i *IntervalBase) Conflicts(other Interval, includeFree bool) bool {
+	if !includeFree {
+		if i.Priority() == 0 || other.Priority() == 0 {
+			return false
+		}
 	}
 	if i.Start().Before(other.End()) && i.End().After(other.Start()) {
 		return true

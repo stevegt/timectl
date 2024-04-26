@@ -40,20 +40,20 @@ func TestConflict(t *testing.T) {
 	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:30:00")
 	Ck(err)
 	interval2 := NewInterval(start2, end2, 1)
-	Tassert(t, interval1.Conflicts(interval2), "expected conflict, got no conflict")
-	Tassert(t, interval2.Conflicts(interval1), "expected conflict, got no conflict")
+	Tassert(t, interval1.Conflicts(interval2, false), "expected conflict, got no conflict")
+	Tassert(t, interval2.Conflicts(interval1, false), "expected conflict, got no conflict")
 
 	start3, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T09:00:00")
 	Ck(err)
 	end3, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:30:00")
 	interval3 := NewInterval(start3, end3, 1)
-	Tassert(t, interval1.Conflicts(interval3), "expected conflict, got no conflict")
-	Tassert(t, interval3.Conflicts(interval1), "expected conflict, got no conflict")
+	Tassert(t, interval1.Conflicts(interval3, false), "expected conflict, got no conflict")
+	Tassert(t, interval3.Conflicts(interval1, false), "expected conflict, got no conflict")
 
 	// check identical intervals
 	interval3b := NewInterval(start3, end3, 1)
-	Tassert(t, interval3.Conflicts(interval3b), "expected conflict, got no conflict")
-	Tassert(t, interval3b.Conflicts(interval3), "expected conflict, got no conflict")
+	Tassert(t, interval3.Conflicts(interval3b, false), "expected conflict, got no conflict")
+	Tassert(t, interval3b.Conflicts(interval3, false), "expected conflict, got no conflict")
 }
 
 // TestNoConflict tests two intervals for no conflict.  Two intervals do
@@ -70,12 +70,44 @@ func TestNoConflict(t *testing.T) {
 	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T12:00:00")
 	Ck(err)
 	interval2 := NewInterval(start2, end2, 1)
-	Tassert(t, !interval1.Conflicts(interval2), "expected no conflict, got conflict")
-	Tassert(t, !interval2.Conflicts(interval1), "expected no conflict, got conflict")
+	Tassert(t, !interval1.Conflicts(interval2, false), "expected no conflict, got conflict")
+	Tassert(t, !interval2.Conflicts(interval1, false), "expected no conflict, got conflict")
 
 	// Two intervals do not conflict if one is a free slot.
 	interval3 := NewInterval(start1, end1, 0)
-	Tassert(t, !interval1.Conflicts(interval3), "expected no conflict, got conflict")
+	Tassert(t, !interval1.Conflicts(interval3, false), "expected no conflict, got conflict")
+}
+
+// test free conflict
+func TestFreeConflict(t *testing.T) {
+	// Two intervals conflict if they overlap in time and includeFree is
+	// true.  The intervals [start1, end1) and [start2, end2) conflict if
+	// either start1 is between start2 and end2 or end1 is between start2
+	// and end2.
+	start1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
+	Ck(err)
+	end1, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
+	Ck(err)
+	interval1 := NewInterval(start1, end1, 0)
+	start2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:30:00")
+	Ck(err)
+	end2, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:30:00")
+	Ck(err)
+	interval2 := NewInterval(start2, end2, 1)
+	Tassert(t, interval1.Conflicts(interval2, true), "expected conflict, got no conflict")
+	Tassert(t, interval2.Conflicts(interval1, true), "expected conflict, got no conflict")
+
+	start3, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T09:00:00")
+	Ck(err)
+	end3, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:30:00")
+	interval3 := NewInterval(start3, end3, 1)
+	Tassert(t, interval1.Conflicts(interval3, true), "expected conflict, got no conflict")
+	Tassert(t, interval3.Conflicts(interval1, true), "expected conflict, got no conflict")
+
+	// check identical intervals
+	interval3b := NewInterval(start3, end3, 1)
+	Tassert(t, interval3.Conflicts(interval3b, true), "expected conflict, got no conflict")
+	Tassert(t, interval3b.Conflicts(interval3, true), "expected conflict, got no conflict")
 }
 
 // TestEqual tests two intervals for equality.  Two intervals are equal

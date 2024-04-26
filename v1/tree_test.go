@@ -164,7 +164,7 @@ func TestConflicts(t *testing.T) {
 	// create a new interval that overlaps the first interval
 	i1030_1130 := newInterval("2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
 	// get conflicts for the new interval
-	conflicts := tree.Conflicts(i1030_1130)
+	conflicts := tree.Conflicts(i1030_1130, false)
 	Tassert(t, len(conflicts) == 1, "Expected 1 conflict, got %d", len(conflicts))
 	Tassert(t, conflicts[0].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, conflicts[0]))
 
@@ -260,7 +260,7 @@ func TestFindFreeMany(t *testing.T) {
 				}
 				ckInterval := NewInterval(start, end, 1)
 				// t.Logf("Trying to find free interval: %v\n", ckInterval)
-				if tree.Conflicts(ckInterval) == nil {
+				if tree.Conflicts(ckInterval, false) == nil {
 					t.Logf("Found free interval: %v", ckInterval)
 					t.Logf("first: %v, minStart: %v, maxEnd: %v, duration: %v", first, minStart, maxEnd, duration)
 					for _, interval := range tree.AllIntervals() {
@@ -276,7 +276,7 @@ func TestFindFreeMany(t *testing.T) {
 			t.Fatalf("Expected duration of at least %v, got %v", duration, freeInterval.Duration())
 		}
 
-		conflicts := tree.Conflicts(freeInterval)
+		conflicts := tree.Conflicts(freeInterval, false)
 		if conflicts != nil {
 			t.Logf("Free interval conflict: %v", freeInterval)
 			t.Logf("first: %v, minStart: %v, maxEnd: %v, duration: %v", first, minStart, maxEnd, duration)
@@ -357,7 +357,7 @@ func TestConcurrent(t *testing.T) {
 
 	for _, expect := range inserted {
 		// we expect 1 conflict for each interval
-		conflicts := tree.Conflicts(expect)
+		conflicts := tree.Conflicts(expect, false)
 		Tassert(t, len(conflicts) == 1, "Expected 1 conflict, got %d", len(conflicts))
 		// check that the conflict is the expected interval
 		Tassert(t, conflicts[0].Equal(expect), fmt.Sprintf("Expected %v, got %v", expect, conflicts[0]))
@@ -453,7 +453,7 @@ func TestDeleteComplex(t *testing.T) {
 			Tassert(t, !busyInterval.Equal(interval), fmt.Sprintf("Expected interval to be deleted, got %v", interval))
 		}
 		// check that the interval has no conflicts
-		conflicts := tree.Conflicts(interval)
+		conflicts := tree.Conflicts(interval, false)
 		Tassert(t, len(conflicts) == 0, "Expected 0 conflicts, got %d", len(conflicts))
 		// check that there are no adjacent free intervals
 		freeIntervals := tree.FreeIntervals()
@@ -465,6 +465,17 @@ func TestDeleteComplex(t *testing.T) {
 				t.Fatalf("Expected no adjacent free intervals")
 			}
 			prev = freeIntervals[j]
+		}
+		// check that there are no gaps between intervals
+		allIntervals := tree.AllIntervals()
+		prev = allIntervals[0]
+		for j := 1; j < len(allIntervals); j++ {
+			if prev.End().Before(allIntervals[j].Start()) {
+				t.Logf("prev: %v", prev)
+				t.Logf("next: %v", allIntervals[j])
+				t.Fatalf("Expected no gaps between intervals")
+			}
+			prev = allIntervals[j]
 		}
 	}
 
@@ -599,6 +610,10 @@ func TestRemoveRange(t *testing.T) {
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, "2024-01-01T10:30:00Z")
 	Ck(err)
+	// check conflicts
+	conflicts := tree.Conflicts(NewInterval(start, end, 0), true)
+	Tassert(t, len(conflicts) == 3, "Expected 3 conflicts, got %v", conflicts)
+	// remove the intervals
 	removed := tree.RemoveRange(start, end)
 	Tassert(t, len(removed) > 0, "Expected at least 1 interval, got %d", len(removed))
 	Tassert(t, removed[0].Equal(i0900_0930), fmt.Sprintf("Expected %v, got %v", i0900_0930, removed[0]))
@@ -609,6 +624,8 @@ func TestRemoveRange(t *testing.T) {
 	intervals := tree.BusyIntervals()
 	Tassert(t, len(intervals) == 1, "Expected 1 interval, got %d", len(intervals))
 	Tassert(t, intervals[0].Equal(i1130_1200), fmt.Sprintf("Expected %v, got %v", i1130_1200, intervals[0]))
+
+	dump(tree, "")
 
 	// check that the free intervals are correct
 	freeIntervals := tree.FreeIntervals()

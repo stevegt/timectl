@@ -31,7 +31,7 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	// find and remove any intervals that overlap with the new interval
 	start := MaxTime(minStart, free[0].Start())
 	end := MinTime(maxEnd, free[len(free)-1].End())
-	removed = t.RemoveRange(start, end)
+	removed = t.removeRange(start, end)
 
 	// adjust the start and end times of the new interval to fit within the found free time
 	newStart := start
@@ -55,14 +55,29 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 	return newInterval, removed, nil
 }
 
+// RemoveRange removes all intervals that overlap with the given time range.
+// It returns the removed intervals.  It only returns intervals that are
+// marked as busy (priority > 0).
 func (t *Tree) RemoveRange(start, end time.Time) (removed []Interval) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.removeRange(start, end)
+}
 
-	interval := NewInterval(start, end, 0)
-	removed = t.conflicts(interval)
+// removeRange is the non-locking version of RemoveRange.
+func (t *Tree) removeRange(start, end time.Time) (removed []Interval) {
 
-	for _, conflict := range removed {
+	interval := NewInterval(start, end, 1)
+	conflicts := t.conflicts(interval, true)
+	Pf("conflicts: %v\n", conflicts)
+
+	for _, conflict := range conflicts {
+		if !conflict.Busy() {
+			continue
+		}
 		ok := t.delete(conflict)
 		Assert(ok, "failed to delete interval")
+		removed = append(removed, conflict)
 	}
 	return removed
 }
