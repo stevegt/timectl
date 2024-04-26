@@ -1,9 +1,7 @@
 package timectl
 
-// . "github.com/stevegt/goadapt"
-
 // Delete removes an interval from the tree, adjusting the structure as
-// necessary.  Deletion fails if the interval is not found in the tree.
+// necessary. Deletion fails if the interval is not found in the tree.
 func (t *Tree) Delete(interval Interval) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -12,58 +10,64 @@ func (t *Tree) Delete(interval Interval) bool {
 
 // delete is a non-threadsafe version of Delete for internal use.
 func (t *Tree) delete(interval Interval) bool {
-	// check leaf node for interval
-	if t.leafInterval != nil && t.leafInterval.Equal(interval) {
-		t.leafInterval = nil
-		t.left = nil
-		t.right = nil
-		return true
+	if t.leafInterval != nil {
+		if t.leafInterval.Equal(interval) {
+			// If the current node is a leaf with the matching interval, remove the interval and clean up the node.
+			t.leafInterval = nil
+			t.left = nil
+			t.right = nil
+			return true
+		}
+		return false // The leaf node's interval does not match.
 	}
 
-	// check children for interval
-	found := false
-	for _, child := range []*Tree{t.left, t.right} {
-		if child != nil && child.Delete(interval) {
-			// interval was found and deleted in child or descendant
-			found = true
-			if child.leafInterval == nil && child.left == nil && child.right == nil {
-				// child is a leaf node with no children, so remove it
-				if child == t.left {
-					t.left = nil
-				}
-				if child == t.right {
-					t.right = nil
-				}
-			}
-		}
+	foundInLeft, foundInRight := false, false
+	if t.left != nil {
+		foundInLeft = t.left.delete(interval)
 	}
-	if !found {
+	if t.right != nil {
+		foundInRight = t.right.delete(interval)
+	}
+
+	if !foundInLeft && !foundInRight {
+		// The interval was not found in either subtree.
 		return false
 	}
 
-	// see if we can promote a child
-	if t.leafInterval == nil && t.left == nil && t.right != nil {
-		// promote right child
-		t.leafInterval = t.right.leafInterval
-		t.left = t.right.left
-		t.right = t.right.right
-	}
-	if t.leafInterval == nil && t.right == nil && t.left != nil {
-		// promote left child
-		t.leafInterval = t.left.leafInterval
-		t.left = t.left.left
-		t.right = t.left.right
-	}
-
-	// see if we can merge children
-	if t.left != nil && t.right != nil {
-		if !t.left.Busy() && !t.right.Busy() {
-			// both children are free, so replace them with a single free node
-			t.leafInterval = NewInterval(t.left.Start(), t.right.End(), 0)
-			t.left = nil
-			t.right = nil
-		}
-	}
+	// Attempt to balance or simplify the tree after deletion if necessary.
+	t.balanceOrSimplify()
 
 	return true
+}
+
+// balanceOrSimplify tries to simplify the tree structure after a deletion
+// by either removing unnecessary nodes or balancing the tree.
+func (t *Tree) balanceOrSimplify() {
+	if t.isLeaf() {
+		return // Nothing to simplify or balance if it's a leaf node.
+	}
+
+	// Check if either child is nil and promote the other.
+	if t.left == nil && t.right != nil {
+		t.promoteChild(t.right)
+	} else if t.right == nil && t.left != nil {
+		t.promoteChild(t.left)
+	}
+
+	// Post-promotion, if the current node becomes a leaf node, attempt further simplification.
+	if t.isLeaf() {
+		t.balanceOrSimplify() // Further checks if simplification is possible.
+	}
+}
+
+// promoteChild replaces the current tree node with the child node.
+func (t *Tree) promoteChild(child *Tree) {
+	t.leafInterval = child.leafInterval
+	t.left = child.left
+	t.right = child.right
+}
+
+// isLeaf checks if the current tree node is a leaf (i.e., has an interval and no children).
+func (t *Tree) isLeaf() bool {
+	return t.leafInterval != nil && t.left == nil && t.right == nil
 }
