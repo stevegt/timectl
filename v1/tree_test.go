@@ -424,6 +424,17 @@ func TestDelete(t *testing.T) {
 	// check that the interval is no longer in the tree
 	intervals := tree.BusyIntervals()
 	Tassert(t, len(intervals) == 0, "Expected 0 intervals, got %d", len(intervals))
+
+	// check that there is one big free interval
+	freeIntervals := tree.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
+	start := TreeStart
+	end := TreeEnd
+	Tassert(t, freeIntervals[0].Start().Equal(start), fmt.Sprintf("Expected %v, got %v", start, freeIntervals[0].Start()))
+	// XXX we use After here instead of Equal because the end time is not exact
+	Tassert(t, freeIntervals[0].End().After(end), fmt.Sprintf("Expected %v, got %v", end, freeIntervals[0].End()))
+	Tassert(t, freeIntervals[0].Priority() == 0, fmt.Sprintf("Expected %v, got %v", 0, freeIntervals[0].Priority()))
+
 }
 
 // test complex delete
