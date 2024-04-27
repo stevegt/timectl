@@ -3,6 +3,8 @@ package timectl
 import (
 	"fmt"
 	"math"
+	"os/exec"
+	"strings"
 	"sync"
 	"time"
 	// . "github.com/stevegt/goadapt"
@@ -343,4 +345,133 @@ func (t *Tree) FreeIntervals() (intervals []Interval) {
 		}
 	}
 	return
+}
+
+// Path is a slice of Tree nodes.
+type Path []*Tree
+
+// Append returns a new Path with the given node appended to the end.
+func (p Path) Append(t *Tree) Path {
+	// because append may reallocate the underlying array, we need to
+	// use copy instead of append to avoid modifying the original path
+	newPath := make(Path, len(p)+1)
+	copy(newPath, p)
+	newPath[len(p)] = t
+	return newPath
+}
+
+// Last returns the last node in the path.
+func (p Path) Last() *Tree {
+	return p[len(p)-1]
+}
+
+// String returns a string representation of the path.
+func (p Path) String() string {
+	var s string
+	var parent *Tree
+	for _, t := range p {
+		if parent != nil {
+			if t == parent.left {
+				s += "l"
+			} else {
+				s += "r"
+			}
+		} else {
+			s += "t"
+		}
+		parent = t
+	}
+	return s
+}
+
+// allPaths returns a channel of all paths to all nodes in the tree.
+// The paths are sorted in depth-first order, left child first.
+func (t *Tree) allPaths(path Path) (c chan Path) {
+	c = make(chan Path)
+	go func() {
+		defer close(c)
+		t.allPathsBlocking(path, c)
+	}()
+	return c
+}
+
+// allPathsBlocking is a helper function for allPaths that returns a
+// channel of all paths to all nodes in the tree.  The paths are sorted
+// in depth-first order, left child first.
+func (t *Tree) allPathsBlocking(path Path, c chan Path) {
+	myPath := path.Append(t)
+	// Pf("path %p myPath %p\n", path, myPath)
+	// Pf("send: %-10s %v\n", myPath, t.leafInterval)
+	c <- myPath
+	if t.left != nil {
+		t.left.allPathsBlocking(myPath, c)
+	}
+	if t.right != nil {
+		t.right.allPathsBlocking(myPath, c)
+	}
+}
+
+// firstNode returns the first node in the tree.
+func (t *Tree) firstNode() *Tree {
+	if t.left != nil {
+		return t.left.firstNode()
+	}
+	return t
+}
+
+// lastNode returns the last node in the tree.
+func (t *Tree) lastNode() *Tree {
+	if t.right != nil {
+		return t.right.lastNode()
+	}
+	return t
+}
+
+// AsDot returns a string representation of the tree in Graphviz DOT
+// format without relying on any other Tree methods.
+func (t *Tree) AsDot(path Path) string {
+	var out string
+	var top bool
+	if path == nil {
+		top = true
+		path = Path{t}
+		out += "digraph G {\n"
+	}
+	id := path.String()
+	label := id
+	if t.leafInterval != nil {
+		label += fmt.Sprintf("\\n%s", t.leafInterval)
+	}
+	out += fmt.Sprintf("  %s [label=\"%s\"];\n", id, label)
+	if t.left != nil {
+		// get left child's dot representation
+		out += t.left.AsDot(path.Append(t.left))
+		// add edge from this node to left child
+		out += fmt.Sprintf("  %s -> %sl;\n", id, id)
+	}
+	if t.right != nil {
+		// get right child's dot representation
+		out += t.right.AsDot(path.Append(t.right))
+		// add edge from this node to right child
+		out += fmt.Sprintf("  %s -> %sr;\n", id, id)
+	}
+	if top {
+		out += "}\n"
+	}
+	return out
+}
+
+// showDot displays the tree in xdot.  If bg is true, then the xdot
+// window is displayed from a background process.
+func showDot(tree *Tree, bg bool) {
+	dot := tree.AsDot(nil)
+	// call 'xdot -' passing the dot file as input
+	cmd := exec.Command("xdot", "-")
+	cmd.Stdin = strings.NewReader(dot)
+	if bg {
+		cmd.Start()
+		go cmd.Wait()
+		return
+	}
+	cmd.Run()
 }

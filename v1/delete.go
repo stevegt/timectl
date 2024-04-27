@@ -26,8 +26,32 @@ func (t *Tree) free(node *Tree) error {
 	return nil
 }
 
-// delete handles the actual deletion of the node.
 func (t *Tree) delete(path []*Tree, node *Tree) bool {
+	// Placeholder implementation.
+	return false
+}
+
+/*
+// delete is simply a process of finding and freeing the target
+// interval and then merging with free siblings.
+func (t *Tree) delete(interval Interval) (deletedInterval Interval) {
+
+	// Find the node containing the interval.
+	ancestors, node := t.findExact(interval, nil)
+
+	// If the node is not found, return nil.
+	if node == nil {
+		return nil
+	}
+
+	// Free the node.
+	if err := t.free(node); err != nil {
+		return nil
+	}
+
+	// Merge with free siblings.
+	tree.mergeFreeSiblings(ancestors)
+
 	// If node is a root node with no children, just remove the interval.
 	if len(path) == 0 {
 		if node.left == nil && node.right == nil {
@@ -53,6 +77,7 @@ func (t *Tree) delete(path []*Tree, node *Tree) bool {
 
 	return true
 }
+*/
 
 // tryAbsorb checks if the parent can absorb the interval of a deleted child node.
 func (t *Tree) tryAbsorb(node *Tree) {

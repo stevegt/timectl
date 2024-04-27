@@ -2,7 +2,10 @@ package timectl
 
 import (
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -116,6 +119,34 @@ func match(interval Interval, startStr, endStr string, priority float64) error {
 	return nil
 }
 
+// saveDot saves the tree as a dot file
+func saveDot(tree *Tree) {
+	// get caller's file and line number
+	_, file, line, ok := runtime.Caller(1)
+	Assert(ok, "Failed to get caller")
+	// keep only the file name, throw away the path
+	_, file = filepath.Split(file)
+	fn := fmt.Sprintf("/tmp/%s:%d.dot", file, line)
+	buf := []byte(tree.AsDot(nil))
+	err := ioutil.WriteFile(fn, buf, 0644)
+	Ck(err)
+}
+
+// verify is a test helper function that verifies the tree.  If
+// there is an error, it shows the tree as a dot file.
+func verify(t *testing.T, tree *Tree) {
+	err := tree.Verify()
+	if err != nil {
+		// get caller's file and line number
+		_, file, line, ok := runtime.Caller(1)
+		Assert(ok, "Failed to get caller")
+		msg := Spf("%v:%v %v\n", file, line, err)
+		Pl(msg)
+		showDot(tree, false)
+		t.Fatal(msg)
+	}
+}
+
 // Test a tree node with children.
 // A tree is a tree of busy and free intervals that
 // span the entire range from treeStart to treeEnd.
@@ -132,6 +163,7 @@ func TestTreeStructure(t *testing.T) {
 	err = expect(tree, "rr", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
+	verify(t, tree)
 }
 
 // TestInsertConflict tests inserting an interval that conflicts with
@@ -147,6 +179,8 @@ func TestInsertConflict(t *testing.T) {
 	// insert a conflicting interval
 	interval := insert(tree, "2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
 	Tassert(t, interval == nil, "Expected nil interval")
+
+	verify(t, tree)
 
 }
 
@@ -174,6 +208,8 @@ func TestConflicts(t *testing.T) {
 	Tassert(t, intervals[0].Equal(i0900_0930), fmt.Sprintf("Expected %v, got %v", i0900_0930, intervals[0]))
 	Tassert(t, intervals[1].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, intervals[1]))
 	Tassert(t, intervals[2].Equal(i1130_1200), fmt.Sprintf("Expected %v, got %v", i1130_1200, intervals[2]))
+
+	verify(t, tree)
 
 }
 
@@ -224,6 +260,7 @@ func TestFindFree(t *testing.T) {
 	expectInterval = NewInterval(expectStart, expectEnd, 0)
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
+	verify(t, tree)
 }
 
 func TestFindFreeMany(t *testing.T) {
@@ -288,6 +325,9 @@ func TestFindFreeMany(t *testing.T) {
 		}
 
 	}
+
+	verify(t, tree)
+
 }
 
 func TestConcurrent(t *testing.T) {
@@ -362,6 +402,9 @@ func TestConcurrent(t *testing.T) {
 		// check that the conflict is the expected interval
 		Tassert(t, conflicts[0].Equal(expect), fmt.Sprintf("Expected %v, got %v", expect, conflicts[0]))
 	}
+
+	verify(t, tree)
+
 }
 
 // ConcreteInterval tests the Interval interface and IntervalBase type.
@@ -405,6 +448,8 @@ func TestInterface(t *testing.T) {
 	intervals = tree.AllIntervals()
 	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
 	Tassert(t, intervals[1].Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, intervals[1]))
+
+	verify(t, tree)
 
 }
 
@@ -501,6 +546,8 @@ func TestFindFreePriority(t *testing.T) {
 	err = match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)
 
+	verify(t, tree)
+
 }
 
 // XXX WIP below here
@@ -540,6 +587,8 @@ func TestFindExact(t *testing.T) {
 	got = path[len(path)-1]
 	Tassert(t, got == expect, fmt.Sprintf("Expected %v, got %v", expect, got))
 
+	verify(t, tree)
+
 }
 
 // test the Verify function
@@ -551,20 +600,14 @@ func TestVerify(t *testing.T) {
 	ok := tree.Insert(interval)
 	Tassert(t, ok, "Failed to insert interval")
 
-	// verify the tree:
-	// - the root node should have a busy interval that spans the entire range
-	// - there should be no gaps between intervals
-	// - there should be no overlapping intervals
-
 	dump(tree, "")
 
-	err := tree.Verify()
-	Tassert(t, err == nil, err)
+	verify(t, tree)
 
 }
 
 // test merging free nodes
-func XXXTestMergeFree(t *testing.T) {
+func TestMergeFree(t *testing.T) {
 	tree := NewTree()
 
 	// split the root node into two free children
@@ -574,8 +617,13 @@ func XXXTestMergeFree(t *testing.T) {
 	tree.left = &Tree{leafInterval: NewInterval(TreeStart, splitAt1200, 0).(*IntervalBase)}
 	tree.right = &Tree{leafInterval: NewInterval(splitAt1200, TreeEnd, 0).(*IntervalBase)}
 
+	err = tree.Verify()
+	Tassert(t, err != nil, "Expected error, got nil")
+
 	// merge the free nodes
 	tree.mergeFree()
+
+	verify(t, tree)
 
 	// check that the tree has one free interval
 	freeIntervals := tree.FreeIntervals()
@@ -583,6 +631,23 @@ func XXXTestMergeFree(t *testing.T) {
 	interval := freeIntervals[0]
 	Tassert(t, interval.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, interval.Start()))
 	Tassert(t, interval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, interval.End()))
+
+}
+
+// test rebalancing the tree
+func TestRebalance(t *testing.T) {
+	tree := NewTree()
+
+	// insert a few intervals into the tree
+	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	insert(tree, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
+
+	// rebalance the tree
+	// tree.rebalance()
+
+	verify(t, tree)
 
 }
 
@@ -597,7 +662,7 @@ func XXXTestMergeFree(t *testing.T) {
 */
 
 // test delete
-func XXXTestDeleteSimple(t *testing.T) {
+func TestDeleteSimple(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
@@ -631,25 +696,21 @@ func XXXTestDeleteSimple(t *testing.T) {
 	Tassert(t, freeInterval.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, freeInterval.Start()))
 	Tassert(t, freeInterval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, freeInterval.End()))
 
+	verify(t, tree)
+
 	/*
-		// delete the interval
-		interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-		ok := tree.Delete(interval)
-		Tassert(t, ok, "Failed to delete interval")
+		// delete is simply a process of finding and freeing the target
+		// interval and then merging free nodes.
+		ok = tree.Insert(interval)
+		Tassert(t, ok, "Failed to insert interval")
+		deletedInterval = tree.delete(interval)
+		Tassert(t, deletedInterval != nil, "Expected non-nil interval")
+		Tassert(t, deletedInterval.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, deletedInterval))
+		allIntervals := tree.AllIntervals()
+		Tassert(t, len(allIntervals) == 1, "Expected 1 interval, got %d", len(allIntervals))
+		Tassert(t, allIntervals[0].Equal(freeInterval), fmt.Sprintf("Expected %v, got %v", freeInterval, allIntervals[0]))
 
-			// check that the interval is no longer in the tree
-			intervals := tree.BusyIntervals()
-			Tassert(t, len(intervals) == 0, "Expected 0 intervals, got %d", len(intervals))
-
-			// check that there is one big free interval
-			freeIntervals := tree.FreeIntervals()
-			Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
-			start := TreeStart
-			end := TreeEnd
-			Tassert(t, freeIntervals[0].Start().Equal(start), fmt.Sprintf("Expected %v, got %v", start, freeIntervals[0].Start()))
-			// XXX we use After here instead of Equal because the end time is not exact
-			Tassert(t, freeIntervals[0].End().After(end), fmt.Sprintf("Expected %v, got %v", end, freeIntervals[0].End()))
-			Tassert(t, freeIntervals[0].Priority() == 0, fmt.Sprintf("Expected %v, got %v", 0, freeIntervals[0].Priority()))
+		verify(t, tree)
 	*/
 
 }
