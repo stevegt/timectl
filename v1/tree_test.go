@@ -166,6 +166,72 @@ func TestTreeStructure(t *testing.T) {
 	verify(t, tree)
 }
 
+// test rotation
+func TestRotate(t *testing.T) {
+	tree := NewTree()
+
+	// insert an interval into the tree -- this should become the left
+	// child of the right child of the root node
+	err := insertExpect(tree, "rl", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	// check the nodes
+	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = expect(tree, "rr", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	Tassert(t, err == nil, err)
+
+	// showDot(tree, false)
+
+	// rotate left
+	tree = tree.rotateLeft()
+	// check the nodes
+	err = expect(tree, "ll", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = expect(tree, "lr", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	err = expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	Tassert(t, err == nil, err)
+
+	// showDot(tree, false)
+
+	verify(t, tree)
+}
+
+// test rebalancing the tree
+func TestRebalanceSimple(t *testing.T) {
+	tree := NewTree()
+
+	// insert 1 interval into the tree
+	err := insertExpect(tree, "rl", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	// check the nodes
+	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = expect(tree, "rr", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	Tassert(t, err == nil, err)
+
+	// rebalance the tree
+	tree.rebalance()
+	// nodes should be the same
+	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = expect(tree, "rl", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	err = expect(tree, "rr", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	Tassert(t, err == nil, err)
+
+	// insert another interval into the tree
+	err = insertExpect(tree, "rrrl", "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	// get the nodes
+	showDot(tree, false)
+	// rebalance the tree
+	tree = tree.rebalance()
+
+	verify(t, tree)
+
+}
+
 // TestInsertConflict tests inserting an interval that conflicts with
 // an existing interval in the tree.
 func TestInsertConflict(t *testing.T) {
