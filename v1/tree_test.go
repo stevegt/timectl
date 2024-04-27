@@ -408,6 +408,29 @@ func TestInterface(t *testing.T) {
 
 }
 
+// test finding exact interval
+func TestFindExact(t *testing.T) {
+	tree := NewTree()
+
+	// insert an interval into the tree
+	err := insertExpect(tree, "rl", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Tassert(t, err == nil, err)
+
+	// find the exact interval
+	interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+
+	// FindExact returns the exact interval that matches the given
+	// interval along with the parent node of the interval.  If the exact
+	// interval is not found, then the found interval is nil and the parent
+	// node is the node where the interval would be inserted.  If the
+	// exact interval is the root node, then the parent node is nil.
+
+	found, parent := tree.FindExact(interval)
+	Tassert(t, found != nil, "Expected non-nil interval")
+	Tassert(t, found.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, found))
+
+}
+
 // test delete
 func TestDelete(t *testing.T) {
 	tree := NewTree()

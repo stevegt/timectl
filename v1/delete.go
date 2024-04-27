@@ -10,52 +10,49 @@ func (t *Tree) Delete(interval Interval) bool {
 
 // delete is a non-threadsafe version of Delete for internal use.
 func (t *Tree) delete(interval Interval) bool {
-	if t == nil {
+	if t == nil || (t.leafInterval == nil && t.left == nil && t.right == nil) {
 		return false
 	}
 
+	// Direct match of the interval in the current node
 	if t.leafInterval != nil && t.leafInterval.Equal(interval) {
-		if t.left == nil && t.right == nil {
-			// If node is a leaf
-			t.leafInterval = nil
-			return true
-		}
-
-		// If the node has one child, replace this node with the child
-		if t.left == nil {
-			*t = *t.right
-			return true
-		}
-		if t.right == nil {
+		// Node with two children case
+		if t.left != nil && t.right != nil {
+			successor := t.right.min()
+			t.leafInterval = successor.leafInterval
+			return t.right.delete(successor.leafInterval) // Recursively delete the successor
+		} else if t.left != nil { // Node with only left child
 			*t = *t.left
 			return true
+		} else if t.right != nil { // Node with only right child
+			*t = *t.right
+			return true
+		} else { // Leaf node
+			t.leafInterval = nil // Clear the interval
+			return true
 		}
-
-		// Node has two children, find the in-order successor
-		successor := t.right.min()
-		t.leafInterval = successor.leafInterval
-		return t.right.delete(t.leafInterval) // Delete the successor
 	}
 
-	// Search in children
+	// Recursively check left and right subtree for the interval
+	deletedLeft := false
 	if t.left != nil && t.left.overlaps(interval) {
-		if t.left.delete(interval) {
-			if t.left.leafInterval == nil && t.left.left == nil && t.left.right == nil {
-				t.left = nil // Prune empty child
-			}
-			return true
-		}
-	}
-	if t.right != nil && t.right.overlaps(interval) {
-		if t.right.delete(interval) {
-			if t.right.leafInterval == nil && t.right.left == nil && t.right.right == nil {
-				t.right = nil // Prune empty child
-			}
-			return true
-		}
+		deletedLeft = t.left.delete(interval)
 	}
 
-	return false
+	deletedRight := false
+	if t.right != nil && t.right.overlaps(interval) {
+		deletedRight = t.right.delete(interval)
+	}
+
+	// If an interval was successfully deleted from either subtree, cleanup subtree if needed
+	if deletedLeft && t.left != nil && t.left.isEmpty() {
+		t.left = nil // Left cleanup
+	}
+	if deletedRight && t.right != nil && t.right.isEmpty() {
+		t.right = nil // Right cleanup
+	}
+
+	return deletedLeft || deletedRight
 }
 
 // overlaps checks if the tree's interval overlaps with the given interval.
