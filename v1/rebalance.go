@@ -24,26 +24,44 @@ func (t *Tree) vine() (newRoot *Tree) {
 
 // rotateLeft performs a left rotation on this node.
 func (t *Tree) rotateLeft() (newRoot *Tree) {
-	y := t.right
-	t2 := y.left
-
-	y.left = t
-	t.right = t2
-
-	newRoot = y
+	newRoot = t.right
+	newLeftRight := t.right.left
+	newRoot.left = t
+	newRoot.left.right = newLeftRight
+	newRoot.left.setMinMax()
+	newRoot.right.setMinMax()
+	newRoot.setMinMax()
 	return
 }
 
 // rotateRight performs a right rotation on this node.
 func (t *Tree) rotateRight() (newRoot *Tree) {
-	y := t.left
-	t2 := y.right
-
-	y.right = t
-	t.left = t2
-
-	newRoot = y
+	newRoot = t.left
+	newRightLeft := t.left.right
+	newRoot.right = t
+	newRoot.right.left = newRightLeft
+	newRoot.left.setMinMax()
+	newRoot.right.setMinMax()
+	newRoot.setMinMax()
 	return
+}
+
+// setMinMax updates the minimum and maximum values of this node.
+func (t *Tree) setMinMax() {
+	if t == nil {
+		return
+	}
+	if t.left == nil {
+		t.minStart = t.interval.Start()
+	} else {
+		t.minStart = t.left.minStart
+	}
+	if t.right == nil {
+		t.maxEnd = t.interval.End()
+	} else {
+		t.maxEnd = t.right.maxEnd
+	}
+	t.setMaxPriority()
 }
 
 // getBalance calculates and returns the balance factor of this node.

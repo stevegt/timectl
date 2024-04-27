@@ -10,7 +10,7 @@ func (t *Tree) FindLowerPriority(first bool, minStart, maxEnd time.Time, duratio
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	result := []Interval{}       // To store the final slice of intervals.
+	result := []Interval{}        // To store the final slice of intervals.
 	var sumDuration time.Duration // To sum up durations of found intervals.
 
 	// A helper function to accumulate intervals of lower priority.
@@ -18,6 +18,24 @@ func (t *Tree) FindLowerPriority(first bool, minStart, maxEnd time.Time, duratio
 	accumulateIntervals = func(node *Tree, start time.Time, end time.Time) bool {
 		if node == nil || sumDuration >= duration {
 			return true // Base case: node is nil or we have enough duration.
+		}
+
+		// if the node's minStart is completely after the search range, skip it.
+		if node.minStart.After(end) {
+			return false
+		}
+
+		// if the node's maxEnd is completely before the search range, skip it.
+		if node.maxEnd.Before(start) {
+			return false
+		}
+
+		// if the node's maxPriority is not lower than the required
+		// priority, clear the accumulators and return false.
+		if node.maxPriority >= priority {
+			sumDuration = 0
+			result = []Interval{}
+			return false
 		}
 
 		// Depending on the search direction, recursively accumulate child intervals first.

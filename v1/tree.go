@@ -6,7 +6,8 @@ import (
 	"strings"
 	"sync"
 	"time"
-	// . "github.com/stevegt/goadapt"
+
+	. "github.com/stevegt/goadapt"
 )
 
 // TreeStart is the minimum time value that can be represented by a Tree node.
@@ -35,13 +36,25 @@ type Tree struct {
 	// rooted at this node
 	maxEnd time.Time
 
+	// maxPriority is the highest priority of any interval in the subtree
+	// rooted at this node
+	maxPriority float64
+
 	mu sync.RWMutex
 }
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Tree {
+	return newTreeFromInterval(NewInterval(TreeStart, TreeEnd, 0))
+}
+
+// newTreeFromInterval creates and returns a new Tree node containing the given interval.
+func newTreeFromInterval(interval Interval) *Tree {
 	return &Tree{
-		interval: NewInterval(TreeStart, TreeEnd, 0),
+		interval:    interval,
+		minStart:    interval.Start(),
+		maxEnd:      interval.End(),
+		maxPriority: interval.Priority(),
 	}
 }
 
@@ -65,13 +78,14 @@ func (t *Tree) insert(newInterval Interval) (ok bool) {
 	if t.busy() {
 		if t.left != nil && newInterval.Start().Before(t.left.End()) {
 			if t.left.insert(newInterval) {
-				t.minStart = t.left.minStart
+				t.setMinMax()
 				return true
 			}
 		}
 		if t.right != nil && newInterval.End().After(t.right.Start()) {
 			if t.right.insert(newInterval) {
 				t.maxEnd = t.right.maxEnd
+				t.setMaxPriority()
 				return true
 			}
 		}
@@ -93,8 +107,7 @@ func (t *Tree) insert(newInterval Interval) (ok bool) {
 		// to have children
 		t.left = nil
 		t.right = nil
-		t.minStart = newInterval.Start()
-		t.maxEnd = newInterval.End()
+		t.setMinMax()
 		return true
 	case 2:
 		// newInterval fits in this node's interval, so we put the
@@ -102,22 +115,30 @@ func (t *Tree) insert(newInterval Interval) (ok bool) {
 		// new right child
 		t.interval = newIntervals[0]
 		t.left = nil
-		t.right = &Tree{interval: newIntervals[1]}
-		t.minStart = t.interval.Start()
-		t.maxEnd = t.right.maxEnd
+		t.right = newTreeFromInterval(newIntervals[1])
+		t.setMinMax()
 		return true
 	case 3:
 		// newInterval fits in this node's interval, so we put the
 		// first interval in the left child, the second interval in
 		// this node, and the third interval in the right child
-		t.left = &Tree{interval: newIntervals[0]}
+		t.left = newTreeFromInterval(newIntervals[0])
 		t.interval = newIntervals[1]
-		t.right = &Tree{interval: newIntervals[2]}
-		t.minStart = t.left.minStart
-		t.maxEnd = t.right.maxEnd
+		t.right = newTreeFromInterval(newIntervals[2])
+		t.setMinMax()
 		return true
 	default:
 		panic("unexpected number of intervals")
+	}
+}
+
+func (t *Tree) setMaxPriority() {
+	t.maxPriority = t.interval.Priority()
+	if t.left != nil {
+		t.maxPriority = max(t.maxPriority, t.left.maxPriority)
+	}
+	if t.right != nil {
+		t.maxPriority = max(t.maxPriority, t.right.maxPriority)
 	}
 }
 
@@ -258,7 +279,6 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		start := MaxTime(minStart, t.minStart)
 		end := MinTime(t.maxEnd, maxEnd)
 		sub := subInterval(first, start, end, duration)
-		// Pf("sub: %v\n", sub)
 		return sub
 	}
 
@@ -418,7 +438,7 @@ func (t *Tree) AsDot(path Path) string {
 		out += "digraph G {\n"
 	}
 	id := path.String()
-	label := id
+	label := Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.maxPriority)
 	if t.interval != nil {
 		label += fmt.Sprintf("\\n%s", t.interval)
 	}

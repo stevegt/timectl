@@ -61,6 +61,34 @@ func (t *Tree) Verify() error {
 			return fmt.Errorf("interval end time is not after start time")
 		}
 
+		// - each interval's minStart time should be equal to the minimum
+		//   of its start time and the start time of its left child
+		expectMinStart := node.minStart
+		if node.left != nil {
+			gotMinStart := MinTime(start, node.left.minStart)
+			if !expectMinStart.Equal(gotMinStart) {
+				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", path)
+			}
+		} else {
+			if !expectMinStart.Equal(start) {
+				return fmt.Errorf("%s minStart time does not match interval start time", path)
+			}
+		}
+
+		// - each interval's maxEnd time should be equal to the maximum
+		//   of its end time and the end time of its right child
+		expectMaxEnd := node.maxEnd
+		if node.right != nil {
+			gotMaxEnd := MaxTime(end, node.right.maxEnd)
+			if !expectMaxEnd.Equal(gotMaxEnd) {
+				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", path)
+			}
+		} else {
+			if !expectMaxEnd.Equal(end) {
+				return fmt.Errorf("%s maxEnd time does not match interval end time", path)
+			}
+		}
+
 		if prevNode != nil {
 			// - each interval's start time should be equal to the end time
 			//   of the previous interval
