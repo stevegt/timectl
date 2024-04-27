@@ -601,6 +601,15 @@ func TestDeleteSimple(t *testing.T) {
 	freeIntervals := tree.FreeIntervals()
 	Tassert(t, len(freeIntervals) == 3, "Expected 3 free intervals, got %d", len(freeIntervals))
 
+	// merge the free nodes
+	tree.mergeFree()
+	// there should now be one free interval
+	freeIntervals = tree.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
+	freeInterval := freeIntervals[0]
+	Tassert(t, freeInterval.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, freeInterval.Start()))
+	Tassert(t, freeInterval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, freeInterval.End()))
+
 	/*
 		// delete the interval
 		interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
@@ -624,6 +633,7 @@ func TestDeleteSimple(t *testing.T) {
 
 }
 
+/*
 // test complex delete
 func TestDeleteComplex(t *testing.T) {
 	rand.Seed(1)
@@ -694,7 +704,6 @@ func TestDeleteComplex(t *testing.T) {
 	Tassert(t, freeIntervals[0].Priority() == 0, fmt.Sprintf("Expected %v, got %v", 0, freeIntervals[0].Priority()))
 }
 
-/*
 func TestRemoveRange(t *testing.T) {
 	tree := NewTree()
 
