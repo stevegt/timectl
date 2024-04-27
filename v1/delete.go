@@ -46,11 +46,3 @@ func (t *Tree) findExact(interval Interval, parentIn *Tree) (found, parent *Tree
 
 	return nil, nil
 }
-
-func (t *Tree) Delete(interval Interval) (ok bool) {
-	return
-}
-
-func (t *Tree) delete(interval Interval) (ok bool) {
-	return
-}
