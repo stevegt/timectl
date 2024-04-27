@@ -12,8 +12,8 @@ func (t *Tree) mergeFree() {
 	mergeRecursive = func(node *Tree) {
 		if node.left != nil && node.right != nil && !node.left.busy() && !node.right.busy() {
 			// Merge the two free intervals.
-			leftStart := node.left.treeStart()
-			rightEnd := node.right.treeEnd()
+			leftStart := node.left.minStart
+			rightEnd := node.right.maxEnd
 			node.interval = NewInterval(leftStart, rightEnd, 0)
 			node.left = nil
 			node.right = nil

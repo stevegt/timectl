@@ -38,12 +38,9 @@ func (t *Tree) findExact(interval Interval, pathIn []*Tree) (pathOut []*Tree, fo
 		return pathIn, t
 	}
 
-	// if the interval starts before the parent's synthetic interval ends, then
-	// return the parent node as the place where the interval would
-	// be inserted
 	if len(pathIn) > 0 {
 		parent := pathIn[len(pathIn)-1]
-		if interval.Start().Before(parent.treeEnd()) {
+		if interval.Start().Before(parent.maxEnd) {
 			return pathIn, nil
 		}
 	}
