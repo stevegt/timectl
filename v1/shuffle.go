@@ -1,12 +1,8 @@
 package timectl
 
-import (
-	"fmt"
-	"time"
+// . "github.com/stevegt/goadapt"
 
-	. "github.com/stevegt/goadapt"
-)
-
+/*
 // Shuffle inserts a new interval into the tree. It finds one or
 // more lower-priority intervals using FindFreePriority, removes
 // and returns them, adjusts the start and end times of the new
@@ -54,7 +50,9 @@ func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval
 
 	return newInterval, removed, nil
 }
+*/
 
+/*
 // RemoveRange removes all intervals that overlap with the given time range.
 // It returns the removed intervals.  It only returns intervals that are
 // marked as busy (priority > 0).
@@ -81,3 +79,4 @@ func (t *Tree) removeRange(start, end time.Time) (removed []Interval) {
 	}
 	return removed
 }
+*/
