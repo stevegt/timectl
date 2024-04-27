@@ -514,12 +514,15 @@ func TestInterface(t *testing.T) {
 
 }
 
-// FindFreePriority works similarly to FindFree, but it returns a
-// contiguous set of intervals that are either free or have a lower
-// priority than the given priority.  The intervals are returned in
-// order of start time.  The minStart and maxEnd times are inclusive.
+// FindLowerPriority returns a contiguous set of nodes that have a
+// lower priority than the given priority.  The start time of the
+// first node is on or before minStart, and the end time of the last
+// node is on or after maxEnd.  The nodes must total at least the
+// given duration, and may be longer.  If first is true, then the
+// search starts at minStart and proceeds in order, otherwise the
+// search starts at maxEnd and proceeds in reverse order.
 //
-// FindFreePriority pseudocode:
+// FindLowerPriority pseudocode:
 /*
 - Start the search at `minStart` and iterate through the tree in order
   (or start at maxEnd and traverse in reverse order if `first` is false)
@@ -536,7 +539,7 @@ func TestInterface(t *testing.T) {
   trim the interval if necessary.  The returned intervals must total
   at least the given duration, and may be longer.
 */
-func TestFindFreePriority(t *testing.T) {
+func TestFindLowerPriority(t *testing.T) {
 	tree := NewTree()
 
 	// insert several intervals into the tree
@@ -554,12 +557,12 @@ func TestFindFreePriority(t *testing.T) {
 
 	// showDot(tree, true)
 
-	// find intervals for a 60 minute duration and priority 3 near the
-	// start time.  because priority 3 is higher than the priority of
-	// the busy interval at 9:00, FindFreePriority should return the
-	// priority 2 interval from 9:00 to 9:30 followed by the free
-	// interval from 9:30 to 10:00.
-	intervals := tree.FindFreePriority(true, searchStart, searchEnd, 60*time.Minute, 3)
+	// find intervals spanning at least a 60 minute duration and lower
+	// than priority 3 near the start time.  because priority 3 is
+	// higher than the priority of the busy interval at 9:00,
+	// FindLowerPriority should return the priority 2 interval from
+	// 9:00 to 9:30 followed by the free interval from 9:30 to 10:00.
+	intervals := tree.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 3)
 	t.Logf("intervals found that are lower priority than 3:")
 	for _, interval := range intervals {
 		t.Logf("%v", interval)
@@ -571,12 +574,13 @@ func TestFindFreePriority(t *testing.T) {
 	err = match(intervals[1], "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
 
-	// find intervals for a 60 minute duration and priority 2 near the
-	// start time.  because priority 2 is not higher than the priority of
-	// the busy interval at 9:00, FindFreePriority should return the free
-	// interval from 9:30 to 10:00 followed by the priority 1 interval
-	// from 10:00 to 11:00.
-	intervals = tree.FindFreePriority(true, searchStart, searchEnd, 60*time.Minute, 2)
+	// find intervals spanning at least a 60 minute duration and lower
+	// than priority 2 near the start time.  because priority 2 is not
+	// higher than the priority of the busy interval at 9:00,
+	// FindLowerPriority should return the priority 0 interval from
+	// 9:30 to 10:00 followed by the priority 1 interval from 10:00 to
+	// 11:00.
+	intervals = tree.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 2)
 	t.Logf("intervals found that are lower priority than 2:")
 	for _, interval := range intervals {
 		t.Logf("%v", interval)
@@ -589,12 +593,13 @@ func TestFindFreePriority(t *testing.T) {
 	Tassert(t, err == nil, err)
 	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
 
-	// find intervals for a 60 minute duration and priority 2 near the
-	// end time.  because priority 2 is not higher than the priority
-	// of the interval at 11:30, FindFreePriority should return the
-	// priority 1 interval from 10:00 to 11:00 followed by the free
-	// interval from 11:00 to 11:30
-	intervals = tree.FindFreePriority(false, searchStart, searchEnd, 60*time.Minute, 2)
+	// find intervals spanning at least a 60 minute duration and lower
+	// than priority 2 near the end time.  because priority 2 is not
+	// higher than the priority of the interval at 11:30,
+	// FindLowerPriority should return the priority 1 interval from
+	// 10:00 to 11:00 followed by the priority 0 interval from 11:00
+	// to 11:30
+	intervals = tree.FindLowerPriority(false, searchStart, searchEnd, 60*time.Minute, 2)
 	t.Logf("intervals found that are lower priority than 2 near end:")
 	for _, interval := range intervals {
 		t.Logf("%v", interval)
@@ -906,7 +911,7 @@ func XXXTestShuffle(t *testing.T) {
 	tree := NewTree()
 
 	// Shuffle inserts a new interval into the tree.  It finds one or
-	// more lower-priority intervals using findFreePriority, removes
+	// more lower-priority intervals using FindLowerPriority, removes
 	// and returns them, adjusts the start and end times of the new
 	// interval to fit within the free time, and inserts the new
 	// interval into the tree.  Shuffle returns the new interval and
