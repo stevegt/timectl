@@ -647,6 +647,9 @@ func TestRebalance(t *testing.T) {
 	// rebalance the tree
 	tree.rebalance()
 
+	err := tree.Verify()
+	Tassert(t, err == nil, err)
+
 	verify(t, tree)
 
 }

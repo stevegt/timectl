@@ -9,6 +9,8 @@ import (
 // that all nodes and intervals are correctly placed within the tree
 // according to the interval tree properties.
 func (t *Tree) Verify() error {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
 	// - the root node should span the entire range from TreeStart to
 	// TreeEnd
@@ -86,5 +88,48 @@ func (t *Tree) Verify() error {
 
 	}
 
+	err := t.ckBalance(nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// ckBalance checks the balance of the tree. It makes sure that the
+// tree is balanced according to the AVL tree properties.
+func (t *Tree) ckBalance(ancestors Path) error {
+	if t == nil {
+		return nil
+	}
+	myPath := ancestors.Append(t)
+
+	// - the height of the left and right subtrees of every node differ
+	//   by at most 1
+	leftHeight := t.left.height()
+	rightHeight := t.right.height()
+	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
+		return fmt.Errorf("height of left and right subtrees of %s differ by more than 1", myPath)
+	}
+
+	// - the height of the left and right subtrees of every node differ
+	//   by at most 1
+	leftBalance := t.left.ckBalance(myPath)
+	if leftBalance != nil {
+		return leftBalance
+	}
+	rightBalance := t.right.ckBalance(myPath)
+	if rightBalance != nil {
+		return rightBalance
+	}
+
+	return nil
+}
+
+// height returns the height of the tree.
+func (t *Tree) height() int {
+	if t == nil {
+		return 0
+	}
+	return 1 + max(t.left.height(), t.right.height())
 }
