@@ -14,24 +14,26 @@ func (t *Tree) delete(interval Interval) bool {
 		return false
 	}
 
-	// Direct match of the interval in the current node
-	if t.leafInterval != nil && t.leafInterval.Equal(interval) {
-		// Node with two children case
-		if t.left != nil && t.right != nil {
-			successor := t.right.min()
-			t.leafInterval = successor.leafInterval
-			return t.right.delete(successor.leafInterval) // Recursively delete the successor
-		} else if t.left != nil { // Node with only left child
-			*t = *t.left
-			return true
-		} else if t.right != nil { // Node with only right child
-			*t = *t.right
-			return true
-		} else { // Leaf node
-			t.leafInterval = nil // Clear the interval
-			return true
+	/*
+		// Direct match of the interval in the current node
+		if t.leafInterval != nil && t.leafInterval.Equal(interval) {
+			// Node with two children case
+			if t.left != nil && t.right != nil {
+				successor := t.right.min()
+				t.leafInterval = successor.leafInterval
+				return t.right.delete(successor.leafInterval) // Recursively delete the successor
+			} else if t.left != nil { // Node with only left child
+				*t = *t.left
+				return true
+			} else if t.right != nil { // Node with only right child
+				*t = *t.right
+				return true
+			} else { // Leaf node
+				t.leafInterval = nil // Clear the interval
+				return true
+			}
 		}
-	}
+	*/
 
 	// Recursively check left and right subtree for the interval
 	deletedLeft := false
@@ -53,6 +55,34 @@ func (t *Tree) delete(interval Interval) bool {
 	}
 
 	return deletedLeft || deletedRight
+}
+
+// FindExact searches for an exact match of the given interval in the tree.
+// If found, it returns the matching interval and its parent node within the tree.
+// The return value parent is nil if the found interval is at the root.
+func (t *Tree) FindExact(interval Interval) (*Tree, *Tree) {
+	if t == nil {
+		return nil, nil
+	}
+
+	var parent *Tree = nil
+	current := t
+
+	for {
+		if current.leafInterval != nil && current.leafInterval.Equal(interval) {
+			return current, parent
+		}
+
+		if current.left != nil && current.left.overlaps(interval) {
+			parent = current
+			current = current.left
+		} else if current.right != nil && current.right.overlaps(interval) {
+			parent = current
+			current = current.right
+		} else {
+			return nil, parent
+		}
+	}
 }
 
 // overlaps checks if the tree's interval overlaps with the given interval.

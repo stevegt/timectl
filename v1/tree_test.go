@@ -413,21 +413,25 @@ func TestFindExact(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
-	err := insertExpect(tree, "rl", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Tassert(t, err == nil, err)
-
-	// find the exact interval
 	interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	ok := tree.Insert(interval)
+	Tassert(t, ok, "Failed to insert interval")
 
-	// FindExact returns the exact interval that matches the given
-	// interval along with the parent node of the interval.  If the exact
-	// interval is not found, then the found interval is nil and the parent
-	// node is the node where the interval would be inserted.  If the
-	// exact interval is the root node, then the parent node is nil.
+	// FindExact returns the tree node containing the exact interval
+	// that matches the given interval, along with the parent node.
+	// If the exact interval is not found, then the found node is nil
+	// and the parent node is the node where the interval would be
+	// inserted.  If the exact interval is in the root node, then the
+	// parent node is nil.
+
+	dump(tree, "")
 
 	found, parent := tree.FindExact(interval)
 	Tassert(t, found != nil, "Expected non-nil interval")
-	Tassert(t, found.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, found))
+	Tassert(t, found.leafInterval.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, found.leafInterval))
+	Tassert(t, parent != nil, "Expected non-nil parent")
+	expect := tree.right
+	Tassert(t, parent == expect, fmt.Sprintf("Expected %v, got %v", expect, parent))
 
 }
 
