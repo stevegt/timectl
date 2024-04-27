@@ -645,7 +645,7 @@ func TestRebalance(t *testing.T) {
 	insert(tree, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
 
 	// rebalance the tree
-	// tree.rebalance()
+	tree.rebalance()
 
 	verify(t, tree)
 
