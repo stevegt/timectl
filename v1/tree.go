@@ -2,7 +2,6 @@ package timectl
 
 import (
 	"fmt"
-	"math"
 	"os/exec"
 	"strings"
 	"sync"
@@ -24,13 +23,13 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
 // Tree represents a node in an interval tree.
 type Tree struct {
-	// If this is not a leaf node, leafIinterval is nil.
-	leafInterval Interval
-	// maxGap is the maximum gap between left end and right start times
-	// for all children in the subtree rooted at this node
-	// maxGap time.Duration
-	left  *Tree // Pointer to the left child
-	right *Tree // Pointer to the right child
+	interval Interval
+	left     *Tree // Pointer to the left child
+	right    *Tree // Pointer to the right child
+
+	// maxEnd is the latest end time of any interval in the subtree
+	// rooted at this node
+	maxEnd time.Time
 
 	mu sync.RWMutex
 }
@@ -38,7 +37,7 @@ type Tree struct {
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Tree {
 	return &Tree{
-		leafInterval: NewInterval(TreeStart, TreeEnd, 0),
+		interval: NewInterval(TreeStart, TreeEnd, 0),
 	}
 }
 
@@ -52,57 +51,62 @@ func (t *Tree) Insert(newInterval Interval) bool {
 }
 
 // insert is a non-threadsafe version of Insert for internal use.
-func (t *Tree) insert(newInterval Interval) bool {
+func (t *Tree) insert(newInterval Interval) (ok bool) {
 
 	if !newInterval.Busy() {
+		// XXX return a meaningful error
 		return false
 	}
 
 	if t.busy() {
 		if t.left != nil && newInterval.Start().Before(t.left.End()) {
-			if t.left.Insert(newInterval) {
+			if t.left.insert(newInterval) {
 				return true
 			}
 		}
 		if t.right != nil && newInterval.End().After(t.right.Start()) {
-			if t.right.Insert(newInterval) {
+			if t.right.insert(newInterval) {
+				t.maxEnd = t.right.maxEnd
 				return true
 			}
 		}
 		return false
 	}
 
-	// this is a free node, possibly with children -- we're going to
+	// t is a free node, possibly with free children -- we're going to
 	// completely replace it with the results of punching a hole in
 	// this node's interval
-	newIntervals := t.interval().Punch(newInterval)
+	newIntervals := t.interval.Punch(newInterval)
 	switch len(newIntervals) {
 	case 0:
 		// newInterval doesn't fit in this node's interval
 		return false
 	case 1:
 		// newInterval fits exactly in this node's interval
-		t.leafInterval = newInterval
-		// clear out any children
+		t.interval = newInterval
+		// clear out any children, because free nodes aren't supposed
+		// to have children
 		t.left = nil
 		t.right = nil
+		t.maxEnd = newInterval.End()
 		return true
 	case 2:
-		// newInterval fits in this node's interval, but we need to
-		// split this node into two children
-		t.leafInterval = nil
-		t.left = &Tree{leafInterval: newIntervals[0]}
-		t.right = &Tree{leafInterval: newIntervals[1]}
+		// newInterval fits in this node's interval, so we put the
+		// first interval in this node and the second interval in a
+		// new right child
+		t.interval = newIntervals[0]
+		t.left = nil
+		t.right = &Tree{interval: newIntervals[1]}
+		t.maxEnd = t.right.maxEnd
 		return true
 	case 3:
-		// newInterval fits in this node's interval, but we need to
-		// split this node into three children
-		t.leafInterval = nil
-		t.left = &Tree{leafInterval: newIntervals[0]}
-		t.right = &Tree{
-			left:  &Tree{leafInterval: newIntervals[1]},
-			right: &Tree{leafInterval: newIntervals[2]},
-		}
+		// newInterval fits in this node's interval, so we put the
+		// first interval in the left child, the second interval in
+		// this node, and the third interval in the right child
+		t.left = &Tree{interval: newIntervals[0]}
+		t.interval = newIntervals[1]
+		t.right = &Tree{interval: newIntervals[2]}
+		t.maxEnd = t.right.maxEnd
 		return true
 	default:
 		panic("unexpected number of intervals")
@@ -155,12 +159,10 @@ func (t *Tree) AllIntervals() []Interval {
 // allIntervals is a non-threadsafe version of AllIntervals for internal use.
 func (t *Tree) allIntervals() []Interval {
 	var intervals []Interval
-	if t.left == nil && t.right == nil {
-		intervals = append(intervals, t.leafInterval)
-	}
 	if t.left != nil {
 		intervals = append(intervals, t.left.AllIntervals()...)
 	}
+	intervals = append(intervals, t.interval)
 	if t.right != nil {
 		intervals = append(intervals, t.right.AllIntervals()...)
 	}
@@ -176,7 +178,7 @@ func (t *Tree) Busy() bool {
 
 // busy is a non-threadsafe version of Busy for internal use.
 func (t *Tree) busy() bool {
-	if t.leafInterval != nil && t.leafInterval.Busy() {
+	if t.interval != nil && t.interval.Busy() {
 		return true
 	}
 	if t.left != nil && t.left.Busy() {
@@ -188,48 +190,34 @@ func (t *Tree) busy() bool {
 	return false
 }
 
-// Start returns the start time of the interval spanning all child nodes.
+// Start returns the start time of the interval in the node.
 func (t *Tree) Start() time.Time {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-
-	if t.leafInterval != nil {
-		return t.leafInterval.Start()
-	}
-	return t.left.Start()
+	return t.interval.Start()
 }
 
-// End returns the end time of the interval spanning all child nodes.
+// End returns the end time of the interval in the node.
 func (t *Tree) End() time.Time {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-
-	if t.leafInterval != nil {
-		return t.leafInterval.End()
-	}
-	return t.right.End()
+	return t.interval.End()
 }
 
-// Interval returns the node's interval if interval is a leaf node, or
-// returns a synthetic interval spanning all child nodes.
-func (t *Tree) Interval() Interval {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	return t.interval()
+// treeStart returns the start time of the leftmost child node.
+func (t *Tree) treeStart() time.Time {
+	if t.left == nil {
+		return t.interval.Start()
+	}
+	return t.left.treeStart()
 }
 
-// interval is a non-threadsafe version of Interval for internal use.
-func (t *Tree) interval() Interval {
-	if t.left == nil && t.right == nil {
-		return t.leafInterval
+// treeEnd returns the end time of the rightmost child node.
+func (t *Tree) treeEnd() time.Time {
+	if t.right == nil {
+		return t.interval.End()
 	}
-	priority := 0.0
-	for _, leaf := range []*Tree{t.left, t.right} {
-		if leaf != nil {
-			priority = math.Max(priority, leaf.interval().Priority())
-		}
-	}
-	return NewInterval(t.Start(), t.End(), priority)
+	return t.right.treeEnd()
 }
 
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
@@ -247,8 +235,8 @@ func (t *Tree) Conflicts(interval Interval, includeFree bool) []Interval {
 // returns only busy intervals.
 func (t *Tree) conflicts(interval Interval, includeFree bool) []Interval {
 	var conflicts []Interval
-	if t.leafInterval != nil && t.leafInterval.Conflicts(interval, includeFree) {
-		conflicts = append(conflicts, t.leafInterval)
+	if t.interval != nil && t.interval.Conflicts(interval, includeFree) {
+		conflicts = append(conflicts, t.interval)
 	} else {
 		if t.left != nil {
 			conflicts = append(conflicts, t.left.conflicts(interval, includeFree)...)
@@ -275,8 +263,8 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
 	if !t.Busy() {
-		start := MaxTime(minStart, t.Start())
-		end := MinTime(t.End(), maxEnd)
+		start := MaxTime(minStart, t.treeStart())
+		end := MinTime(t.treeEnd(), maxEnd)
 		sub := subInterval(first, start, end, duration)
 		// Pf("sub: %v\n", sub)
 		return sub
@@ -294,8 +282,8 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		if child == nil {
 			continue
 		}
-		start = MaxTime(minStart, child.Start())
-		end = MinTime(child.End(), maxEnd)
+		start = MaxTime(minStart, child.treeStart())
+		end = MinTime(child.treeEnd(), maxEnd)
 		slot := child.FindFree(first, start, end, duration)
 		if slot != nil {
 			return slot
@@ -326,7 +314,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 // stdout.
 func dump(tree *Tree, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	fmt.Printf("%-10v: %v\n", path, tree.leafInterval)
+	fmt.Printf("%-10v: %v\n", path, tree.interval)
 	if tree.left != nil {
 		dump(tree.left, path+"l")
 	}
@@ -402,10 +390,10 @@ func (t *Tree) allPathsBlocking(path Path, c chan Path) {
 	myPath := path.Append(t)
 	// Pf("path %p myPath %p\n", path, myPath)
 	// Pf("send: %-10s %v\n", myPath, t.leafInterval)
-	c <- myPath
 	if t.left != nil {
 		t.left.allPathsBlocking(myPath, c)
 	}
+	c <- myPath
 	if t.right != nil {
 		t.right.allPathsBlocking(myPath, c)
 	}
@@ -439,21 +427,21 @@ func (t *Tree) AsDot(path Path) string {
 	}
 	id := path.String()
 	label := id
-	if t.leafInterval != nil {
-		label += fmt.Sprintf("\\n%s", t.leafInterval)
+	if t.interval != nil {
+		label += fmt.Sprintf("\\n%s", t.interval)
 	}
 	out += fmt.Sprintf("  %s [label=\"%s\"];\n", id, label)
 	if t.left != nil {
 		// get left child's dot representation
 		out += t.left.AsDot(path.Append(t.left))
 		// add edge from this node to left child
-		out += fmt.Sprintf("  %s -> %sl;\n", id, id)
+		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
 	}
 	if t.right != nil {
 		// get right child's dot representation
 		out += t.right.AsDot(path.Append(t.right))
 		// add edge from this node to right child
-		out += fmt.Sprintf("  %s -> %sr;\n", id, id)
+		out += fmt.Sprintf("  %s -> %sr [label=%s];\n", id, id, "r")
 	}
 	if top {
 		out += "}\n"

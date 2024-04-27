@@ -12,20 +12,14 @@ func (t *Tree) Verify() error {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	// - the root node should span the entire range from TreeStart to
-	// TreeEnd
-	rootStart := t.Interval().Start()
-	rootEnd := t.Interval().End()
-	if !rootStart.Equal(TreeStart) {
-		return fmt.Errorf("root interval start time does not match tree start time")
-	}
-	if !rootEnd.Equal(TreeEnd) {
-		return fmt.Errorf("root interval end time does not match tree end time")
+	// the interval should not be nil
+	if t.interval == nil {
+		return fmt.Errorf("root interval is nil")
 	}
 
 	// - the first interval in the tree should be a free interval that
 	//   starts at TreeStart
-	firstInterval := t.firstNode().leafInterval
+	firstInterval := t.firstNode().interval
 	if firstInterval == nil {
 		return fmt.Errorf("first interval is nil")
 	}
@@ -38,7 +32,7 @@ func (t *Tree) Verify() error {
 
 	// - the last interval in the tree should be a free interval that
 	//   ends at TreeEnd
-	lastInterval := t.lastNode().leafInterval
+	lastInterval := t.lastNode().interval
 	if lastInterval == nil {
 		return fmt.Errorf("last interval is nil")
 	}
@@ -49,42 +43,37 @@ func (t *Tree) Verify() error {
 		return fmt.Errorf("last interval is not free")
 	}
 
-	var prevLeaf *Tree
+	var prevNode *Tree
 	for path := range t.allPaths(nil) {
 		node := path.Last()
 		// Pf(" got: %-10s %v\n", path, node.leafInterval)
 
-		// - each node should have either two children or none
-		if t.left == nil && t.right != nil {
-			return fmt.Errorf("node has right child but no left child")
-		}
-		if t.left != nil && t.right == nil {
-			return fmt.Errorf("node has left child but no right child")
+		// the node interval should not be nil
+		if node.interval == nil {
+			return fmt.Errorf("node interval is nil")
 		}
 
-		if node.leafInterval == nil {
-			continue
-		}
-		// only leaf interval checks below here
+		start := node.interval.Start()
+		end := node.interval.End()
 
 		// - each interval's end time should be greater than its start time
-		if !node.End().After(node.Start()) {
+		if !end.After(start) {
 			return fmt.Errorf("interval end time is not after start time")
 		}
 
-		if prevLeaf != nil {
+		if prevNode != nil {
 			// - each interval's start time should be equal to the end time
 			//   of the previous interval
-			if !node.Start().Equal(prevLeaf.End()) {
+			if !start.Equal(prevNode.interval.End()) {
 				return fmt.Errorf("%s start time does not match previous interval end time", path)
 			}
 
 			// - there should be no adjacent free intervals
-			if !prevLeaf.Busy() && !node.Busy() {
+			if !prevNode.Busy() && !node.Busy() {
 				return fmt.Errorf("adjacent free intervals")
 			}
 		}
-		prevLeaf = node
+		prevNode = node
 
 	}
 

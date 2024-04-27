@@ -19,7 +19,7 @@ func (t *Tree) FindExact(interval Interval) (path []*Tree, found *Tree) {
 // current node during recursion.
 func (t *Tree) findExact(interval Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
 
-	if t.leafInterval == nil {
+	if t.interval == nil {
 		// non-leaf node
 		// try left
 		path := append(pathIn, t)
@@ -34,7 +34,7 @@ func (t *Tree) findExact(interval Interval, pathIn []*Tree) (pathOut []*Tree, fo
 	}
 
 	// leaf node
-	if t.leafInterval.Equal(interval) {
+	if t.interval.Equal(interval) {
 		return pathIn, t
 	}
 
@@ -43,7 +43,7 @@ func (t *Tree) findExact(interval Interval, pathIn []*Tree) (pathOut []*Tree, fo
 	// be inserted
 	if len(pathIn) > 0 {
 		parent := pathIn[len(pathIn)-1]
-		if interval.Start().Before(parent.End()) {
+		if interval.Start().Before(parent.treeEnd()) {
 			return pathIn, nil
 		}
 	}

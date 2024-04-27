@@ -10,11 +10,11 @@ func (t *Tree) mergeFree() {
 	// Recursive helper function to merge free intervals starting at a given node.
 	var mergeRecursive func(node *Tree)
 	mergeRecursive = func(node *Tree) {
-		if node.left != nil && node.right != nil && !node.left.interval().Busy() && !node.right.interval().Busy() {
+		if node.left != nil && node.right != nil && !node.left.busy() && !node.right.busy() {
 			// Merge the two free intervals.
-			leftStart := node.left.Start()
-			rightEnd := node.right.End()
-			node.leafInterval = NewInterval(leftStart, rightEnd, 0)
+			leftStart := node.left.treeStart()
+			rightEnd := node.right.treeEnd()
+			node.interval = NewInterval(leftStart, rightEnd, 0)
 			node.left = nil
 			node.right = nil
 		} else {

@@ -22,7 +22,7 @@ func (t *Tree) free(node *Tree) error {
 		return fmt.Errorf("cannot free node with children")
 	}
 	freeInterval := NewInterval(node.Start(), node.End(), 0)
-	node.leafInterval = freeInterval
+	node.interval = freeInterval
 	return nil
 }
 
