@@ -422,7 +422,7 @@ func TestFindExact(t *testing.T) {
 	// If the exact interval is not found, then the found node is nil
 	// and the parent node is the node where the interval would be
 	// inserted.  If the exact interval is in the root node, then the
-	// parent node is nil.
+	// parent node is nil.  If the tree is empty, then both nodes are nil.
 
 	dump(tree, "")
 
@@ -433,7 +433,47 @@ func TestFindExact(t *testing.T) {
 	expect := tree.right
 	Tassert(t, parent == expect, fmt.Sprintf("Expected %v, got %v", expect, parent))
 
+	// try finding an interval that is not in the tree
+	interval = newInterval("2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
+	found, parent = tree.FindExact(interval)
+	Tassert(t, found == nil, "Expected nil interval")
+	Tassert(t, parent != nil, "Expected non-nil parent")
+	expect = tree.right
+	Tassert(t, parent == expect, fmt.Sprintf("Expected %v, got %v", expect, parent))
+
 }
+
+// test merging free nodes
+func TestMergeFree(t *testing.T) {
+	tree := NewTree()
+
+	// split the root node into two free children
+	splitAt, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
+	Ck(err)
+	tree.leafInterval = nil
+	tree.left = &Tree{leafInterval: NewInterval(TreeStart, splitAt, 0).(*IntervalBase)}
+	tree.right = &Tree{leafInterval: NewInterval(splitAt, TreeEnd, 0).(*IntervalBase)}
+
+	// merge the free nodes
+	tree.mergeFree()
+
+	// check that the tree has one free interval
+	freeIntervals := tree.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
+	interval := freeIntervals[0]
+	Tassert(t, interval.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, interval.Start()))
+	Tassert(t, interval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, interval.End()))
+}
+
+/* deletion algorithm:
+
+- Find the exact interval in the tree
+- If the exact interval is not found, then return false
+- If the exact interval is found in a leaf node, then remove the node and clear the link in the parent
+- if either of the parent's children is a leaf node, then promote the child
+- starting with the node's grandparent, walk the tree, merging free nodes as necessary
+
+*/
 
 // test delete
 func TestDelete(t *testing.T) {
