@@ -1,5 +1,7 @@
 package timectl
 
+import "fmt"
+
 // Delete removes an interval from the tree and returns true if the interval was successfully removed.
 func (t *Tree) Delete(interval Interval) bool {
 	t.mu.Lock()
@@ -15,8 +17,13 @@ func (t *Tree) Delete(interval Interval) bool {
 	return t.delete(path, found)
 }
 
-func (t *Tree) free(path []*Tree, node *Tree) bool {
-	return false
+func (t *Tree) free(node *Tree) error {
+	if node.left != nil || node.right != nil {
+		return fmt.Errorf("cannot free node with children")
+	}
+	freeInterval := NewInterval(node.Start(), node.End(), 0)
+	node.leafInterval = freeInterval
+	return nil
 }
 
 // delete handles the actual deletion of the node.
