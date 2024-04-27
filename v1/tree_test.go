@@ -514,6 +514,28 @@ func TestInterface(t *testing.T) {
 
 }
 
+// test accumulator
+func TestAccumulator(t *testing.T) {
+	tree := NewTree()
+
+	// accumulator collects intervals in the tree that overlap the given
+	// interval.  The intervals are collected in order of start time.
+
+	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+
+	// create an interval from 9:15 to 10:15
+	i0915_1015 := newInterval("2024-01-01T09:15:00Z", "2024-01-01T10:15:00Z", 1)
+
+	// get the intervals that overlap the interval
+	intervals := tree.Accumulate(i0915_1015)
+
+	// check that we got the right number of intervals
+	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
+
+}
+
 // FindLowerPriority returns a contiguous set of nodes that have a
 // lower priority than the given priority.  The start time of the
 // first node is on or before minStart, and the end time of the last

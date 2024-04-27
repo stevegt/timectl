@@ -2,6 +2,8 @@ package timectl
 
 import (
 	"time"
+
+	. "github.com/stevegt/goadapt"
 )
 
 // FindLowerPriority searches for the first contiguous set of intervals with lower priority,
@@ -20,6 +22,9 @@ func (t *Tree) FindLowerPriority(first bool, minStart, maxEnd time.Time, duratio
 			return true // Base case: node is nil or we have enough duration.
 		}
 
+		Pf("accumulateIntervals: start=%v, end=%v, node.interval=%v, node.minStart=%v, node.maxEnd=%v, node.maxPriority=%v\n",
+			start, end, node.interval, node.minStart, node.maxEnd, node.maxPriority)
+
 		// if the node's minStart is completely after the search range, skip it.
 		if node.minStart.After(end) {
 			return false
@@ -31,7 +36,7 @@ func (t *Tree) FindLowerPriority(first bool, minStart, maxEnd time.Time, duratio
 		}
 
 		// if the node's maxPriority is not lower than the required
-		// priority, clear the accumulators and return false.
+		// priority, clear the accumulators and return false
 		if node.maxPriority >= priority {
 			sumDuration = 0
 			result = []Interval{}
@@ -50,7 +55,8 @@ func (t *Tree) FindLowerPriority(first bool, minStart, maxEnd time.Time, duratio
 		}
 
 		// Check this interval if it's within our search range and of lower priority.
-		if node.interval.Start().Before(end) && node.interval.End().After(start) && node.interval.Priority() < priority {
+		ckInterval := NewInterval(start, end, 0)
+		if ckInterval.Wraps(node.interval) && node.interval.Priority() < priority {
 			intervalDuration := node.interval.Duration()
 			sumDuration += intervalDuration
 			result = append(result, node.interval)
