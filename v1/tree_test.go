@@ -142,7 +142,7 @@ func verify(t *testing.T, tree *Tree) {
 		Assert(ok, "Failed to get caller")
 		msg := Spf("%v:%v %v\n", file, line, err)
 		Pl(msg)
-		showDot(tree, false)
+		// showDot(tree, false)
 		t.Fatal(msg)
 	}
 }
@@ -224,7 +224,7 @@ func TestRebalanceSimple(t *testing.T) {
 	err = insertExpect(tree, "rrrl", "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	// get the nodes
-	showDot(tree, false)
+	// showDot(tree, false)
 	// rebalance the tree
 	tree = tree.rebalance()
 

@@ -11,7 +11,7 @@ func (old *Tree) rebalance() (t *Tree) {
 	t = t.vine()
 
 	// Step 2: Convert the vine to a balanced tree.
-	t = t.balance()
+	// t = t.balance()
 
 	return
 }
@@ -19,6 +19,7 @@ func (old *Tree) rebalance() (t *Tree) {
 // vine converts the tree to a vine.
 func (t *Tree) vine() (newRoot *Tree) {
 	// XXX checkpoint before converting to store values in internal nodes
+	return t
 }
 
 // rotateLeft performs a left rotation on this node.

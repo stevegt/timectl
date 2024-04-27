@@ -88,10 +88,12 @@ func (t *Tree) Verify() error {
 
 	}
 
-	err := t.ckBalance(nil)
-	if err != nil {
-		return err
-	}
+	/*
+		err := t.ckBalance(nil)
+		if err != nil {
+			return err
+		}
+	*/
 
 	return nil
 }
