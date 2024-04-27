@@ -587,12 +587,19 @@ func TestDeleteSimple(t *testing.T) {
 	// find the node containing the interval
 	path, found := tree.FindExact(interval)
 
-	// delete the interval using the found node and path. The rm()
-	// function does not merge free nodes.  It unlinks the given node
-	// and promotes the node's sibling.  It returns true if the node
-	// was deleted, and false if the node was not found.
-	ok = tree.rm(path, found)
-	Tassert(t, ok, "Failed to delete interval")
+	// free the node at the given path. The free() function
+	// It replaces the interval in the node with a free interval
+	// that spans the same range.  It returns true if the node was
+	// found and freed, and false if the node was not found.
+	ok = tree.free(path, found)
+	Tassert(t, ok, "Failed to free interval")
+
+	// check that the interval is no longer in the tree
+	intervals := tree.BusyIntervals()
+	Tassert(t, len(intervals) == 0, "Expected 0 intervals, got %d", len(intervals))
+	// we haven't merged free nodes yet, so there should be two free nodes
+	freeIntervals := tree.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 2, "Expected 2 free intervals, got %d", len(freeIntervals))
 
 	/*
 		// delete the interval
