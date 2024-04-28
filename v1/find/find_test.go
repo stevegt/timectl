@@ -2,11 +2,14 @@ package find
 
 import (
 	"fmt"
+	"math/rand"
+	"testing"
+	"time"
+
 	"github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
 	"github.com/stevegt/timectl/tree"
-	"testing"
-	"time"
+	"github.com/stevegt/timectl/util"
 )
 
 func TestFindFree(t *testing.T) {
@@ -54,4 +57,71 @@ func TestFindFree(t *testing.T) {
 	goadapt.Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
 	tree.Verify(t, top)
+}
+
+func TestFindFreeMany(t *testing.T) {
+	// This test creates a tree with a number of random intervals and then
+	// finds free intervals of varying durations.
+	rand.Seed(1)
+	top := tree.NewTree()
+
+	// insert several random intervals
+	for i := 0; i < 10; i++ {
+		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
+		// ignore return value
+		tree.Insert(top, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
+	}
+
+	// Dump(tree, "")
+
+	// find a large number of free intervals of varying durations
+	for i := 0; i < 1000; i++ {
+		minStart := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+		maxEnd := minStart.Add(time.Duration(rand.Intn(1440)) * time.Minute)
+		duration := time.Duration(rand.Intn(60)+1) * time.Minute
+		first := rand.Intn(2) == 0
+		// t.Logf("minStart: %v, maxEnd: %v, duration: %v, first: %v", minStart, maxEnd, duration, first)
+		freeInterval := top.FindFree(first, minStart, maxEnd, duration)
+		if freeInterval == nil {
+			// sanity check -- try a bunch of times to see if we can find a free interval
+			for j := 0; j < 100; j++ {
+				start := util.MaxTime(minStart, time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC))
+				end := util.MinTime(maxEnd, start.Add(duration))
+				if end.Sub(start) < duration {
+					continue
+				}
+				ckInterval := interval.NewInterval(start, end, 1)
+				// t.Logf("Trying to find free interval: %v\n", ckInterval)
+				if top.Conflicts(ckInterval, false) == nil {
+					t.Logf("Found free interval: %v", ckInterval)
+					t.Logf("first: %v, minStart: %v, maxEnd: %v, duration: %v", first, minStart, maxEnd, duration)
+					for _, iv := range top.AllIntervals() {
+						t.Logf("%v", iv)
+					}
+					t.Fatalf("Expected conflict, got nil")
+				}
+			}
+			continue
+		}
+
+		if freeInterval.Duration() < duration {
+			t.Fatalf("Expected duration of at least %v, got %v", duration, freeInterval.Duration())
+		}
+
+		conflicts := top.Conflicts(freeInterval, false)
+		if conflicts != nil {
+			t.Logf("Free interval conflict: %v", freeInterval)
+			t.Logf("first: %v, minStart: %v, maxEnd: %v, duration: %v", first, minStart, maxEnd, duration)
+			for _, iv := range conflicts {
+				t.Logf("%v", iv)
+			}
+			tree.Dump(top, "")
+			t.Fatalf("Expected free interval, got conflict")
+		}
+
+	}
+
+	tree.Verify(t, top)
+
 }
