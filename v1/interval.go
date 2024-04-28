@@ -20,6 +20,10 @@ type Interval interface {
 	Intersection(other Interval) Interval
 	// Wraps returns true if the current interval completely contains the other interval.
 	Wraps(other Interval) bool
+	// Overlaps returns true if the current interval intersects with the given interval.
+	Overlaps(other Interval) bool
+	// OverlapsRange returns true if the current interval intersects with the given range.
+	OverlapsRange(start, end time.Time) bool
 	// Duration returns the duration of the interval.
 	Duration() time.Duration
 	// Busy returns true if the interval is associated with a payload.
@@ -188,4 +192,23 @@ func (i *IntervalBase) SetEnd(end time.Time) {
 // Clone returns a deep copy of the interval.
 func (i *IntervalBase) Clone() Interval {
 	return NewInterval(i.Start(), i.End(), i.Priority())
+}
+
+// Overlaps returns true if the current interval intersects with the given interval.
+func (i *IntervalBase) Overlaps(other Interval) bool {
+	if i.Start().Before(other.End()) && i.End().After(other.Start()) {
+		return true
+	}
+	if other.Start().Before(i.End()) && other.End().After(i.Start()) {
+		return true
+	}
+	return false
+}
+
+// OverlapsRange returns true if the current interval intersects with the given range.
+func (i *IntervalBase) OverlapsRange(start, end time.Time) bool {
+	if i.Start().Before(end) && i.End().After(start) {
+		return true
+	}
+	return false
 }

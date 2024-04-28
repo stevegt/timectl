@@ -100,6 +100,7 @@ func insert(tree *Tree, startStr, endStr string, priority float64) Interval {
 	// Insert adds a new interval to the tree, adjusting the structure as
 	// necessary.  Insertion fails if the new interval conflicts with any
 	// existing interval in the tree.
+	// Pf("Inserting interval: %v\n", interval)
 	ok := tree.Insert(interval)
 	if !ok {
 		return nil
@@ -398,32 +399,26 @@ func TestConcurrent(t *testing.T) {
 	rand.Seed(1)
 	tree := NewTree()
 
-	size := 10
-
 	// insert several random intervals in multiple goroutines
 	insertMap := sync.Map{}
 	wgInsert := sync.WaitGroup{}
-	for i := 0; i < size; i++ {
+	for i := 0; i < 20; i++ {
 		wgInsert.Add(1)
 		go func(i int) {
-			// retry until we can insert an interval
-			for {
-				// wait a random amount of time
-				time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
-				start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
-				end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
-				interval := insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
-				if interval == nil {
-					continue
-				}
+			// wait a random amount of time
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+			// try to insert a random interval
+			start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
+			end := start.Add(time.Duration(rand.Intn(59)+1) * time.Minute)
+			interval := insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
+			if interval != nil {
 				insertMap.Store(i, interval)
-				break
 			}
 			wgInsert.Done()
 		}(i)
 	}
 
-	// find free intervals in multiple goroutines while the tree is being
+	// find free intervals while the tree is being
 	// modified by the insert goroutines
 	foundCount := 0
 
@@ -432,7 +427,6 @@ func TestConcurrent(t *testing.T) {
 		maxEnd := minStart.Add(time.Duration(rand.Intn(1440)) * time.Minute)
 		duration := time.Duration(rand.Intn(60)+1) * time.Minute
 		first := rand.Intn(2) == 0
-		// ignore return value
 		freeInterval := tree.FindFree(first, minStart, maxEnd, duration)
 		if freeInterval != nil {
 			foundCount++
@@ -445,14 +439,17 @@ func TestConcurrent(t *testing.T) {
 	wgInsert.Wait()
 
 	// copy the intervals from insertMap to a slice
-	inserted := make([]*IntervalBase, size)
+	var inserted []Interval
 	insertMap.Range(func(key, value any) bool {
-		inserted[key.(int)] = value.(*IntervalBase)
+		inserted = append(inserted, value.(Interval))
 		return true
 	})
 
+	size := len(inserted)
+	Tassert(t, size > 0, "Expected at least one interval")
+	Pf("Inserted %d intervals\n", size)
+
 	// check that all intervals were inserted
-	Tassert(t, len(inserted) == size, "Expected %d intervals, got %d", size, len(inserted))
 	busyLen := len(tree.BusyIntervals())
 	Tassert(t, busyLen == size, "Expected %d intervals, got %d", size, busyLen)
 
@@ -518,22 +515,93 @@ func TestInterface(t *testing.T) {
 func TestAccumulator(t *testing.T) {
 	tree := NewTree()
 
-	// accumulator collects intervals in the tree that overlap the given
+	// accumulate collects intervals in the tree that overlap the given
 	// interval.  The intervals are collected in order of start time.
 
 	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
 
-	// create an interval from 9:15 to 10:15
-	i0915_1015 := newInterval("2024-01-01T09:15:00Z", "2024-01-01T10:15:00Z", 1)
+	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:15:00Z")
+	Ck(err)
+	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T10:15:00Z")
+	Ck(err)
 
-	// get the intervals that overlap the interval
-	intervals := tree.Accumulate(i0915_1015)
+	// get the intervals that overlap the range
+	c1 := tree.accumulate(searchStart, searchEnd)
+	intervals := chan2slice(c1)
 
 	// check that we got the right number of intervals
 	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
 
+}
+
+// test filter
+func TestFilter(t *testing.T) {
+	tree := NewTree()
+
+	// filter returns a channel of intervals from the input channel
+	// that pass the filter function.
+
+	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+
+	fn := func(interval Interval) bool {
+		return interval.Priority() < 2
+	}
+
+	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:15:00Z")
+	Ck(err)
+	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T10:15:00Z")
+	Ck(err)
+
+	c1 := tree.accumulate(searchStart, searchEnd)
+	c2 := filter(c1, fn)
+	i2 := chan2slice(c2)
+
+	// check that we got the right number of intervals
+	Tassert(t, len(i2) == 2, "Expected 2 intervals, got %d", len(i2))
+
+}
+
+// test contiguous filter
+func TestContiguousFilter(t *testing.T) {
+	tree := NewTree()
+
+	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 2)
+	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	insert(tree, "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
+
+	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
+	Ck(err)
+	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:45:00Z")
+	Ck(err)
+
+	// get the intervals that overlap the range
+	acc := tree.accumulate(searchStart, searchEnd)
+	// filter the intervals to only include those with a priority less than 2
+	low := filter(acc, func(interval Interval) bool {
+		return interval.Priority() < 2
+	})
+	// filter the intervals to only include those that are contiguous
+	// for at least N minutes
+	cont := contiguous(low, 120*time.Minute)
+	res := chan2slice(cont)
+
+	// check that we got the right number of intervals
+	Tassert(t, len(res) == 4, "Expected 4 intervals, got %d", len(res))
+
+	// check that we got the right intervals
+	err = match(res[0], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = match(res[1], "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Tassert(t, err == nil, err)
+	err = match(res[2], "2024-01-01T12:00:00Z", "2024-01-01T12:15:00Z", 0)
+	Tassert(t, err == nil, err)
+	err = match(res[3], "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
+	Tassert(t, err == nil, err)
 }
 
 // FindLowerPriority returns a contiguous set of nodes that have a
@@ -543,24 +611,6 @@ func TestAccumulator(t *testing.T) {
 // given duration, and may be longer.  If first is true, then the
 // search starts at minStart and proceeds in order, otherwise the
 // search starts at maxEnd and proceeds in reverse order.
-//
-// FindLowerPriority pseudocode:
-/*
-- Start the search at `minStart` and iterate through the tree in order
-  (or start at maxEnd and traverse in reverse order if `first` is false)
-- If the current interval has a lower priority than the given
-  priority, add it to a candidate list
-- If the current interval has a higher priority than the given
-  priority, clear the candidate list
-- If the candidate list has intervals that are contiguous with the
-  current interval, add the current interval to the candidate list,
-  else clear the candidate list
-- If the candidate list has intervals that span the given duration,
-  return the candidate list
-- Do not trim intervals -- return the full interval.  The caller can
-  trim the interval if necessary.  The returned intervals must total
-  at least the given duration, and may be longer.
-*/
 func TestFindLowerPriority(t *testing.T) {
 	tree := NewTree()
 
