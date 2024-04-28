@@ -21,8 +21,8 @@ func MaxTime(a, b time.Time) time.Time {
 	return b
 }
 
-// maxDuration returns the longer of two time.Duration values.
-func maxDuration(a, b time.Duration) time.Duration {
+// MaxDuration returns the longer of two time.Duration values.
+func MaxDuration(a, b time.Duration) time.Duration {
 	if a > b {
 		return a
 	}
