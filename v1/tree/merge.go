@@ -2,10 +2,8 @@ package tree
 
 import "github.com/stevegt/timectl/interval"
 
-// MergeFree merges adjacent free intervals in the tree.
-func (t *Tree) MergeFree() {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+// mergeFree merges adjacent free intervals in the tree.
+func (t *Tree) mergeFree() {
 
 	// Check for nil because this function could be called on a nil receiver due to defer in Tree operations.
 	if t == nil {

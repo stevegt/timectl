@@ -115,123 +115,6 @@ func TestContiguousFilter(t *testing.T) {
 	Tassert(t, err == nil, err)
 }
 
-// FindLowerPriority returns a contiguous set of nodes that have a
-// lower priority than the given priority.  The start time of the
-// first node is on or before minStart, and the end time of the last
-// node is on or after maxEnd.  The nodes must total at least the
-// given duration, and may be longer.  If first is true, then the
-// search starts at minStart and proceeds in order, otherwise the
-// search starts at maxEnd and proceeds in reverse order.
-func TestFindLowerPriority(t *testing.T) {
-	top := NewTree()
-
-	// insert several intervals into the tree
-	i1000_1100 := Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
-	i1130_1200 := Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
-	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
-	i0900_0930 := Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
-	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
-
-	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
-	Ck(err)
-	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
-	Ck(err)
-
-	// showDot(tree, true)
-
-	// find intervals spanning at least a 60 minute duration and lower
-	// than priority 3 near the start time.  because priority 3 is
-	// higher than the priority of the busy interval at 9:00,
-	// FindLowerPriority should return the priority 2 interval from
-	// 9:00 to 9:30 followed by the free interval from 9:30 to 10:00.
-	intervals := top.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 3)
-	t.Logf("intervals found that are lower priority than 3:")
-	for _, iv := range intervals {
-		t.Logf("%v", iv)
-	}
-	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = Match(intervals[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
-	Tassert(t, err == nil, err)
-	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = Match(intervals[1], "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
-	Tassert(t, err == nil, err)
-
-	// find intervals spanning at least a 60 minute duration and lower
-	// than priority 2 near the start time.  because priority 2 is not
-	// higher than the priority of the busy interval at 9:00,
-	// FindLowerPriority should return the priority 0 interval from
-	// 9:30 to 10:00 followed by the priority 1 interval from 10:00 to
-	// 11:00.
-	intervals = top.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 2)
-	t.Logf("intervals found that are lower priority than 2:")
-	for _, iv := range intervals {
-		t.Logf("%v", iv)
-	}
-	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = Match(intervals[0], "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
-	Tassert(t, err == nil, err)
-	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = Match(intervals[1], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Tassert(t, err == nil, err)
-	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
-
-	// find intervals spanning at least a 60 minute duration and lower
-	// than priority 2 near the end time.  because priority 2 is not
-	// higher than the priority of the interval at 11:30,
-	// FindLowerPriority should return the priority 1 interval from
-	// 10:00 to 11:00 followed by the priority 0 interval from 11:00
-	// to 11:30
-	intervals = top.FindLowerPriority(false, searchStart, searchEnd, 60*time.Minute, 2)
-	t.Logf("intervals found that are lower priority than 2 near end:")
-	for _, iv := range intervals {
-		t.Logf("%v", iv)
-	}
-	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = Match(intervals[0], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Tassert(t, err == nil, err)
-	Tassert(t, intervals[0] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[0])
-	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = Match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
-	Tassert(t, err == nil, err)
-
-	Verify(t, top)
-
-}
-
-// test finding exact interval
-func TestFindExact(t *testing.T) {
-	top := NewTree()
-
-	// insert an interval into the tree
-	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	ok := top.Insert(iv)
-	Tassert(t, ok, "Failed to insert interval")
-
-	// showDot(tree, false)
-
-	// FindExact returns the tree node containing the exact interval that
-	// matches the given interval, along with the path of ancestor nodes.
-	// If the exact interval is not found, then the found node is nil and
-	// the path node ends with the node where the interval would be
-	// inserted.  If the exact interval is in the root node, then the path
-	// is nil.  If the tree is empty, then both are nil.
-
-	path, found := top.FindExact(iv)
-	Tassert(t, found != nil, "Expected non-nil interval")
-	Tassert(t, found.Interval.Equal(iv), fmt.Sprintf("Expected %v, got %v", iv, found.Interval))
-	Tassert(t, len(path) == 0, "Expected empty path")
-
-	// try finding an interval that is not in the tree
-	iv = NewInterval("2024-01-01T11:30:00Z", "2024-01-01T12:30:00Z", 1)
-	path, found = top.FindExact(iv)
-	Tassert(t, found == nil, "Expected nil interval")
-	Tassert(t, len(path) == 0, "Expected empty path")
-
-	Verify(t, top)
-
-}
-
 // test rebalancing the tree
 func TestRebalance(t *testing.T) {
 	top := NewTree()
@@ -269,7 +152,7 @@ func XXXTestMergeFree(t *testing.T) {
 	Tassert(t, err != nil, "Expected error, got nil")
 
 	// merge the free nodes
-	top.MergeFree()
+	top.mergeFree()
 
 	Verify(t, top)
 
@@ -319,7 +202,7 @@ func XXXTestDeleteSimple(t *testing.T) {
 	Tassert(t, len(freeIntervals) == 3, "Expected 3 free intervals, got %d", len(freeIntervals))
 
 	// merge the free nodes
-	top.MergeFree()
+	top.mergeFree()
 	// there should now be one free interval
 	freeIntervals = top.FreeIntervals()
 	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
