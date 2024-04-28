@@ -55,7 +55,7 @@ func TestFindFree(t *testing.T) {
 	expectInterval = interval.NewInterval(expectStart, expectEnd, 0)
 	goadapt.Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 }
 
 func TestFindFreeMany(t *testing.T) {
@@ -121,7 +121,7 @@ func TestFindFreeMany(t *testing.T) {
 
 	}
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 
 }
 
@@ -154,7 +154,7 @@ func TestFindExact(t *testing.T) {
 	goadapt.Tassert(t, found == nil, "Expected nil interval")
 	goadapt.Tassert(t, len(path) == 0, "Expected empty path")
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 
 }
 
@@ -238,6 +238,6 @@ func TestFindLowerPriority(t *testing.T) {
 	err = tree.Match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	goadapt.Tassert(t, err == nil, err)
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 
 }

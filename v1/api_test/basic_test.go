@@ -21,7 +21,7 @@ func TestTreeStructure(t *testing.T) {
 	err = tree.Expect(top, "r", "2024-01-01T11:00:00Z", tree.TreeEndStr, 0)
 	goadapt.Tassert(t, err == nil, err)
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 }
 
 // TestInsertConflict tests inserting an interval that conflicts with
@@ -38,7 +38,7 @@ func TestInsertConflict(t *testing.T) {
 	interval := tree.Insert(top, "2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
 	goadapt.Tassert(t, interval == nil, "Expected nil interval")
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 
 }
 
@@ -67,6 +67,6 @@ func TestConflicts(t *testing.T) {
 	goadapt.Tassert(t, intervals[1].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, intervals[1]))
 	goadapt.Tassert(t, intervals[2].Equal(i1130_1200), fmt.Sprintf("Expected %v, got %v", i1130_1200, intervals[2]))
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 
 }

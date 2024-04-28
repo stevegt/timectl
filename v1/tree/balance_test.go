@@ -30,7 +30,7 @@ func TestRotate(t *testing.T) {
 
 	// showDot(tree, false)
 
-	Verify(t, top)
+	Verify(t, top, false)
 }
 
 // test rebalancing the tree
@@ -64,6 +64,6 @@ func TestRebalanceSimple(t *testing.T) {
 	// rebalance the tree
 	top = top.rebalance()
 
-	Verify(t, top)
+	Verify(t, top, false)
 
 }

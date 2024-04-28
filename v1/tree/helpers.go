@@ -123,7 +123,7 @@ func SaveDot(tree *Tree) {
 
 // Verify is a test helper function that verifies the tree.  If
 // there is an error, it shows the tree as a dot file.
-func Verify(t *testing.T, tree *Tree) {
+func Verify(t *testing.T, tree *Tree, show bool) {
 	err := tree.Verify()
 	if err != nil {
 		// get caller's file and line number
@@ -131,7 +131,9 @@ func Verify(t *testing.T, tree *Tree) {
 		Assert(ok, "Failed to get caller")
 		msg := Spf("%v:%v %v\n", file, line, err)
 		Pl(msg)
-		showDot(tree, false)
+		if show {
+			showDot(tree, false)
+		}
 		t.Fatal(msg)
 	}
 }

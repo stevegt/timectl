@@ -426,3 +426,45 @@ func showDot(tree *Tree, bg bool) {
 	}
 	cmd.Run()
 }
+
+// rotateLeft performs a Left rotation on this node.
+func (t *Tree) rotateLeft() (newRoot *Tree) {
+	newRoot = t.Right
+	newLeftRight := t.Right.Left
+	newRoot.Left = t
+	newRoot.Left.Right = newLeftRight
+	newRoot.Left.setMinMax()
+	newRoot.Right.setMinMax()
+	newRoot.setMinMax()
+	return
+}
+
+// rotateRight performs a Right rotation on this node.
+func (t *Tree) rotateRight() (newRoot *Tree) {
+	newRoot = t.Left
+	newRightLeft := t.Left.Right
+	newRoot.Right = t
+	newRoot.Right.Left = newRightLeft
+	newRoot.Left.setMinMax()
+	newRoot.Right.setMinMax()
+	newRoot.setMinMax()
+	return
+}
+
+// setMinMax updates the minimum and maximum values of this node.
+func (t *Tree) setMinMax() {
+	if t == nil {
+		return
+	}
+	if t.Left == nil {
+		t.MinStart = t.Interval.Start()
+	} else {
+		t.MinStart = t.Left.MinStart
+	}
+	if t.Right == nil {
+		t.MaxEnd = t.Interval.End()
+	} else {
+		t.MaxEnd = t.Right.MaxEnd
+	}
+	t.setMaxPriority()
+}

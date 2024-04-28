@@ -28,7 +28,7 @@ func XXXTestMergeFree(t *testing.T) {
 	// merge the free nodes
 	top.mergeFree()
 
-	Verify(t, top)
+	Verify(t, top, false)
 
 	// check that the tree has one free interval
 	freeIntervals := top.FreeIntervals()
@@ -84,7 +84,7 @@ func XXXTestDeleteSimple(t *testing.T) {
 	Tassert(t, freeInterval.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, freeInterval.Start()))
 	Tassert(t, freeInterval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, freeInterval.End()))
 
-	Verify(t, top)
+	Verify(t, top, false)
 
 	/*
 		// delete is simply a process of finding and freeing the target

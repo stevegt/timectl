@@ -130,7 +130,7 @@ func TestRebalance(t *testing.T) {
 	err := top.Verify()
 	Tassert(t, err == nil, err)
 
-	Verify(t, top)
+	Verify(t, top, false)
 
 }
 

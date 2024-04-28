@@ -52,6 +52,6 @@ func TestInterface(t *testing.T) {
 	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
 	Tassert(t, intervals[1].Equal(iv), fmt.Sprintf("Expected %v, got %v", iv, intervals[1]))
 
-	tree.Verify(t, top)
+	tree.Verify(t, top, false)
 
 }
