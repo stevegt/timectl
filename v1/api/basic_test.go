@@ -1,4 +1,4 @@
-package basic
+package api
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func TestTreeStructure(t *testing.T) {
 }
 
 // TestInsertConflict tests inserting an interval that conflicts with
-// an existing interval in the tree.
+// an existing interval in the
 func TestInsertConflict(t *testing.T) {
 
 	top := tree.NewTree()

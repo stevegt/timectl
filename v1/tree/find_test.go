@@ -1,4 +1,4 @@
-package find
+package tree
 
 import (
 	"fmt"
@@ -8,18 +8,17 @@ import (
 
 	"github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
-	"github.com/stevegt/timectl/tree"
 	"github.com/stevegt/timectl/util"
 )
 
 func TestFindFree(t *testing.T) {
-	top := tree.NewTree()
+	top := NewTree()
 
 	// insert an interval into the tree -- this should become the left
 	// child of the right child of the root node
-	tree.Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	tree.Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	tree.Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
 	goadapt.Ck(err)
@@ -56,21 +55,21 @@ func TestFindFree(t *testing.T) {
 	expectInterval = interval.NewInterval(expectStart, expectEnd, 0)
 	goadapt.Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
-	tree.Verify(t, top)
+	Verify(t, top)
 }
 
 func TestFindFreeMany(t *testing.T) {
 	// This test creates a tree with a number of random intervals and then
 	// finds free intervals of varying durations.
 	rand.Seed(1)
-	top := tree.NewTree()
+	top := NewTree()
 
 	// insert several random intervals
 	for i := 0; i < 10; i++ {
 		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
 		// ignore return value
-		tree.Insert(top, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
+		Insert(top, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
 	}
 
 	// Dump(tree, "")
@@ -116,12 +115,12 @@ func TestFindFreeMany(t *testing.T) {
 			for _, iv := range conflicts {
 				t.Logf("%v", iv)
 			}
-			tree.Dump(top, "")
+			Dump(top, "")
 			t.Fatalf("Expected free interval, got conflict")
 		}
 
 	}
 
-	tree.Verify(t, top)
+	Verify(t, top)
 
 }
