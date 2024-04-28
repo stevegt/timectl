@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/reugn/async"
 
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
@@ -42,7 +43,7 @@ type Tree struct {
 	// rooted at this node
 	MaxPriority float64
 
-	Mu sync.RWMutex
+	Mu async.ReentrantLock
 }
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
@@ -146,8 +147,8 @@ func (t *Tree) setMaxPriority() {
 
 // BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
 func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	for _, i := range t.allIntervals() {
 		if i.Busy() {
 			intervals = append(intervals, i)
@@ -158,8 +159,8 @@ func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
 
 // AllIntervals returns a slice of all intervals in all leaf nodes of the tree.
 func (t *Tree) AllIntervals() []interval.Interval {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	return t.allIntervals()
 }
 
@@ -178,8 +179,8 @@ func (t *Tree) allIntervals() []interval.Interval {
 
 // Busy returns true if any interval in the tree is busy.
 func (t *Tree) Busy() bool {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	return t.busy()
 }
 
@@ -199,15 +200,15 @@ func (t *Tree) busy() bool {
 
 // Start returns the start time of the interval in the node.
 func (t *Tree) Start() time.Time {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	return t.Interval.Start()
 }
 
 // End returns the end time of the interval in the node.
 func (t *Tree) End() time.Time {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	return t.Interval.End()
 }
 
@@ -215,8 +216,8 @@ func (t *Tree) End() time.Time {
 // If includeFree is true, then this function returns all intervals that conflict with the given
 // interval, otherwise it returns only busy intervals.
 func (t *Tree) Conflicts(interval interval.Interval, includeFree bool) []interval.Interval {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	return t.conflicts(interval, includeFree)
 }
 
@@ -248,8 +249,8 @@ func (t *Tree) conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 // following the left child first if first is set, otherwise following
 // the right child first.
 func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.Interval) {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
@@ -302,8 +303,8 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 
 // FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
 func (t *Tree) FreeIntervals() (intervals []interval.Interval) {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	for _, i := range t.allIntervals() {
 		if !i.Busy() {
 			intervals = append(intervals, i)

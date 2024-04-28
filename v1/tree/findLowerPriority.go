@@ -39,8 +39,8 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 }
 
 func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []interval.Interval {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
 	result := []interval.Interval{} // To store the final slice of intervals.
 	var sumDuration time.Duration   // To sum up durations of found intervals.

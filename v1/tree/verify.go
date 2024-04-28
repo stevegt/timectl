@@ -11,8 +11,8 @@ import (
 // that all nodes and intervals are correctly placed within the tree
 // according to the interval tree properties.
 func (t *Tree) Verify() error {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
 	// the interval should not be nil
 	if t.Interval == nil {

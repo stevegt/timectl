@@ -12,8 +12,8 @@ import (
 // are both nil.  If the exact interval is in the root node, then the
 // Muth is nil.
 func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree) {
-	t.Mu.RLock()
-	defer t.Mu.RUnlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 	return t.findExact(interval, nil)
 }
 
