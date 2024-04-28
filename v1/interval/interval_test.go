@@ -1,4 +1,4 @@
-package timectl
+package interval
 
 import (
 	"testing"

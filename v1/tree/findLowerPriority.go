@@ -4,6 +4,7 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
+	"github.com/stevegt/timectl/interval"
 )
 
 // FindLowerPriority returns a contiguous set of nodes that have a
@@ -13,15 +14,15 @@ import (
 // given duration, and may be longer.  If first is true, then the
 // search starts at minStart and proceeds in order, otherwise the
 // search starts at maxEnd and proceeds in reverse order.
-func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []Interval {
+func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []interval.Interval {
 	// get the intervals that overlap the range
 	acc := t.accumulate(searchStart, searchEnd)
 	// filter the intervals to only include those with a priority less
 	// than priority
-	low := filter(acc, func(interval Interval) bool {
+	low := filter(acc, func(interval interval.Interval) bool {
 		return interval.Priority() < priority
 	})
-	var ordered <-chan Interval
+	var ordered <-chan interval.Interval
 	if first {
 		ordered = low
 	} else {
@@ -37,12 +38,12 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	return res
 }
 
-func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []Interval {
+func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []interval.Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	result := []Interval{}        // To store the final slice of intervals.
-	var sumDuration time.Duration // To sum up durations of found intervals.
+	result := []interval.Interval{} // To store the final slice of intervals.
+	var sumDuration time.Duration   // To sum up durations of found intervals.
 
 	// A helper function to accumulate intervals of lower priority.
 	var accumulateIntervals func(node *Tree, start time.Time, end time.Time) bool
@@ -68,7 +69,7 @@ func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, dura
 		// priority, clear the accumulators and return false
 		if node.maxPriority >= priority {
 			sumDuration = 0
-			result = []Interval{}
+			result = []interval.Interval{}
 			return false
 		}
 
@@ -84,7 +85,7 @@ func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, dura
 		}
 
 		// Check this interval if it's within our search range and of lower priority.
-		ckInterval := NewInterval(start, end, 0)
+		ckInterval := interval.NewInterval(start, end, 0)
 		if ckInterval.Wraps(node.interval) && node.interval.Priority() < priority {
 			intervalDuration := node.interval.Duration()
 			sumDuration += intervalDuration
@@ -103,7 +104,7 @@ func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, dura
 	accumulateIntervals(t, minStart, maxEnd)
 
 	if sumDuration < duration { // Check if we didn't find enough duration.
-		return []Interval{} // Return an empty slice in case of failure.
+		return []interval.Interval{} // Return an empty slice in case of failure.
 	}
 
 	// Reverse the slice if we were searching from the end to keep intervals in chronological order.
@@ -120,10 +121,10 @@ func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, dura
 // accumulate returns a channel of intervals in the tree that overlap the
 // given range of start and end times. The intervals are returned in order
 // of start time.
-func (t *Tree) accumulate(start, end time.Time) (out <-chan Interval) {
+func (t *Tree) accumulate(start, end time.Time) (out <-chan interval.Interval) {
 
 	// filter function to check if an interval overlaps the given range.
-	filterFn := func(i Interval) bool {
+	filterFn := func(i interval.Interval) bool {
 		return i.OverlapsRange(start, end)
 	}
 
@@ -136,8 +137,8 @@ func (t *Tree) accumulate(start, end time.Time) (out <-chan Interval) {
 }
 
 // slice2chan converts a slice of intervals to a channel of intervals.
-func slice2chan(intervals []Interval) <-chan Interval {
-	ch := make(chan Interval)
+func slice2chan(intervals []interval.Interval) <-chan interval.Interval {
+	ch := make(chan interval.Interval)
 	go func() {
 		for _, i := range intervals {
 			ch <- i
@@ -148,8 +149,8 @@ func slice2chan(intervals []Interval) <-chan Interval {
 }
 
 // chan2slice converts a channel of intervals to a slice of intervals.
-func chan2slice(ch <-chan Interval) []Interval {
-	intervals := []Interval{}
+func chan2slice(ch <-chan interval.Interval) []interval.Interval {
+	intervals := []interval.Interval{}
 	for i := range ch {
 		intervals = append(intervals, i)
 	}
@@ -158,8 +159,8 @@ func chan2slice(ch <-chan Interval) []Interval {
 
 // filter filters intervals from a channel of intervals based on a
 // filter function and returns a channel of intervals.
-func filter(ch <-chan Interval, filterFn func(Interval) bool) <-chan Interval {
-	out := make(chan Interval)
+func filter(ch <-chan interval.Interval, filterFn func(interval.Interval) bool) <-chan interval.Interval {
+	out := make(chan interval.Interval)
 	go func() {
 		for i := range ch {
 			if filterFn(i) {
@@ -176,11 +177,11 @@ func filter(ch <-chan Interval, filterFn func(Interval) bool) <-chan Interval {
 // least the given duration.  The intervals may be provided in
 // either forward or reverse order, and will be returned in the
 // order they are provided.
-func contiguous(ch <-chan Interval, duration time.Duration) <-chan Interval {
-	out := make(chan Interval)
+func contiguous(ch <-chan interval.Interval, duration time.Duration) <-chan interval.Interval {
+	out := make(chan interval.Interval)
 	go func() {
 		var sum time.Duration
-		var intervals []Interval
+		var intervals []interval.Interval
 		for i := range ch {
 			if len(intervals) == 0 {
 				intervals = append(intervals, i)
@@ -200,7 +201,7 @@ func contiguous(ch <-chan Interval, duration time.Duration) <-chan Interval {
 					return
 				}
 			} else {
-				intervals = []Interval{i}
+				intervals = []interval.Interval{i}
 				sum = i.Duration()
 			}
 		}
@@ -210,10 +211,10 @@ func contiguous(ch <-chan Interval, duration time.Duration) <-chan Interval {
 }
 
 // reverse reverses the order of intervals in a channel of intervals.
-func reverse(ch <-chan Interval) <-chan Interval {
-	out := make(chan Interval)
+func reverse(ch <-chan interval.Interval) <-chan interval.Interval {
+	out := make(chan interval.Interval)
 	go func() {
-		intervals := []Interval{}
+		intervals := []interval.Interval{}
 		for i := range ch {
 			intervals = append(intervals, i)
 		}

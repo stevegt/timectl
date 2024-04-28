@@ -2,6 +2,8 @@ package timectl
 
 import (
 	"fmt" // Import the fmt package to use for formatting errors.
+
+	"github.com/stevegt/timectl/util"
 	// . "github.com/stevegt/goadapt"
 )
 
@@ -65,7 +67,7 @@ func (t *Tree) Verify() error {
 		//   of its start time and the start time of its left child
 		expectMinStart := node.minStart
 		if node.left != nil {
-			gotMinStart := MinTime(start, node.left.minStart)
+			gotMinStart := util.MinTime(start, node.left.minStart)
 			if !expectMinStart.Equal(gotMinStart) {
 				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", path)
 			}
@@ -79,7 +81,7 @@ func (t *Tree) Verify() error {
 		//   of its end time and the end time of its right child
 		expectMaxEnd := node.maxEnd
 		if node.right != nil {
-			gotMaxEnd := MaxTime(end, node.right.maxEnd)
+			gotMaxEnd := util.MaxTime(end, node.right.maxEnd)
 			if !expectMaxEnd.Equal(gotMaxEnd) {
 				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", path)
 			}

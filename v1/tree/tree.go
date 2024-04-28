@@ -8,6 +8,8 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
+	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/util"
 )
 
 // TreeStart is the minimum time value that can be represented by a Tree node.
@@ -24,7 +26,7 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
 // Tree represents a node in an interval tree.
 type Tree struct {
-	interval Interval
+	interval interval.Interval
 	left     *Tree // Pointer to the left child
 	right    *Tree // Pointer to the right child
 
@@ -45,11 +47,11 @@ type Tree struct {
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Tree {
-	return newTreeFromInterval(NewInterval(TreeStart, TreeEnd, 0))
+	return newTreeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
 }
 
 // newTreeFromInterval creates and returns a new Tree node containing the given interval.
-func newTreeFromInterval(interval Interval) *Tree {
+func newTreeFromInterval(interval interval.Interval) *Tree {
 	return &Tree{
 		interval:    interval,
 		minStart:    interval.Start(),
@@ -61,14 +63,14 @@ func newTreeFromInterval(interval Interval) *Tree {
 // Insert adds a new interval to the tree, adjusting the structure as
 // necessary.  Insertion fails if the new interval conflicts with any
 // existing interval in the tree.  The new interval must be busy.
-func (t *Tree) Insert(newInterval Interval) bool {
+func (t *Tree) Insert(newInterval interval.Interval) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.insert(newInterval)
 }
 
 // insert is a non-threadsafe version of Insert for internal use.
-func (t *Tree) insert(newInterval Interval) (ok bool) {
+func (t *Tree) insert(newInterval interval.Interval) (ok bool) {
 
 	if !newInterval.Busy() {
 		// XXX return a meaningful error
@@ -142,32 +144,8 @@ func (t *Tree) setMaxPriority() {
 	}
 }
 
-// MinTime returns the earlier of two time.Time values.
-func MinTime(a, b time.Time) time.Time {
-	if a.Before(b) {
-		return a
-	}
-	return b
-}
-
-// MaxTime returns the later of two time.Time values.
-func MaxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
-	}
-	return b
-}
-
-// maxDuration returns the longer of two time.Duration values.
-func maxDuration(a, b time.Duration) time.Duration {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
-func (t *Tree) BusyIntervals() (intervals []Interval) {
+func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	for _, i := range t.allIntervals() {
@@ -179,15 +157,15 @@ func (t *Tree) BusyIntervals() (intervals []Interval) {
 }
 
 // AllIntervals returns a slice of all intervals in all leaf nodes of the tree.
-func (t *Tree) AllIntervals() []Interval {
+func (t *Tree) AllIntervals() []interval.Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.allIntervals()
 }
 
 // allIntervals is a non-threadsafe version of AllIntervals for internal use.
-func (t *Tree) allIntervals() []Interval {
-	var intervals []Interval
+func (t *Tree) allIntervals() []interval.Interval {
+	var intervals []interval.Interval
 	if t.left != nil {
 		intervals = append(intervals, t.left.AllIntervals()...)
 	}
@@ -236,7 +214,7 @@ func (t *Tree) End() time.Time {
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
 // If includeFree is true, then this function returns all intervals that conflict with the given
 // interval, otherwise it returns only busy intervals.
-func (t *Tree) Conflicts(interval Interval, includeFree bool) []Interval {
+func (t *Tree) Conflicts(interval interval.Interval, includeFree bool) []interval.Interval {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.conflicts(interval, includeFree)
@@ -246,16 +224,16 @@ func (t *Tree) Conflicts(interval Interval, includeFree bool) []Interval {
 // use.  If includeFree is true, then this function returns all
 // intervals that conflict with the given interval, otherwise it
 // returns only busy intervals.
-func (t *Tree) conflicts(interval Interval, includeFree bool) []Interval {
-	var conflicts []Interval
-	if t.interval != nil && t.interval.Conflicts(interval, includeFree) {
+func (t *Tree) conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
+	var conflicts []interval.Interval
+	if t.interval != nil && t.interval.Conflicts(iv, includeFree) {
 		conflicts = append(conflicts, t.interval)
 	} else {
 		if t.left != nil {
-			conflicts = append(conflicts, t.left.conflicts(interval, includeFree)...)
+			conflicts = append(conflicts, t.left.conflicts(iv, includeFree)...)
 		}
 		if t.right != nil {
-			conflicts = append(conflicts, t.right.conflicts(interval, includeFree)...)
+			conflicts = append(conflicts, t.right.conflicts(iv, includeFree)...)
 		}
 	}
 	return conflicts
@@ -269,15 +247,15 @@ func (t *Tree) conflicts(interval Interval, includeFree bool) []Interval {
 // This function works by walking the tree in a depth-first manner,
 // following the left child first if first is set, otherwise following
 // the right child first.
-func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free Interval) {
+func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.Interval) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
 	if !t.Busy() {
-		start := MaxTime(minStart, t.minStart)
-		end := MinTime(t.maxEnd, maxEnd)
+		start := util.MaxTime(minStart, t.minStart)
+		end := util.MinTime(t.maxEnd, maxEnd)
 		sub := subInterval(first, start, end, duration)
 		return sub
 	}
@@ -294,8 +272,8 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		if child == nil {
 			continue
 		}
-		start = MaxTime(minStart, child.minStart)
-		end = MinTime(child.maxEnd, maxEnd)
+		start = util.MaxTime(minStart, child.minStart)
+		end = util.MinTime(child.maxEnd, maxEnd)
 		slot := child.FindFree(first, start, end, duration)
 		if slot != nil {
 			return slot
@@ -312,14 +290,14 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 // minStart and maxEnd times are inclusive. The duration is exclusive.
 // If the duration is longer than the time between minStart and maxEnd,
 // then this function returns nil.
-func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration) Interval {
+func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration) interval.Interval {
 	if maxEnd.Sub(minStart) < duration {
 		return nil
 	}
 	if first {
-		return NewInterval(minStart, minStart.Add(duration), 0)
+		return interval.NewInterval(minStart, minStart.Add(duration), 0)
 	}
-	return NewInterval(maxEnd.Add(-duration), maxEnd, 0)
+	return interval.NewInterval(maxEnd.Add(-duration), maxEnd, 0)
 }
 
 // dump is a helper function that prints the tree structure to
@@ -336,7 +314,7 @@ func dump(tree *Tree, path string) {
 }
 
 // FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
-func (t *Tree) FreeIntervals() (intervals []Interval) {
+func (t *Tree) FreeIntervals() (intervals []interval.Interval) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	for _, i := range t.allIntervals() {

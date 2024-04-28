@@ -1,5 +1,7 @@
 package timectl
 
+import "github.com/stevegt/timectl/interval"
+
 // mergeFree merges adjacent free intervals in the tree.
 func (t *Tree) mergeFree() {
 	// Check for nil because this function could be called on a nil receiver due to defer in Tree operations.
@@ -14,7 +16,7 @@ func (t *Tree) mergeFree() {
 			// Merge the two free intervals.
 			leftStart := node.left.minStart
 			rightEnd := node.right.maxEnd
-			node.interval = NewInterval(leftStart, rightEnd, 0)
+			node.interval = interval.NewInterval(leftStart, rightEnd, 0)
 			node.left = nil
 			node.right = nil
 		} else {

@@ -1,8 +1,10 @@
-package timectl
+package interval
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/stevegt/timectl/util"
 	// . "github.com/stevegt/goadapt"
 )
 
@@ -171,8 +173,8 @@ func (i *IntervalBase) Priority() float64 {
 // intervals.  The intersection is the interval that overlaps both
 // intervals.
 func (i *IntervalBase) Intersection(other Interval) Interval {
-	start := MaxTime(i.Start(), other.Start())
-	end := MinTime(i.End(), other.End())
+	start := util.MaxTime(i.Start(), other.Start())
+	end := util.MinTime(i.End(), other.End())
 	if start.Before(end) {
 		return NewInterval(start, end, 0)
 	}

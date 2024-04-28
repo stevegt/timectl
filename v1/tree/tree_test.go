@@ -11,6 +11,8 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
+	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/util"
 )
 
 // Tree is an interval tree that stores intervals and allows for fast
@@ -66,7 +68,7 @@ func expect(tree *Tree, pathStr, startStr, endStr string, priority float64) erro
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
-	ev := NewInterval(start, end, priority)
+	ev := interval.NewInterval(start, end, priority)
 	if !node.interval.Equal(ev) {
 		return fmt.Errorf("Expected %v, got %v", ev, node.interval)
 	}
@@ -85,17 +87,17 @@ func insertExpect(tree *Tree, pathStr, startStr, endStr string, priority float64
 
 // newInterval is a test helper function that creates a new interval
 // with the given start and end times and priority content.
-func newInterval(startStr, endStr string, priority float64) Interval {
+func newInterval(startStr, endStr string, priority float64) interval.Interval {
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
-	return NewInterval(start, end, priority)
+	return interval.NewInterval(start, end, priority)
 }
 
 // insert is a test helper function that inserts an interval into the
 // tree and returns the interval that was inserted.
-func insert(tree *Tree, startStr, endStr string, priority float64) Interval {
+func insert(tree *Tree, startStr, endStr string, priority float64) interval.Interval {
 	interval := newInterval(startStr, endStr, priority)
 	// Insert adds a new interval to the tree, adjusting the structure as
 	// necessary.  Insertion fails if the new interval conflicts with any
@@ -110,14 +112,14 @@ func insert(tree *Tree, startStr, endStr string, priority float64) Interval {
 
 // match is a test helper function that checks if the given interval
 // has the expected start and end times and priority.
-func match(interval Interval, startStr, endStr string, priority float64) error {
+func match(iv interval.Interval, startStr, endStr string, priority float64) error {
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
-	ev := NewInterval(start, end, priority)
-	if !interval.Equal(ev) {
-		return fmt.Errorf("Expected %v, got %v", ev, interval)
+	ev := interval.NewInterval(start, end, priority)
+	if !iv.Equal(ev) {
+		return fmt.Errorf("Expected %v, got %v", ev, iv)
 	}
 	return nil
 }
@@ -309,7 +311,7 @@ func TestFindFree(t *testing.T) {
 	Ck(err)
 	expectEnd, err := time.Parse(time.RFC3339, "2024-01-01T10:00:00Z")
 	Ck(err)
-	expectInterval := NewInterval(expectStart, expectEnd, 0)
+	expectInterval := interval.NewInterval(expectStart, expectEnd, 0)
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
 	// find the last free interval that is at least 30 minutes long
@@ -319,7 +321,7 @@ func TestFindFree(t *testing.T) {
 	Ck(err)
 	expectEnd, err = time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
 	Ck(err)
-	expectInterval = NewInterval(expectStart, expectEnd, 0)
+	expectInterval = interval.NewInterval(expectStart, expectEnd, 0)
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
 	verify(t, tree)
@@ -352,12 +354,12 @@ func TestFindFreeMany(t *testing.T) {
 		if freeInterval == nil {
 			// sanity check -- try a bunch of times to see if we can find a free interval
 			for j := 0; j < 100; j++ {
-				start := MaxTime(minStart, time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC))
-				end := MinTime(maxEnd, start.Add(duration))
+				start := util.MaxTime(minStart, time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC))
+				end := util.MinTime(maxEnd, start.Add(duration))
 				if end.Sub(start) < duration {
 					continue
 				}
-				ckInterval := NewInterval(start, end, 1)
+				ckInterval := interval.NewInterval(start, end, 1)
 				// t.Logf("Trying to find free interval: %v\n", ckInterval)
 				if tree.Conflicts(ckInterval, false) == nil {
 					t.Logf("Found free interval: %v", ckInterval)
@@ -439,9 +441,9 @@ func TestConcurrent(t *testing.T) {
 	wgInsert.Wait()
 
 	// copy the intervals from insertMap to a slice
-	var inserted []Interval
+	var inserted []interval.Interval
 	insertMap.Range(func(key, value any) bool {
-		inserted = append(inserted, value.(Interval))
+		inserted = append(inserted, value.(interval.Interval))
 		return true
 	})
 
@@ -465,21 +467,21 @@ func TestConcurrent(t *testing.T) {
 
 }
 
-// ConcreteInterval tests the Interval interface and IntervalBase type.
+// ConcreteInterval tests the interval.Interval interface and interval.IntervalBase type.
 type ConcreteInterval struct {
-	*IntervalBase
+	*interval.IntervalBase
 }
 
 func NewConcreteInterval(start, end time.Time, priority float64) *ConcreteInterval {
 	interval := &ConcreteInterval{
-		IntervalBase: NewInterval(start, end, priority).(*IntervalBase),
+		IntervalBase: interval.NewInterval(start, end, priority).(*interval.IntervalBase),
 	}
 	return interval
 }
 
 func TestInterface(t *testing.T) {
-	// This test checks the basic functionality of the Interval interface
-	// and IntervalBase type.
+	// This test checks the basic functionality of the interval.Interval interface
+	// and interval.IntervalBase type.
 	tree := NewTree()
 
 	start, err := time.Parse(time.RFC3339, "2024-01-01T10:00:00Z")
@@ -547,7 +549,7 @@ func TestFilter(t *testing.T) {
 	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
-	fn := func(interval Interval) bool {
+	fn := func(interval interval.Interval) bool {
 		return interval.Priority() < 2
 	}
 
@@ -582,7 +584,7 @@ func TestContiguousFilter(t *testing.T) {
 	// get the intervals that overlap the range
 	acc := tree.accumulate(searchStart, searchEnd)
 	// filter the intervals to only include those with a priority less than 2
-	low := filter(acc, func(interval Interval) bool {
+	low := filter(acc, func(interval interval.Interval) bool {
 		return interval.Priority() < 2
 	})
 	// filter the intervals to only include those that are contiguous
@@ -746,8 +748,8 @@ func TestMergeFree(t *testing.T) {
 	splitAt1200, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
 	Ck(err)
 	tree.interval = nil
-	tree.left = &Tree{interval: NewInterval(TreeStart, splitAt1200, 0).(*IntervalBase)}
-	tree.right = &Tree{interval: NewInterval(splitAt1200, TreeEnd, 0).(*IntervalBase)}
+	tree.left = &Tree{interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
+	tree.right = &Tree{interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
 
 	err = tree.Verify()
 	Tassert(t, err != nil, "Expected error, got nil")
@@ -941,7 +943,7 @@ func TestRemoveRange(t *testing.T) {
 	end, err := time.Parse(time.RFC3339, "2024-01-01T10:30:00Z")
 	Ck(err)
 	// check conflicts
-	conflicts := tree.Conflicts(NewInterval(start, end, 0), true)
+	conflicts := tree.Conflicts(interval.NewInterval(start, end, 0), true)
 	Tassert(t, len(conflicts) == 3, "Expected 3 conflicts, got %v", conflicts)
 	// remove the intervals
 	removed := tree.RemoveRange(start, end)
@@ -960,10 +962,10 @@ func TestRemoveRange(t *testing.T) {
 	// check that the free intervals are correct
 	freeIntervals := tree.FreeIntervals()
 	Tassert(t, len(freeIntervals) > 0, "Expected at least 1 free interval, got %d", len(freeIntervals))
-	freeExpect := NewInterval(TreeStart, i1130_1200.Start(), 0)
+	freeExpect := interval.NewInterval(TreeStart, i1130_1200.Start(), 0)
 	Tassert(t, freeIntervals[0].Equal(freeExpect), fmt.Sprintf("Expected %v, got %v", freeExpect, freeIntervals[0]))
 	Tassert(t, len(freeIntervals) == 2, "Expected 2 free intervals, got %d", len(freeIntervals))
-	freeExpect = NewInterval(i1130_1200.End(), TreeEnd, 0)
+	freeExpect = interval.NewInterval(i1130_1200.End(), TreeEnd, 0)
 	Tassert(t, freeIntervals[1].Equal(freeExpect), fmt.Sprintf("Expected %v, got %v", freeExpect, freeIntervals[1]))
 
 	// check that the total number of intervals is correct
@@ -1012,7 +1014,7 @@ func XXXTestShuffle(t *testing.T) {
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, "2024-01-01T09:30:00Z")
 	Ck(err)
-	newInterval := NewInterval(start, end, 3)
+	newInterval := interval.NewInterval(start, end, 3)
 	newInterval, removed, err := tree.Shuffle(true, searchStart, searchEnd, newInterval)
 	Tassert(t, err == nil, err)
 	Tassert(t, len(removed) == 1, "Expected 1 interval, got %d", len(removed))

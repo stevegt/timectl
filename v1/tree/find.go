@@ -1,5 +1,7 @@
 package timectl
 
+import "github.com/stevegt/timectl/interval"
+
 // . "github.com/stevegt/goadapt"
 
 // FindExact returns the tree node containing the exact interval that
@@ -7,7 +9,7 @@ package timectl
 // If the exact interval is not found, then the path and found node
 // are both nil.  If the exact interval is in the root node, then the
 // path is nil.
-func (t *Tree) FindExact(interval Interval) (path []*Tree, found *Tree) {
+func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.findExact(interval, nil)
@@ -16,7 +18,7 @@ func (t *Tree) FindExact(interval Interval) (path []*Tree, found *Tree) {
 // findExact is a non-threadsafe version of FindExact for internal
 // use.  The path parameter is used to track the path to the
 // current node during recursion.
-func (t *Tree) findExact(interval Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
+func (t *Tree) findExact(interval interval.Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
 
 	if t.interval == nil {
 		// non-leaf node

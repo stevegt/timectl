@@ -1,15 +1,19 @@
 package timectl
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/stevegt/timectl/interval"
+)
 
 // Delete removes an interval from the tree and returns true if the interval was successfully removed.
-func (t *Tree) Delete(interval Interval) bool {
+func (t *Tree) Delete(interval interval.Interval) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	path, found := t.findExact(interval, nil)
 	if found == nil {
-		// Interval not found.
+		// interval.Interval not found.
 		return false
 	}
 
@@ -21,7 +25,7 @@ func (t *Tree) free(node *Tree) error {
 	if node.left != nil || node.right != nil {
 		return fmt.Errorf("cannot free node with children")
 	}
-	freeInterval := NewInterval(node.Start(), node.End(), 0)
+	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
 	node.interval = freeInterval
 	return nil
 }
@@ -34,7 +38,7 @@ func (t *Tree) delete(path []*Tree, node *Tree) bool {
 /*
 // delete is simply a process of finding and freeing the target
 // interval and then merging with free siblings.
-func (t *Tree) delete(interval Interval) (deletedInterval Interval) {
+func (t *Tree) delete(interval interval.Interval) (deletedInterval interval.Interval) {
 
 	// Find the node containing the interval.
 	ancestors, node := t.findExact(interval, nil)
