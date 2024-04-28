@@ -396,7 +396,7 @@ func XXXTestMergeFree(t *testing.T) {
 	Tassert(t, err != nil, "Expected error, got nil")
 
 	// merge the free nodes
-	top.mergeFree()
+	top.MergeFree()
 
 	Verify(t, top)
 
@@ -446,7 +446,7 @@ func XXXTestDeleteSimple(t *testing.T) {
 	Tassert(t, len(freeIntervals) == 3, "Expected 3 free intervals, got %d", len(freeIntervals))
 
 	// merge the free nodes
-	top.mergeFree()
+	top.MergeFree()
 	// there should now be one free interval
 	freeIntervals = top.FreeIntervals()
 	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))

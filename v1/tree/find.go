@@ -21,8 +21,6 @@ func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree)
 // use.  The path parameter is used to track the path to the
 // current node during recursion.
 func (t *Tree) findExact(interval interval.Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
 
 	if t.Interval == nil {
 		// non-leaf node

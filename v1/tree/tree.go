@@ -376,6 +376,9 @@ func (t *Tree) lastNode() *Tree {
 // AsDot returns a string representation of the tree in Graphviz DOT
 // format without relying on any other Tree methods.
 func (t *Tree) AsDot(path Path) string {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+
 	var out string
 	var top bool
 	if path == nil {

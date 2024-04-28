@@ -21,6 +21,11 @@ func (t *Tree) Delete(interval interval.Interval) bool {
 	return t.delete(path, found)
 }
 
+func (t *Tree) delete(path []*Tree, node *Tree) bool {
+	// Placeholder implementation.
+	return false
+}
+
 func (t *Tree) free(node *Tree) error {
 	if node.Left != nil || node.Right != nil {
 		return fmt.Errorf("cannot free node with children")
@@ -28,11 +33,6 @@ func (t *Tree) free(node *Tree) error {
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
 	node.Interval = freeInterval
 	return nil
-}
-
-func (t *Tree) delete(path []*Tree, node *Tree) bool {
-	// Placeholder implementation.
-	return false
 }
 
 /*
