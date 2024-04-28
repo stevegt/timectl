@@ -26,7 +26,6 @@ import (
 // A tree is a tree of busy and free intervals that
 // span the entire range from treeStart to treeEnd.
 func TestTreeStructure(t *testing.T) {
-
 	tree := NewTree()
 	// insert interval into empty tree
 	err := InsertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
@@ -327,8 +326,6 @@ func TestFindLowerPriority(t *testing.T) {
 
 }
 
-// XXX WIP below here
-
 // test finding exact interval
 func TestFindExact(t *testing.T) {
 	tree := NewTree()
@@ -362,49 +359,6 @@ func TestFindExact(t *testing.T) {
 
 }
 
-// test the Verify function
-func TestVerify(t *testing.T) {
-	tree := NewTree()
-
-	// insert an interval into the tree
-	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	ok := tree.Insert(iv)
-	Tassert(t, ok, "Failed to insert interval")
-
-	Dump(tree, "")
-
-	Verify(t, tree)
-
-}
-
-// test merging free nodes
-func XXXTestMergeFree(t *testing.T) {
-	tree := NewTree()
-
-	// split the root node into two free children
-	splitAt1200, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
-	Ck(err)
-	tree.Interval = nil
-	tree.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
-	tree.Right = &Tree{Interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
-
-	err = tree.Verify()
-	Tassert(t, err != nil, "Expected error, got nil")
-
-	// merge the free nodes
-	tree.mergeFree()
-
-	Verify(t, tree)
-
-	// check that the tree has one free interval
-	freeIntervals := tree.FreeIntervals()
-	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
-	iv := freeIntervals[0]
-	Tassert(t, iv.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, iv.Start()))
-	Tassert(t, iv.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, iv.End()))
-
-}
-
 // test rebalancing the tree
 func TestRebalance(t *testing.T) {
 	tree := NewTree()
@@ -422,6 +376,36 @@ func TestRebalance(t *testing.T) {
 	Tassert(t, err == nil, err)
 
 	Verify(t, tree)
+
+}
+
+// XXX WIP below here
+
+// test merging free nodes
+func XXXTestMergeFree(t *testing.T) {
+	top := NewTree()
+
+	// split the root node into two free children
+	splitAt1200, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
+	Ck(err)
+	top.Interval = nil
+	top.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
+	top.Right = &Tree{Interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
+
+	err = top.Verify()
+	Tassert(t, err != nil, "Expected error, got nil")
+
+	// merge the free nodes
+	top.mergeFree()
+
+	Verify(t, top)
+
+	// check that the tree has one free interval
+	freeIntervals := top.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
+	iv := freeIntervals[0]
+	Tassert(t, iv.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, iv.Start()))
+	Tassert(t, iv.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, iv.End()))
 
 }
 
