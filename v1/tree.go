@@ -441,6 +441,8 @@ func (t *Tree) AsDot(path Path) string {
 	label := Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.maxPriority)
 	if t.interval != nil {
 		label += fmt.Sprintf("\\n%s", t.interval)
+	} else {
+		label += "\\nnil"
 	}
 	out += fmt.Sprintf("  %s [label=\"%s\"];\n", id, label)
 	if t.left != nil {

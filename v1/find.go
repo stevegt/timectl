@@ -4,10 +4,9 @@ package timectl
 
 // FindExact returns the tree node containing the exact interval that
 // matches the given interval, along with the path of ancestor nodes.
-// If the exact interval is not found, then the found node is nil and
-// the path node ends with the node where the interval would be
-// inserted.  If the exact interval is in the root node, then the path
-// is nil.  If the tree is empty, then both are nil.
+// If the exact interval is not found, then the path and found node
+// are both nil.  If the exact interval is in the root node, then the
+// path is nil.
 func (t *Tree) FindExact(interval Interval) (path []*Tree, found *Tree) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -36,13 +35,6 @@ func (t *Tree) findExact(interval Interval, pathIn []*Tree) (pathOut []*Tree, fo
 	// leaf node
 	if t.interval.Equal(interval) {
 		return pathIn, t
-	}
-
-	if len(pathIn) > 0 {
-		parent := pathIn[len(pathIn)-1]
-		if interval.Start().Before(parent.maxEnd) {
-			return pathIn, nil
-		}
 	}
 
 	return nil, nil

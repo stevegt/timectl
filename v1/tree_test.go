@@ -699,7 +699,7 @@ func TestFindExact(t *testing.T) {
 	ok := tree.Insert(interval)
 	Tassert(t, ok, "Failed to insert interval")
 
-	dump(tree, "")
+	// showDot(tree, false)
 
 	// FindExact returns the tree node containing the exact interval that
 	// matches the given interval, along with the path of ancestor nodes.
@@ -711,19 +711,13 @@ func TestFindExact(t *testing.T) {
 	path, found := tree.FindExact(interval)
 	Tassert(t, found != nil, "Expected non-nil interval")
 	Tassert(t, found.interval.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, found.interval))
-	Tassert(t, len(path) != 0, "Expected non-empty path")
-	expect := tree.right
-	got := path[len(path)-1]
-	Tassert(t, got == expect, fmt.Sprintf("Expected %v, got %v", expect, got))
+	Tassert(t, len(path) == 0, "Expected empty path")
 
 	// try finding an interval that is not in the tree
-	interval = newInterval("2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
+	interval = newInterval("2024-01-01T11:30:00Z", "2024-01-01T12:30:00Z", 1)
 	path, found = tree.FindExact(interval)
 	Tassert(t, found == nil, "Expected nil interval")
-	Tassert(t, len(path) != 0, "Expected non-empty path")
-	expect = tree.right
-	got = path[len(path)-1]
-	Tassert(t, got == expect, fmt.Sprintf("Expected %v, got %v", expect, got))
+	Tassert(t, len(path) == 0, "Expected empty path")
 
 	verify(t, tree)
 
