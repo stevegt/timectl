@@ -1,4 +1,4 @@
-package timectl
+package tree
 
 // rebalance checks and corrects the balance of the tree using DSW algorithm.
 func (old *Tree) rebalance() (t *Tree) {

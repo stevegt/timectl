@@ -1,4 +1,4 @@
-package timectl
+package tree
 
 import (
 	"fmt" // Import the fmt package to use for formatting errors.

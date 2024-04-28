@@ -1,4 +1,4 @@
-package timectl
+package tree
 
 // . "github.com/stevegt/goadapt"
 

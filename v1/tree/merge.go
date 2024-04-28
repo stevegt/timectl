@@ -1,4 +1,4 @@
-package timectl
+package tree
 
 import "github.com/stevegt/timectl/interval"
 
