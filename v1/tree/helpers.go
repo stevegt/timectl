@@ -135,3 +135,16 @@ func Verify(t *testing.T, tree *Tree) {
 		t.Fatal(msg)
 	}
 }
+
+// Dump is a helper function that prints the tree structure to
+// stdout.
+func Dump(tree *Tree, path string) {
+	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
+	fmt.Printf("%-10v: %v\n", path, tree.Interval)
+	if tree.Left != nil {
+		Dump(tree.Left, path+"l")
+	}
+	if tree.Right != nil {
+		Dump(tree.Right, path+"r")
+	}
+}

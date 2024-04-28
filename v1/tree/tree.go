@@ -300,19 +300,6 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 	return interval.NewInterval(maxEnd.Add(-duration), maxEnd, 0)
 }
 
-// dump is a helper function that prints the tree structure to
-// stdout.
-func dump(tree *Tree, path string) {
-	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	fmt.Printf("%-10v: %v\n", path, tree.Interval)
-	if tree.Left != nil {
-		dump(tree.Left, path+"l")
-	}
-	if tree.Right != nil {
-		dump(tree.Right, path+"r")
-	}
-}
-
 // FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
 func (t *Tree) FreeIntervals() (intervals []interval.Interval) {
 	t.Mu.RLock()
