@@ -17,10 +17,12 @@ func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree)
 	return t.findExact(interval, nil)
 }
 
-// findExact is a non-threadsafe version of FindExact for internal
+// findExact is a recursive version of FindExact for internal
 // use.  The path parameter is used to track the path to the
 // current node during recursion.
 func (t *Tree) findExact(interval interval.Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
 	if t.Interval == nil {
 		// non-leaf node

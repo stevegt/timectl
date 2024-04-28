@@ -67,26 +67,21 @@ func newTreeFromInterval(interval interval.Interval) *Tree {
 func (t *Tree) Insert(newInterval interval.Interval) bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	return t.insert(newInterval)
-}
-
-// insert is a non-threadsafe version of Insert for internal use.
-func (t *Tree) insert(newInterval interval.Interval) (ok bool) {
 
 	if !newInterval.Busy() {
 		// XXX return a meaningful error
 		return false
 	}
 
-	if t.busy() {
+	if t.Busy() {
 		if t.Left != nil && newInterval.Start().Before(t.Left.End()) {
-			if t.Left.insert(newInterval) {
+			if t.Left.Insert(newInterval) {
 				t.setMinMax()
 				return true
 			}
 		}
 		if t.Right != nil && newInterval.End().After(t.Right.Start()) {
-			if t.Right.insert(newInterval) {
+			if t.Right.Insert(newInterval) {
 				t.MaxEnd = t.Right.MaxEnd
 				t.setMaxPriority()
 				return true
@@ -149,7 +144,7 @@ func (t *Tree) setMaxPriority() {
 func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	for _, i := range t.allIntervals() {
+	for _, i := range t.AllIntervals() {
 		if i.Busy() {
 			intervals = append(intervals, i)
 		}
@@ -161,11 +156,7 @@ func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
 func (t *Tree) AllIntervals() []interval.Interval {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	return t.allIntervals()
-}
 
-// allIntervals is a non-threadsafe version of AllIntervals for internal use.
-func (t *Tree) allIntervals() []interval.Interval {
 	var intervals []interval.Interval
 	if t.Left != nil {
 		intervals = append(intervals, t.Left.AllIntervals()...)
@@ -181,11 +172,7 @@ func (t *Tree) allIntervals() []interval.Interval {
 func (t *Tree) Busy() bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	return t.busy()
-}
 
-// busy is a non-threadsafe version of Busy for internal use.
-func (t *Tree) busy() bool {
 	if t.Interval != nil && t.Interval.Busy() {
 		return true
 	}
@@ -215,26 +202,19 @@ func (t *Tree) End() time.Time {
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
 // If includeFree is true, then this function returns all intervals that conflict with the given
 // interval, otherwise it returns only busy intervals.
-func (t *Tree) Conflicts(interval interval.Interval, includeFree bool) []interval.Interval {
+func (t *Tree) Conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	return t.conflicts(interval, includeFree)
-}
 
-// conflicts is a non-threadsafe version of Conflicts for internal
-// use.  If includeFree is true, then this function returns all
-// intervals that conflict with the given Interval, otherwise it
-// returns only busy intervals.
-func (t *Tree) conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
 	var conflicts []interval.Interval
 	if t.Interval != nil && t.Interval.Conflicts(iv, includeFree) {
 		conflicts = append(conflicts, t.Interval)
 	} else {
 		if t.Left != nil {
-			conflicts = append(conflicts, t.Left.conflicts(iv, includeFree)...)
+			conflicts = append(conflicts, t.Left.Conflicts(iv, includeFree)...)
 		}
 		if t.Right != nil {
-			conflicts = append(conflicts, t.Right.conflicts(iv, includeFree)...)
+			conflicts = append(conflicts, t.Right.Conflicts(iv, includeFree)...)
 		}
 	}
 	return conflicts
@@ -305,7 +285,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 func (t *Tree) FreeIntervals() (intervals []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
-	for _, i := range t.allIntervals() {
+	for _, i := range t.AllIntervals() {
 		if !i.Busy() {
 			intervals = append(intervals, i)
 		}

@@ -130,7 +130,7 @@ func (t *Tree) accumulate(start, end time.Time) (out <-chan interval.Interval) {
 
 	// XXX replace this with allIntervalsChan(fwd) and add a fwd parameter
 	// to accumulate() so we can get the intervals in reverse order.
-	allIntervals := t.allIntervals()
+	allIntervals := t.AllIntervals()
 	c1 := slice2chan(allIntervals)
 	out = filter(c1, filterFn)
 	return
