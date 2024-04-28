@@ -61,11 +61,19 @@ func TestRebalanceSimple(t *testing.T) {
 
 	Verify(t, top, false)
 
-	// insert another interval into the tree
+	// insert more intervals
 	err = InsertExpect(top, "r", "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Tassert(t, err == nil, err)
+	err = InsertExpect(top, "rr", "2024-01-01T12:30:00Z", "2024-01-01T13:00:00Z", 1)
+	Tassert(t, err == nil, err)
 
-	showDot(top, false)
+	// showDot(top, false)
+
+	// check the heights
+	leftHeight := top.Left.height()
+	rightHeight := top.Right.height()
+	Tassert(t, leftHeight == 1, "left height should be 1")
+	Tassert(t, rightHeight == 3, "right height should be 3")
 
 	err = top.ckBalance(nil)
 	Tassert(t, err != nil, "tree should be unbalanced")

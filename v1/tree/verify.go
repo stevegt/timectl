@@ -128,7 +128,7 @@ func (t *Tree) ckBalance(ancestors Path) error {
 	leftHeight := t.Left.height()
 	rightHeight := t.Right.height()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
-		return fmt.Errorf("height of left and right subtrees of %s differ by more than 1", myPath)
+		return fmt.Errorf("path: %v left height: %d, right height: %d", myPath, leftHeight, rightHeight)
 	}
 
 	// - the height of the left and right subtrees of every node differ
