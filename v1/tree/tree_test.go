@@ -2,10 +2,7 @@ package timectl
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math/rand"
-	"path/filepath"
-	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -28,130 +25,6 @@ import (
 // node interval end time is less than or equal to the right node
 // interval end time.
 
-// get is a test helper function that returns the tree node at the
-// given path in the tree.  pathStr is the path to the node in the
-// tree, where 'l' means to go left and 'r' means to go right.  An
-// empty pathStr means to return the root node.
-func get(tree *Tree, pathStr string) *Tree {
-	path := []rune(pathStr)
-	if len(path) == 0 {
-		return tree
-	}
-	switch path[0] {
-	case 'l':
-		Assert(tree.left != nil, "No left node")
-		return get(tree.left, string(path[1:]))
-	case 'r':
-		Assert(tree.right != nil, "No right node")
-		return get(tree.right, string(path[1:]))
-	default:
-		Assert(false, "Invalid path %v", pathStr)
-	}
-	return nil
-}
-
-// expect is a test helper function that checks if the given tree
-// node's interval has the expected start and end times and priority.
-// pathStr is the path to the node in the tree, where 'l'
-// means to go left and 'r' means to go right.  An empty pathStr means
-// to check the root node.
-func expect(tree *Tree, pathStr, startStr, endStr string, priority float64) error {
-	node := get(tree, pathStr)
-	if node == nil {
-		return fmt.Errorf("no node at path: %v", pathStr)
-	}
-	nodeInterval := node.interval
-	if nodeInterval.Priority() != priority {
-		return fmt.Errorf("Expected priority=%v, got priority=%v", priority, nodeInterval.Priority())
-	}
-	start, err := time.Parse(time.RFC3339, startStr)
-	Ck(err)
-	end, err := time.Parse(time.RFC3339, endStr)
-	Ck(err)
-	ev := interval.NewInterval(start, end, priority)
-	if !node.interval.Equal(ev) {
-		return fmt.Errorf("Expected %v, got %v", ev, node.interval)
-	}
-	return nil
-}
-
-// insertExpect is a test helper function that inserts an interval
-// into the tree and checks if the tree has the expected structure.
-func insertExpect(tree *Tree, pathStr, startStr, endStr string, priority float64) error {
-	interval := insert(tree, startStr, endStr, priority)
-	if interval == nil {
-		return fmt.Errorf("Failed to insert interval")
-	}
-	return expect(tree, pathStr, startStr, endStr, priority)
-}
-
-// newInterval is a test helper function that creates a new interval
-// with the given start and end times and priority content.
-func newInterval(startStr, endStr string, priority float64) interval.Interval {
-	start, err := time.Parse(time.RFC3339, startStr)
-	Ck(err)
-	end, err := time.Parse(time.RFC3339, endStr)
-	Ck(err)
-	return interval.NewInterval(start, end, priority)
-}
-
-// insert is a test helper function that inserts an interval into the
-// tree and returns the interval that was inserted.
-func insert(tree *Tree, startStr, endStr string, priority float64) interval.Interval {
-	interval := newInterval(startStr, endStr, priority)
-	// Insert adds a new interval to the tree, adjusting the structure as
-	// necessary.  Insertion fails if the new interval conflicts with any
-	// existing interval in the tree.
-	// Pf("Inserting interval: %v\n", interval)
-	ok := tree.Insert(interval)
-	if !ok {
-		return nil
-	}
-	return interval
-}
-
-// match is a test helper function that checks if the given interval
-// has the expected start and end times and priority.
-func match(iv interval.Interval, startStr, endStr string, priority float64) error {
-	start, err := time.Parse(time.RFC3339, startStr)
-	Ck(err)
-	end, err := time.Parse(time.RFC3339, endStr)
-	Ck(err)
-	ev := interval.NewInterval(start, end, priority)
-	if !iv.Equal(ev) {
-		return fmt.Errorf("Expected %v, got %v", ev, iv)
-	}
-	return nil
-}
-
-// saveDot saves the tree as a dot file
-func saveDot(tree *Tree) {
-	// get caller's file and line number
-	_, file, line, ok := runtime.Caller(1)
-	Assert(ok, "Failed to get caller")
-	// keep only the file name, throw away the path
-	_, file = filepath.Split(file)
-	fn := fmt.Sprintf("/tmp/%s:%d.dot", file, line)
-	buf := []byte(tree.AsDot(nil))
-	err := ioutil.WriteFile(fn, buf, 0644)
-	Ck(err)
-}
-
-// verify is a test helper function that verifies the tree.  If
-// there is an error, it shows the tree as a dot file.
-func verify(t *testing.T, tree *Tree) {
-	err := tree.Verify()
-	if err != nil {
-		// get caller's file and line number
-		_, file, line, ok := runtime.Caller(1)
-		Assert(ok, "Failed to get caller")
-		msg := Spf("%v:%v %v\n", file, line, err)
-		Pl(msg)
-		showDot(tree, false)
-		t.Fatal(msg)
-	}
-}
-
 // Test a tree node with children.
 // A tree is a tree of busy and free intervals that
 // span the entire range from treeStart to treeEnd.
@@ -159,15 +32,15 @@ func TestTreeStructure(t *testing.T) {
 
 	tree := NewTree()
 	// insert interval into empty tree
-	err := insertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err := InsertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	// the other nodes should be non-busy
-	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	err = Expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	err = Expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
-	verify(t, tree)
+	Verify(t, tree)
 }
 
 // test rotation
@@ -175,27 +48,27 @@ func TestRotate(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
-	err := insertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err := InsertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	// check the nodes
-	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	err = Expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	err = Expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
 	// rotate left
 	tree = tree.rotateLeft()
 	// check the nodes
-	err = expect(tree, "ll", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	err = Expect(tree, "ll", TreeStartStr, "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "l", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = Expect(tree, "l", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	err = Expect(tree, "", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
 	// showDot(tree, false)
 
-	verify(t, tree)
+	Verify(t, tree)
 }
 
 // test rebalancing the tree
@@ -203,33 +76,33 @@ func TestRebalanceSimple(t *testing.T) {
 	tree := NewTree()
 
 	// insert 1 interval into the tree
-	err := insertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err := InsertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	// check the nodes
-	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	err = Expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	err = Expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
 	// rebalance the tree
 	tree.rebalance()
 	// nodes should be the same
-	err = expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
+	err = Expect(tree, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = Expect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
-	err = expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
+	err = Expect(tree, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
 	// insert another interval into the tree
-	err = insertExpect(tree, "r", "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	err = InsertExpect(tree, "r", "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	// get the nodes
 	// showDot(tree, false)
 	// rebalance the tree
 	tree = tree.rebalance()
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -240,14 +113,14 @@ func TestInsertConflict(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
-	err := insertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err := InsertExpect(tree, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 
 	// insert a conflicting interval
-	interval := insert(tree, "2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
+	interval := Insert(tree, "2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
 	Tassert(t, interval == nil, "Expected nil interval")
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -255,15 +128,15 @@ func TestConflicts(t *testing.T) {
 	tree := NewTree()
 
 	// insert several intervals into the tree
-	i1000_1100 := insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	i1000_1100 := Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
-	i1130_1200 := insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	i1130_1200 := Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
-	i0900_0930 := insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	i0900_0930 := Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
 	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
 
 	// create a new interval that overlaps the first interval
-	i1030_1130 := newInterval("2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
+	i1030_1130 := NewInterval("2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
 	// get conflicts for the new interval
 	conflicts := tree.Conflicts(i1030_1130, false)
 	Tassert(t, len(conflicts) == 1, "Expected 1 conflict, got %d", len(conflicts))
@@ -276,7 +149,7 @@ func TestConflicts(t *testing.T) {
 	Tassert(t, intervals[1].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, intervals[1]))
 	Tassert(t, intervals[2].Equal(i1130_1200), fmt.Sprintf("Expected %v, got %v", i1130_1200, intervals[2]))
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -285,9 +158,9 @@ func TestFindFree(t *testing.T) {
 
 	// insert an interval into the tree -- this should become the left
 	// child of the right child of the root node
-	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
 	Ck(err)
@@ -324,7 +197,7 @@ func TestFindFree(t *testing.T) {
 	expectInterval = interval.NewInterval(expectStart, expectEnd, 0)
 	Tassert(t, freeInterval.Equal(expectInterval), fmt.Sprintf("Expected %s, got %s", expectInterval, freeInterval))
 
-	verify(t, tree)
+	Verify(t, tree)
 }
 
 func TestFindFreeMany(t *testing.T) {
@@ -338,7 +211,7 @@ func TestFindFreeMany(t *testing.T) {
 		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
 		// ignore return value
-		insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
+		Insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
 	}
 
 	// dump(tree, "")
@@ -390,7 +263,7 @@ func TestFindFreeMany(t *testing.T) {
 
 	}
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -412,7 +285,7 @@ func TestConcurrent(t *testing.T) {
 			// try to insert a random interval
 			start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 			end := start.Add(time.Duration(rand.Intn(59)+1) * time.Minute)
-			interval := insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
+			interval := Insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
 			if interval != nil {
 				insertMap.Store(i, interval)
 			}
@@ -463,7 +336,7 @@ func TestConcurrent(t *testing.T) {
 		Tassert(t, conflicts[0].Equal(expect), fmt.Sprintf("Expected %v, got %v", expect, conflicts[0]))
 	}
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -509,7 +382,7 @@ func TestInterface(t *testing.T) {
 	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
 	Tassert(t, intervals[1].Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, intervals[1]))
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -520,9 +393,9 @@ func TestAccumulator(t *testing.T) {
 	// accumulate collects intervals in the tree that overlap the given
 	// interval.  The intervals are collected in order of start time.
 
-	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:15:00Z")
 	Ck(err)
@@ -545,9 +418,9 @@ func TestFilter(t *testing.T) {
 	// filter returns a channel of intervals from the input channel
 	// that pass the filter function.
 
-	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
 	fn := func(interval interval.Interval) bool {
 		return interval.Priority() < 2
@@ -571,10 +444,10 @@ func TestFilter(t *testing.T) {
 func TestContiguousFilter(t *testing.T) {
 	tree := NewTree()
 
-	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
-	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 2)
-	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	insert(tree, "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
+	Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 2)
+	Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(tree, "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
 	Ck(err)
@@ -596,13 +469,13 @@ func TestContiguousFilter(t *testing.T) {
 	Tassert(t, len(res) == 4, "Expected 4 intervals, got %d", len(res))
 
 	// check that we got the right intervals
-	err = match(res[0], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
+	err = Match(res[0], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = match(res[1], "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	err = Match(res[1], "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Tassert(t, err == nil, err)
-	err = match(res[2], "2024-01-01T12:00:00Z", "2024-01-01T12:15:00Z", 0)
+	err = Match(res[2], "2024-01-01T12:00:00Z", "2024-01-01T12:15:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = match(res[3], "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
+	err = Match(res[3], "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
 	Tassert(t, err == nil, err)
 }
 
@@ -617,11 +490,11 @@ func TestFindLowerPriority(t *testing.T) {
 	tree := NewTree()
 
 	// insert several intervals into the tree
-	i1000_1100 := insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	i1000_1100 := Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
-	i1130_1200 := insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
+	i1130_1200 := Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
 	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
-	i0900_0930 := insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	i0900_0930 := Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
@@ -642,10 +515,10 @@ func TestFindLowerPriority(t *testing.T) {
 		t.Logf("%v", interval)
 	}
 	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = match(intervals[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	err = Match(intervals[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 	Tassert(t, err == nil, err)
 	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = match(intervals[1], "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
+	err = Match(intervals[1], "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
 
 	// find intervals spanning at least a 60 minute duration and lower
@@ -660,10 +533,10 @@ func TestFindLowerPriority(t *testing.T) {
 		t.Logf("%v", interval)
 	}
 	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = match(intervals[0], "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
+	err = Match(intervals[0], "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
 	Tassert(t, err == nil, err)
 	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = match(intervals[1], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = Match(intervals[1], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	Tassert(t, intervals[1] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[1])
 
@@ -679,14 +552,14 @@ func TestFindLowerPriority(t *testing.T) {
 		t.Logf("%v", interval)
 	}
 	Tassert(t, len(intervals) > 0, "Expected at least 1 interval, got %d", len(intervals))
-	err = match(intervals[0], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = Match(intervals[0], "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, err == nil, err)
 	Tassert(t, intervals[0] == i1000_1100, "Expected %v, got %v", i1000_1100, intervals[0])
 	Tassert(t, len(intervals) == 2, "Expected 2 intervals, got %d", len(intervals))
-	err = match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
+	err = Match(intervals[1], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -697,7 +570,7 @@ func TestFindExact(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
-	interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	interval := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	ok := tree.Insert(interval)
 	Tassert(t, ok, "Failed to insert interval")
 
@@ -712,16 +585,16 @@ func TestFindExact(t *testing.T) {
 
 	path, found := tree.FindExact(interval)
 	Tassert(t, found != nil, "Expected non-nil interval")
-	Tassert(t, found.interval.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, found.interval))
+	Tassert(t, found.Interval.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, found.Interval))
 	Tassert(t, len(path) == 0, "Expected empty path")
 
 	// try finding an interval that is not in the tree
-	interval = newInterval("2024-01-01T11:30:00Z", "2024-01-01T12:30:00Z", 1)
+	interval = NewInterval("2024-01-01T11:30:00Z", "2024-01-01T12:30:00Z", 1)
 	path, found = tree.FindExact(interval)
 	Tassert(t, found == nil, "Expected nil interval")
 	Tassert(t, len(path) == 0, "Expected empty path")
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -730,13 +603,13 @@ func TestVerify(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
-	interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	interval := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	ok := tree.Insert(interval)
 	Tassert(t, ok, "Failed to insert interval")
 
 	dump(tree, "")
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -747,9 +620,9 @@ func TestMergeFree(t *testing.T) {
 	// split the root node into two free children
 	splitAt1200, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
 	Ck(err)
-	tree.interval = nil
-	tree.left = &Tree{interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
-	tree.right = &Tree{interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
+	tree.Interval = nil
+	tree.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
+	tree.Right = &Tree{Interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
 
 	err = tree.Verify()
 	Tassert(t, err != nil, "Expected error, got nil")
@@ -757,7 +630,7 @@ func TestMergeFree(t *testing.T) {
 	// merge the free nodes
 	tree.mergeFree()
 
-	verify(t, tree)
+	Verify(t, tree)
 
 	// check that the tree has one free interval
 	freeIntervals := tree.FreeIntervals()
@@ -773,10 +646,10 @@ func TestRebalance(t *testing.T) {
 	tree := NewTree()
 
 	// insert a few intervals into the tree
-	insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
-	insert(tree, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
+	Insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	Insert(tree, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
 
 	// rebalance the tree
 	tree.rebalance()
@@ -784,7 +657,7 @@ func TestRebalance(t *testing.T) {
 	err := tree.Verify()
 	Tassert(t, err == nil, err)
 
-	verify(t, tree)
+	Verify(t, tree)
 
 }
 
@@ -803,7 +676,7 @@ func TestDeleteSimple(t *testing.T) {
 	tree := NewTree()
 
 	// insert an interval into the tree
-	interval := newInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	interval := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	ok := tree.Insert(interval)
 	Tassert(t, ok, "Failed to insert interval")
 
@@ -833,7 +706,7 @@ func TestDeleteSimple(t *testing.T) {
 	Tassert(t, freeInterval.Start().Equal(TreeStart), fmt.Sprintf("Expected %v, got %v", TreeStart, freeInterval.Start()))
 	Tassert(t, freeInterval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, freeInterval.End()))
 
-	verify(t, tree)
+	Verify(t, tree)
 
 	/*
 		// delete is simply a process of finding and freeing the target

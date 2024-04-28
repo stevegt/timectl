@@ -11,17 +11,17 @@ import (
 // that all nodes and intervals are correctly placed within the tree
 // according to the interval tree properties.
 func (t *Tree) Verify() error {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+	t.Mu.RLock()
+	defer t.Mu.RUnlock()
 
 	// the interval should not be nil
-	if t.interval == nil {
+	if t.Interval == nil {
 		return fmt.Errorf("root interval is nil")
 	}
 
 	// - the first interval in the tree should be a free interval that
 	//   starts at TreeStart
-	firstInterval := t.firstNode().interval
+	firstInterval := t.firstNode().Interval
 	if firstInterval == nil {
 		return fmt.Errorf("first interval is nil")
 	}
@@ -34,7 +34,7 @@ func (t *Tree) Verify() error {
 
 	// - the last interval in the tree should be a free interval that
 	//   ends at TreeEnd
-	lastInterval := t.lastNode().interval
+	lastInterval := t.lastNode().Interval
 	if lastInterval == nil {
 		return fmt.Errorf("last interval is nil")
 	}
@@ -51,12 +51,12 @@ func (t *Tree) Verify() error {
 		// Pf(" got: %-10s %v\n", path, node.leafInterval)
 
 		// the node interval should not be nil
-		if node.interval == nil {
+		if node.Interval == nil {
 			return fmt.Errorf("node interval is nil")
 		}
 
-		start := node.interval.Start()
-		end := node.interval.End()
+		start := node.Interval.Start()
+		end := node.Interval.End()
 
 		// - each interval's end time should be greater than its start time
 		if !end.After(start) {
@@ -65,9 +65,9 @@ func (t *Tree) Verify() error {
 
 		// - each interval's minStart time should be equal to the minimum
 		//   of its start time and the start time of its left child
-		expectMinStart := node.minStart
-		if node.left != nil {
-			gotMinStart := util.MinTime(start, node.left.minStart)
+		expectMinStart := node.MinStart
+		if node.Left != nil {
+			gotMinStart := util.MinTime(start, node.Left.MinStart)
 			if !expectMinStart.Equal(gotMinStart) {
 				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", path)
 			}
@@ -79,9 +79,9 @@ func (t *Tree) Verify() error {
 
 		// - each interval's maxEnd time should be equal to the maximum
 		//   of its end time and the end time of its right child
-		expectMaxEnd := node.maxEnd
-		if node.right != nil {
-			gotMaxEnd := util.MaxTime(end, node.right.maxEnd)
+		expectMaxEnd := node.MaxEnd
+		if node.Right != nil {
+			gotMaxEnd := util.MaxTime(end, node.Right.MaxEnd)
 			if !expectMaxEnd.Equal(gotMaxEnd) {
 				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", path)
 			}
@@ -94,7 +94,7 @@ func (t *Tree) Verify() error {
 		if prevNode != nil {
 			// - each interval's start time should be equal to the end time
 			//   of the previous interval
-			if !start.Equal(prevNode.interval.End()) {
+			if !start.Equal(prevNode.Interval.End()) {
 				return fmt.Errorf("%s start time does not match previous interval end time", path)
 			}
 
@@ -127,19 +127,19 @@ func (t *Tree) ckBalance(ancestors Path) error {
 
 	// - the height of the left and right subtrees of every node differ
 	//   by at most 1
-	leftHeight := t.left.height()
-	rightHeight := t.right.height()
+	leftHeight := t.Left.height()
+	rightHeight := t.Right.height()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
 		return fmt.Errorf("height of left and right subtrees of %s differ by more than 1", myPath)
 	}
 
 	// - the height of the left and right subtrees of every node differ
 	//   by at most 1
-	leftBalance := t.left.ckBalance(myPath)
+	leftBalance := t.Left.ckBalance(myPath)
 	if leftBalance != nil {
 		return leftBalance
 	}
-	rightBalance := t.right.ckBalance(myPath)
+	rightBalance := t.Right.ckBalance(myPath)
 	if rightBalance != nil {
 		return rightBalance
 	}
@@ -152,5 +152,5 @@ func (t *Tree) height() int {
 	if t == nil {
 		return 0
 	}
-	return 1 + max(t.left.height(), t.right.height())
+	return 1 + max(t.Left.height(), t.Right.height())
 }

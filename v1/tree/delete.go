@@ -8,8 +8,8 @@ import (
 
 // Delete removes an interval from the tree and returns true if the interval was successfully removed.
 func (t *Tree) Delete(interval interval.Interval) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
 	path, found := t.findExact(interval, nil)
 	if found == nil {
@@ -22,11 +22,11 @@ func (t *Tree) Delete(interval interval.Interval) bool {
 }
 
 func (t *Tree) free(node *Tree) error {
-	if node.left != nil || node.right != nil {
+	if node.Left != nil || node.Right != nil {
 		return fmt.Errorf("cannot free node with children")
 	}
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
-	node.interval = freeInterval
+	node.Interval = freeInterval
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (t *Tree) delete(interval interval.Interval) (deletedInterval interval.Inte
 }
 */
 
-// tryAbsorb checks if the parent can absorb the interval of a deleted child node.
+// tryAbsorb checks if the parent can absorb the Interval of a deleted child node.
 func (t *Tree) tryAbsorb(node *Tree) {
 	// This function will implement the logic of absorbing intervals if applicable,
 	// modifying the parent node's interval or merging intervals from its children if necessary.

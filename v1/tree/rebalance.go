@@ -22,26 +22,26 @@ func (t *Tree) vine() (newRoot *Tree) {
 	return t
 }
 
-// rotateLeft performs a left rotation on this node.
+// rotateLeft performs a Left rotation on this node.
 func (t *Tree) rotateLeft() (newRoot *Tree) {
-	newRoot = t.right
-	newLeftRight := t.right.left
-	newRoot.left = t
-	newRoot.left.right = newLeftRight
-	newRoot.left.setMinMax()
-	newRoot.right.setMinMax()
+	newRoot = t.Right
+	newLeftRight := t.Right.Left
+	newRoot.Left = t
+	newRoot.Left.Right = newLeftRight
+	newRoot.Left.setMinMax()
+	newRoot.Right.setMinMax()
 	newRoot.setMinMax()
 	return
 }
 
-// rotateRight performs a right rotation on this node.
+// rotateRight performs a Right rotation on this node.
 func (t *Tree) rotateRight() (newRoot *Tree) {
-	newRoot = t.left
-	newRightLeft := t.left.right
-	newRoot.right = t
-	newRoot.right.left = newRightLeft
-	newRoot.left.setMinMax()
-	newRoot.right.setMinMax()
+	newRoot = t.Left
+	newRightLeft := t.Left.Right
+	newRoot.Right = t
+	newRoot.Right.Left = newRightLeft
+	newRoot.Left.setMinMax()
+	newRoot.Right.setMinMax()
 	newRoot.setMinMax()
 	return
 }
@@ -51,15 +51,15 @@ func (t *Tree) setMinMax() {
 	if t == nil {
 		return
 	}
-	if t.left == nil {
-		t.minStart = t.interval.Start()
+	if t.Left == nil {
+		t.MinStart = t.Interval.Start()
 	} else {
-		t.minStart = t.left.minStart
+		t.MinStart = t.Left.MinStart
 	}
-	if t.right == nil {
-		t.maxEnd = t.interval.End()
+	if t.Right == nil {
+		t.MaxEnd = t.Interval.End()
 	} else {
-		t.maxEnd = t.right.maxEnd
+		t.MaxEnd = t.Right.MaxEnd
 	}
 	t.setMaxPriority()
 }
@@ -69,5 +69,5 @@ func (t *Tree) getBalance() int {
 	if t == nil {
 		return 0
 	}
-	return t.left.height() - t.right.height()
+	return t.Left.height() - t.Right.height()
 }

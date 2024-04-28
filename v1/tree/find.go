@@ -1,6 +1,8 @@
 package timectl
 
-import "github.com/stevegt/timectl/interval"
+import (
+	"github.com/stevegt/timectl/interval"
+)
 
 // . "github.com/stevegt/goadapt"
 
@@ -8,10 +10,10 @@ import "github.com/stevegt/timectl/interval"
 // matches the given interval, along with the path of ancestor nodes.
 // If the exact interval is not found, then the path and found node
 // are both nil.  If the exact interval is in the root node, then the
-// path is nil.
+// Muth is nil.
 func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree) {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+	t.Mu.RLock()
+	defer t.Mu.RUnlock()
 	return t.findExact(interval, nil)
 }
 
@@ -20,22 +22,22 @@ func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree)
 // current node during recursion.
 func (t *Tree) findExact(interval interval.Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
 
-	if t.interval == nil {
+	if t.Interval == nil {
 		// non-leaf node
 		// try left
 		path := append(pathIn, t)
-		if t.left != nil {
-			pathOut, found = t.left.findExact(interval, path)
+		if t.Left != nil {
+			pathOut, found = t.Left.findExact(interval, path)
 		}
 		// try right
-		if found == nil && t.right != nil {
-			pathOut, found = t.right.findExact(interval, path)
+		if found == nil && t.Right != nil {
+			pathOut, found = t.Right.findExact(interval, path)
 		}
 		return
 	}
 
 	// leaf node
-	if t.interval.Equal(interval) {
+	if t.Interval.Equal(interval) {
 		return pathIn, t
 	}
 

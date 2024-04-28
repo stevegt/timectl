@@ -39,8 +39,8 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 }
 
 func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, duration time.Duration, priority float64) []interval.Interval {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
+	t.Mu.RLock()
+	defer t.Mu.RUnlock()
 
 	result := []interval.Interval{} // To store the final slice of intervals.
 	var sumDuration time.Duration   // To sum up durations of found intervals.
@@ -53,21 +53,21 @@ func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, dura
 		}
 
 		Pf("accumulateIntervals: start=%v, end=%v, node.interval=%v, node.minStart=%v, node.maxEnd=%v, node.maxPriority=%v\n",
-			start, end, node.interval, node.minStart, node.maxEnd, node.maxPriority)
+			start, end, node.Interval, node.MinStart, node.MaxEnd, node.MaxPriority)
 
 		// if the node's minStart is completely after the search range, skip it.
-		if node.minStart.After(end) {
+		if node.MinStart.After(end) {
 			return false
 		}
 
 		// if the node's maxEnd is completely before the search range, skip it.
-		if node.maxEnd.Before(start) {
+		if node.MaxEnd.Before(start) {
 			return false
 		}
 
 		// if the node's maxPriority is not lower than the required
 		// priority, clear the accumulators and return false
-		if node.maxPriority >= priority {
+		if node.MaxPriority >= priority {
 			sumDuration = 0
 			result = []interval.Interval{}
 			return false
@@ -75,28 +75,28 @@ func (t *Tree) XXXFindLowerPriority(first bool, minStart, maxEnd time.Time, dura
 
 		// Depending on the search direction, recursively accumulate child intervals first.
 		if first {
-			if accumulateIntervals(node.left, start, end) {
+			if accumulateIntervals(node.Left, start, end) {
 				return true // Stop if already found enough duration.
 			}
 		} else {
-			if accumulateIntervals(node.right, start, end) {
+			if accumulateIntervals(node.Right, start, end) {
 				return true // Stop if already found enough duration.
 			}
 		}
 
 		// Check this interval if it's within our search range and of lower priority.
 		ckInterval := interval.NewInterval(start, end, 0)
-		if ckInterval.Wraps(node.interval) && node.interval.Priority() < priority {
-			intervalDuration := node.interval.Duration()
+		if ckInterval.Wraps(node.Interval) && node.Interval.Priority() < priority {
+			intervalDuration := node.Interval.Duration()
 			sumDuration += intervalDuration
-			result = append(result, node.interval)
+			result = append(result, node.Interval)
 		}
 
 		// Continue accumulating intervals based on search direction.
 		if first {
-			return accumulateIntervals(node.right, start, end)
+			return accumulateIntervals(node.Right, start, end)
 		} else {
-			return accumulateIntervals(node.left, start, end)
+			return accumulateIntervals(node.Left, start, end)
 		}
 	}
 
