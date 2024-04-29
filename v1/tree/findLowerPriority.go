@@ -2,9 +2,6 @@ package tree
 
 import (
 	"time"
-
-	//. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
 )
 
 // FindLowerPriority returns a contiguous set of nodes that have a
@@ -14,26 +11,20 @@ import (
 // given duration, and may be longer.  If first is true, then the
 // search starts at minStart and proceeds in order, otherwise the
 // search starts at maxEnd and proceeds in reverse order.
-func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []interval.Interval {
+func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Tree {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
-	// get the intervals that overlap the range
-	acc := t.accumulate(searchStart, searchEnd)
-	// filter the intervals to only include those with a priority less
+	// get the nodes that overlap the range
+	acc := t.accumulate(first, searchStart, searchEnd)
+	// filter the nodes to only include those with a priority less
 	// than priority
-	low := filter(acc, func(interval interval.Interval) bool {
-		return interval.Priority() < priority
+	low := filter(acc, func(node *Tree) bool {
+		return node.Interval.Priority() < priority
 	})
-	var ordered <-chan interval.Interval
-	if first {
-		ordered = low
-	} else {
-		ordered = reverse(low)
-	}
-	// filter the intervals to only include those that are contiguous
+	// filter the nodes to only include those that are contiguous
 	// for at least duration
-	cont := contiguous(ordered, duration)
+	cont := contiguous(low, duration)
 	if !first {
 		cont = reverse(cont)
 	}
@@ -41,29 +32,27 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	return res
 }
 
-// accumulate returns a channel of intervals in the tree that overlap the
-// given range of start and end times. The intervals are returned in order
+// accumulate returns a channel of nodes in the tree that overlap the
+// given range of start and end times. The nodes are returned in order
 // of start time.
-func (t *Tree) accumulate(start, end time.Time) (out <-chan interval.Interval) {
+func (t *Tree) accumulate(fwd bool, start, end time.Time) (out <-chan *Tree) {
 
 	// filter function to check if an interval overlaps the given range.
-	filterFn := func(i interval.Interval) bool {
+	filterFn := func(t *Tree) bool {
+		i := t.Interval
 		return i.OverlapsRange(start, end)
 	}
 
-	// XXX replace this with allIntervalsChan(fwd) and add a fwd parameter
-	// to accumulate() so we can get the intervals in reverse order.
-	allIntervals := t.AllIntervals()
-	c1 := slice2chan(allIntervals)
-	out = filter(c1, filterFn)
+	allNodes := t.allNodes(fwd)
+	out = filter(allNodes, filterFn)
 	return
 }
 
-// slice2chan converts a slice of intervals to a channel of intervals.
-func slice2chan(intervals []interval.Interval) <-chan interval.Interval {
-	ch := make(chan interval.Interval)
+// slice2chan converts a slice of nodes to a channel of nodes.
+func slice2chan(nodes []*Tree) <-chan *Tree {
+	ch := make(chan *Tree)
 	go func() {
-		for _, i := range intervals {
+		for _, i := range nodes {
 			ch <- i
 		}
 		close(ch)
@@ -71,21 +60,21 @@ func slice2chan(intervals []interval.Interval) <-chan interval.Interval {
 	return ch
 }
 
-// chan2slice converts a channel of intervals to a slice of intervals.
-func chan2slice(ch <-chan interval.Interval) []interval.Interval {
-	intervals := []interval.Interval{}
+// chan2slice converts a channel of nodes to a slice of nodes.
+func chan2slice(ch <-chan *Tree) []*Tree {
+	nodes := []*Tree{}
 	for i := range ch {
-		intervals = append(intervals, i)
+		nodes = append(nodes, i)
 	}
-	return intervals
+	return nodes
 }
 
-// filter filters intervals from a channel of intervals based on a
-// filter function and returns a channel of intervals.
-func filter(ch <-chan interval.Interval, filterFn func(interval.Interval) bool) <-chan interval.Interval {
-	out := make(chan interval.Interval)
+// filter filters nodes from a channel of nodes based on a
+// filter function and returns a channel of nodes.
+func filter(in <-chan *Tree, filterFn func(tree *Tree) bool) <-chan *Tree {
+	out := make(chan *Tree)
 	go func() {
-		for i := range ch {
+		for i := range in {
 			if filterFn(i) {
 				out <- i
 			}
@@ -95,36 +84,40 @@ func filter(ch <-chan interval.Interval, filterFn func(interval.Interval) bool) 
 	return out
 }
 
-// contiguous returns a channel of intervals from the input
+// contiguous returns a channel of nodes from the input
 // channel that are contiguous and have a total duration of at
-// least the given duration.  The intervals may be provided in
+// least the given duration.  The nodes may be provided in
 // either forward or reverse order, and will be returned in the
 // order they are provided.
-func contiguous(ch <-chan interval.Interval, duration time.Duration) <-chan interval.Interval {
-	out := make(chan interval.Interval)
+func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
+	out := make(chan *Tree)
 	go func() {
 		var sum time.Duration
-		var intervals []interval.Interval
-		for i := range ch {
-			if len(intervals) == 0 {
-				intervals = append(intervals, i)
+		var nodes []*Tree
+		for n := range ch {
+			i := n.Interval
+			if len(nodes) == 0 {
+				nodes = append(nodes, n)
 				sum = i.Duration()
 				continue
 			}
-			okFwd := i.Start().Equal(intervals[len(intervals)-1].End())
-			okRev := i.End().Equal(intervals[len(intervals)-1].Start())
+			lastInterval := nodes[len(nodes)-1].Interval
+			nStart := n.Interval.Start()
+			nEnd := n.Interval.End()
+			okFwd := nStart.Equal(lastInterval.End())
+			okRev := nEnd.Equal(lastInterval.Start())
 			if okFwd || okRev {
-				intervals = append(intervals, i)
+				nodes = append(nodes, n)
 				sum += i.Duration()
 				if sum >= duration {
-					for _, i := range intervals {
+					for _, i := range nodes {
 						out <- i
 					}
 					close(out)
 					return
 				}
 			} else {
-				intervals = []interval.Interval{i}
+				nodes = []*Tree{n}
 				sum = i.Duration()
 			}
 		}
@@ -133,16 +126,16 @@ func contiguous(ch <-chan interval.Interval, duration time.Duration) <-chan inte
 	return out
 }
 
-// reverse reverses the order of intervals in a channel of intervals.
-func reverse(ch <-chan interval.Interval) <-chan interval.Interval {
-	out := make(chan interval.Interval)
+// reverse reverses the order of nodes in a channel of nodes.
+func reverse(ch <-chan *Tree) <-chan *Tree {
+	out := make(chan *Tree)
 	go func() {
-		intervals := []interval.Interval{}
+		nodes := []*Tree{}
 		for i := range ch {
-			intervals = append(intervals, i)
+			nodes = append(nodes, i)
 		}
-		for i := len(intervals) - 1; i >= 0; i-- {
-			out <- intervals[i]
+		for i := len(nodes) - 1; i >= 0; i-- {
+			out <- nodes[i]
 		}
 		close(out)
 	}()

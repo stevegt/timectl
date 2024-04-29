@@ -366,6 +366,43 @@ func (t *Tree) allPathsBlocking(path Path, c chan Path) {
 	}
 }
 
+// allNodes returns a channel of all nodes in the tree.  The fwd
+// parameter determines whether the nodes are returned in depth-first
+// order, Left child first, or in reverse depth-first order, Right
+// child first.
+func (t *Tree) allNodes(fwd bool) (c chan *Tree) {
+	c = make(chan *Tree)
+	go func() {
+		defer close(c)
+		t.allNodesBlocking(fwd, c)
+	}()
+	return c
+}
+
+// allNodesBlocking is a helper function for allNodes that returns a
+// channel of all nodes in the tree.  The fwd parameter determines
+// whether the nodes are returned in depth-first order, Left child
+// first, or in reverse depth-first order, Right child first.
+func (t *Tree) allNodesBlocking(fwd bool, c chan *Tree) {
+	if fwd {
+		if t.Left != nil {
+			t.Left.allNodesBlocking(fwd, c)
+		}
+		c <- t
+		if t.Right != nil {
+			t.Right.allNodesBlocking(fwd, c)
+		}
+	} else {
+		if t.Right != nil {
+			t.Right.allNodesBlocking(fwd, c)
+		}
+		c <- t
+		if t.Left != nil {
+			t.Left.allNodesBlocking(fwd, c)
+		}
+	}
+}
+
 // firstNode returns the first node in the tree.
 func (t *Tree) firstNode() *Tree {
 	if t.Left != nil {

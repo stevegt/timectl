@@ -25,8 +25,8 @@ import (
 func TestAccumulator(t *testing.T) {
 	top := NewTree()
 
-	// accumulate collects intervals in the tree that overlap the given
-	// interval.  The intervals are collected in order of start time.
+	// accumulate collects nodes in the tree that overlap the given
+	// range.  The nodes are collected in order of start time.
 
 	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
@@ -37,12 +37,12 @@ func TestAccumulator(t *testing.T) {
 	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T10:15:00Z")
 	Ck(err)
 
-	// get the intervals that overlap the range
-	c1 := top.accumulate(searchStart, searchEnd)
-	intervals := chan2slice(c1)
+	// get the nodes that overlap the range
+	c1 := top.accumulate(true, searchStart, searchEnd)
+	nodes := chan2slice(c1)
 
-	// check that we got the right number of intervals
-	Tassert(t, len(intervals) == 3, "Expected 3 intervals, got %d", len(intervals))
+	// check that we got the right number of nodes
+	Tassert(t, len(nodes) == 3, "Expected 3 nodes, got %d", len(nodes))
 
 }
 
@@ -50,15 +50,16 @@ func TestAccumulator(t *testing.T) {
 func TestFilter(t *testing.T) {
 	top := NewTree()
 
-	// filter returns a channel of intervals from the input channel
+	// filter returns a channel of nodes from the input channel
 	// that pass the filter function.
 
 	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
-	fn := func(interval interval.Interval) bool {
-		return interval.Priority() < 2
+	fn := func(t *Tree) bool {
+		iv := t.Interval
+		return iv.Priority() < 2
 	}
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:15:00Z")
@@ -66,12 +67,12 @@ func TestFilter(t *testing.T) {
 	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T10:15:00Z")
 	Ck(err)
 
-	c1 := top.accumulate(searchStart, searchEnd)
+	c1 := top.accumulate(true, searchStart, searchEnd)
 	c2 := filter(c1, fn)
 	i2 := chan2slice(c2)
 
-	// check that we got the right number of intervals
-	Tassert(t, len(i2) == 2, "Expected 2 intervals, got %d", len(i2))
+	// check that we got the right number of nodes
+	Tassert(t, len(i2) == 2, "Expected 2 nodes, got %d", len(i2))
 
 }
 
@@ -89,29 +90,32 @@ func TestContiguousFilter(t *testing.T) {
 	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:45:00Z")
 	Ck(err)
 
-	// get the intervals that overlap the range
-	acc := top.accumulate(searchStart, searchEnd)
-	// filter the intervals to only include those with a priority less than 2
-	low := filter(acc, func(interval interval.Interval) bool {
-		return interval.Priority() < 2
+	// get the nodes that overlap the range
+	acc := top.accumulate(true, searchStart, searchEnd)
+	// filter the nodes to only include those with a priority less than 2
+	low := filter(acc, func(t *Tree) bool {
+		iv := t.Interval
+		return iv.Priority() < 2
 	})
-	// filter the intervals to only include those that are contiguous
+	// filter the nodes to only include those that are contiguous
 	// for at least N minutes
 	cont := contiguous(low, 120*time.Minute)
 	res := chan2slice(cont)
 
-	// check that we got the right number of intervals
-	Tassert(t, len(res) == 4, "Expected 4 intervals, got %d", len(res))
+	// check that we got the right number of nodes
+	Tassert(t, len(res) == 4, "Expected 4 nodes, got %d", len(res))
 
-	// check that we got the right intervals
-	err = Match(res[0], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
+	// check that we got the right nodes
+	var ivs []interval.Interval
+	for _, n := range res {
+		ivs = append(ivs, n.Interval)
+	}
+	err = Match(ivs[0], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = Match(res[1], "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	err = Match(ivs[1], "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Tassert(t, err == nil, err)
-	err = Match(res[2], "2024-01-01T12:00:00Z", "2024-01-01T12:15:00Z", 0)
+	err = Match(ivs[2], "2024-01-01T12:00:00Z", "2024-01-01T12:15:00Z", 0)
 	Tassert(t, err == nil, err)
-	err = Match(res[3], "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
+	err = Match(ivs[3], "2024-01-01T12:15:00Z", "2024-01-01T13:00:00Z", 1)
 	Tassert(t, err == nil, err)
 }
-
-// XXX WIP below here
