@@ -28,7 +28,7 @@ type Interval interface {
 	OverlapsRange(start, end time.Time) bool
 	// Duration returns the duration of the interval.
 	Duration() time.Duration
-	// Busy returns true if the interval is associated with a payload.
+	// Busy returns true if the interval is busy.  The interval is busy if the priority is greater than zero.
 	Busy() bool
 	// Punch creates one to three new intervals by punching a hole in the current interval.
 	Punch(hole Interval) []Interval

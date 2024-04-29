@@ -72,6 +72,77 @@ func (t *Tree) Insert(newInterval interval.Interval) bool {
 		return false
 	}
 
+	// use FindLowerPriority to find a free interval where we can insert
+	// the new interval
+	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), newInterval.Priority())
+	if len(nodes) == 0 {
+		// XXX return a meaningful error
+		return false
+	}
+
+	// nodes should be a slice of length 1
+	Assert(len(nodes) == 1, "unexpected number of nodes")
+	f := nodes[0]
+	// freeNode should have a free interval
+	Assert(!f.Busy(), "freeNode is busy")
+
+	newIntervals := f.Interval.Punch(newInterval)
+	switch len(newIntervals) {
+	case 0:
+		// newInterval doesn't fit in this node's interval
+		Assert(false, "newInterval doesn't fit in freeNode's interval")
+	case 1:
+		// newInterval fits exactly in this node's interval
+		f.Interval = newInterval
+		f.setMinMax()
+		return true
+	case 2:
+		// newInterval fits in this node's interval with a free interval
+		// left over
+		// put the first interval in this node
+		f.Interval = newIntervals[0]
+		// create a new right child for the second interval and make
+		// the old right child the right child of it
+		newNode := newTreeFromInterval(newIntervals[1])
+		newNode.Right = f.Right
+		newNode.setMinMax()
+		f.Right = newNode
+		f.setMinMax()
+		return true
+	case 3:
+		// newInterval fits in this node's interval with free intervals
+		// left over to the left and right
+		// put the first interval in a new left child
+		newLeftNode := newTreeFromInterval(newIntervals[0])
+		newLeftNode.Left = f.Left
+		newLeftNode.setMinMax()
+		f.Left = newLeftNode
+		// put the second interval in this node
+		f.Interval = newIntervals[1]
+		// put the third interval in a new right child
+		newRightNode := newTreeFromInterval(newIntervals[2])
+		newRightNode.Right = f.Right
+		newRightNode.setMinMax()
+		f.Right = newRightNode
+		f.setMinMax()
+		return true
+	default:
+		Assert(false, "unexpected number of intervals")
+	}
+
+	Assert(false, "unexpected code path")
+	return false
+}
+
+func (t *Tree) XXXInsert(newInterval interval.Interval) bool {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+
+	if !newInterval.Busy() {
+		// XXX return a meaningful error
+		return false
+	}
+
 	// if newInterval is outside the bounds of this node, then we can't
 	// insert it here
 	if newInterval.Start().Before(t.MinStart) || newInterval.End().After(t.MaxEnd) {
@@ -177,21 +248,13 @@ func (t *Tree) AllIntervals() []interval.Interval {
 	return intervals
 }
 
-// Busy returns true if any interval in the tree is busy.
+// Busy returns true if the interval is busy.
 func (t *Tree) Busy() bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
-	if t.Interval != nil && t.Interval.Busy() {
-		return true
-	}
-	if t.Left != nil && t.Left.Busy() {
-		return true
-	}
-	if t.Right != nil && t.Right.Busy() {
-		return true
-	}
-	return false
+	Assert(t.Interval != nil, "unexpected nil interval")
+	return t.Interval.Busy()
 }
 
 // Start returns the start time of the interval in the node.
