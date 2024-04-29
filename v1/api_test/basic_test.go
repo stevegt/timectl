@@ -50,9 +50,9 @@ func TestInsertMany(t *testing.T) {
 	err = tree.InsertExpect(top, "lrrrr", "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
 	tree.Verify(t, top, true)
 	Tassert(t, err == nil, err)
-	// err = tree.InsertExpect(top, "lrl", "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
-	// tree.Verify(t, top, true)
-	// Tassert(t, err == nil, err)
+	err = tree.InsertExpect(top, "lrl", "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
+	tree.Verify(t, top, true)
+	Tassert(t, err == nil, err)
 
 }
 

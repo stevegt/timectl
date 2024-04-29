@@ -7,21 +7,16 @@ func (t *Tree) rebalance() {
 }
 
 // treeToVine converts the tree into a "vine" (a sorted linked list) using right rotations.
-func (t *Tree) treeToVine() {
-	tail := t
-	remainder := t.Right
-	for remainder != nil {
-		if remainder.Left != nil {
-			oldRemainder := remainder
-			remainder = remainder.Left
-			oldRemainder.Left = remainder.Right
-			remainder.Right = oldRemainder
-			tail.Right = remainder
-		} else {
-			tail = remainder
-			remainder = remainder.Right
-		}
+func (t *Tree) treeToVine() (out *Tree) {
+	if t == nil {
+		return
 	}
+	out = t
+	for out.Left != nil {
+		out = out.rotateRight()
+	}
+	out.Right = out.Right.treeToVine()
+	return
 }
 
 // vineToTree converts the "vine" back into a balanced tree using left rotations.

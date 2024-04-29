@@ -47,9 +47,20 @@ func TestVine(t *testing.T) {
 	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
 	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
-	Insert(top, "2024-01-01T10:30:00Z", "2024-01-01T17:00:00Z", 1)
 
+	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+
+	// convert the tree into a vine
+	top = top.treeToVine()
 	// ShowDot(top, false)
+
+	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+	pathChan := top.allPaths(nil)
+	expect := "t"
+	for path := range pathChan {
+		Tassert(t, path.String() == expect, "path should be %v, got %v", expect, path)
+		expect += "r"
+	}
 }
 
 // test rebalancing the tree
