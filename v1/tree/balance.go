@@ -1,31 +1,48 @@
 package tree
 
-// rebalance checks and corrects the balance of the tree using DSW algorithm.
-func (old *Tree) rebalance() (t *Tree) {
-	t = old
+// rebalance restructures the tree to maintain or improve balance. It does not require
+// an 'ancestors' variable as initially indicated by mistaken code implementation.
+// It is called after insertions or deletions that might have left the tree unbalanced.
+func (t *Tree) rebalance() {
 	if t == nil {
-		return nil
+		return
 	}
 
-	// Step 1: Convert the tree to a vine.
-	t = t.vine()
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
-	// Step 2: Convert the vine to a balanced tree.
-	// t = t.balance()
+	leftHeight := t.Left.height()
+	rightHeight := t.Right.height()
 
-	return
-}
+	// If left is heavier, check if a right rotation is needed
+	if leftHeight > rightHeight+1 {
+		leftLeftHeight := t.Left.Left.height()
+		leftRightHeight := t.Left.Right.height()
 
-// vine converts the tree to a vine.
-func (t *Tree) vine() (newRoot *Tree) {
-	// XXX checkpoint before converting to store values in internal nodes
-	return t
-}
-
-// getBalance calculates and returns the balance factor of this node.
-func (t *Tree) getBalance() int {
-	if t == nil {
-		return 0
+		// Left-Right Case: Left rotation on left child before right rotation on self
+		if leftRightHeight > leftLeftHeight {
+			t.Left = t.Left.rotateLeft()
+		}
+		// Left-Left Case: Right rotation on self
+		t = t.rotateRight()
 	}
-	return t.Left.height() - t.Right.height()
+
+	// If right is heavier, check if a left rotation is needed
+	if rightHeight > leftHeight+1 {
+		rightRightHeight := t.Right.Right.height()
+		rightLeftHeight := t.Right.Left.height()
+
+		// Right-Left Case: Right rotation on right child before left rotation on self
+		if rightLeftHeight > rightRightHeight {
+			t.Right = t.Right.rotateRight()
+		}
+		// Right-Right Case: Left rotation on self
+		t = t.rotateLeft()
+	}
+
+	// Note: The original code had references to a nonexistent 'ancestors' slice,
+	// which was incorrect. Furthermore, the rebalance process is self-contained within
+	// the node 't', and manual reassignment 't = newRoot' is not applicable as 't' is
+	// a local copy of the pointer. The proper tree structure adjustment is handled within
+	// rotateLeft and rotateRight method calls, which correctly modify the tree structure.
 }

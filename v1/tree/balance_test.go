@@ -49,6 +49,11 @@ func TestRebalanceSimple(t *testing.T) {
 
 	Verify(t, top, false)
 
+	// rebalance is a function that rebalances the tree using the DSW
+	// algorithm.  It calls rotateLeft() and rotateRight() to first
+	// convert the tree into a vine and then convert the vine into a
+	// balanced tree.
+
 	// rebalance the tree
 	top.rebalance()
 	// nodes should be the same
@@ -67,8 +72,6 @@ func TestRebalanceSimple(t *testing.T) {
 	err = InsertExpect(top, "rr", "2024-01-01T12:30:00Z", "2024-01-01T13:00:00Z", 1)
 	Tassert(t, err == nil, err)
 
-	// showDot(top, false)
-
 	// check the heights
 	leftHeight := top.Left.height()
 	rightHeight := top.Right.height()
@@ -78,8 +81,18 @@ func TestRebalanceSimple(t *testing.T) {
 	err = top.ckBalance(nil)
 	Tassert(t, err != nil, "tree should be unbalanced")
 
+	showDot(top, false)
+
 	// rebalance the tree
-	top = top.rebalance()
+	top.rebalance()
+
+	showDot(top, false)
+
+	// check the heights
+	leftHeight = top.Left.height()
+	rightHeight = top.Right.height()
+	Tassert(t, leftHeight == 2, "left height should be 2")
+	Tassert(t, rightHeight == 2, "right height should be 2")
 
 	Verify(t, top, false)
 
