@@ -72,9 +72,9 @@ func (t *Tree) Insert(newInterval interval.Interval) bool {
 		return false
 	}
 
-	// use FindLowerPriority to find a free interval where we can insert
-	// the new interval
-	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), newInterval.Priority())
+	// use FindLowerPriority to find a free interval where we can
+	// insert the new interval
+	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
 	if len(nodes) == 0 {
 		// XXX return a meaningful error
 		return false
@@ -85,6 +85,13 @@ func (t *Tree) Insert(newInterval interval.Interval) bool {
 	f := nodes[0]
 	// freeNode should have a free interval
 	Assert(!f.Busy(), "freeNode is busy")
+
+	// f should start on or before newInterval and end on or after
+	// newInterval
+	if f.Start().After(newInterval.Start()) || f.End().Before(newInterval.End()) {
+		// XXX return a meaningful error
+		return false
+	}
 
 	newIntervals := f.Interval.Punch(newInterval)
 	switch len(newIntervals) {
@@ -447,6 +454,7 @@ func (t *Tree) allNodes(fwd bool, start, end time.Time) <-chan *Tree {
 // whether the nodes are returned in depth-first order, Left child
 // first, or in reverse depth-first order, Right child first.
 func (t *Tree) allNodesBlocking(fwd bool, start, end time.Time, c chan *Tree) {
+
 	if t == nil {
 		return
 	}

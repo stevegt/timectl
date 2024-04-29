@@ -170,16 +170,16 @@ func TestFindLowerPriority(t *testing.T) {
 	top := tree.NewTree()
 
 	// insert several intervals into the tree
+	i0900_0930 := tree.Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	goadapt.Tassert(t, i0900_0930 != nil, "Failed to insert interval")
 	i1000_1100 := tree.Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	goadapt.Tassert(t, i1000_1100 != nil, "Failed to insert interval")
 	i1130_1200 := tree.Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
 	goadapt.Tassert(t, i1130_1200 != nil, "Failed to insert interval")
-	i0900_0930 := tree.Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
-	goadapt.Tassert(t, i0900_0930 != nil, "Failed to insert interval")
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
 	goadapt.Ck(err)
-	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
+	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:00:00Z")
 	goadapt.Ck(err)
 
 	// showDot(tree, true)

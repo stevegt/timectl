@@ -21,6 +21,50 @@ import (
 // node interval end time is less than or equal to the right node
 // interval end time.
 
+// test contiguous as a standalone function without a tree
+func TestContiguous(t *testing.T) {
+	// create some intervals
+	ivs := []interval.Interval{
+		NewInterval("2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 0),
+		NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1),
+		NewInterval("2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 0),
+		NewInterval("2024-01-01T12:00:00Z", "2024-01-01T15:00:00Z", 0),
+		NewInterval("2024-01-01T15:00:00Z", "2024-01-01T16:00:00Z", 1),
+	}
+
+	// put them in tree nodes
+	nodes := make([]*Tree, len(ivs))
+	for i, iv := range ivs {
+		nodes[i] = newTreeFromInterval(iv)
+	}
+	Tassert(t, len(nodes) == 5, "Expected 5 nodes, got %d", len(nodes))
+
+	// keep only the free intervals
+	nodeChan := slice2chan(nodes)
+	freeChan := filter(nodeChan, func(node *Tree) bool {
+		iv := node.Interval
+		return iv.Priority() < 1
+	})
+	freeNodes := chan2slice(freeChan)
+	Tassert(t, len(freeNodes) == 3, "Expected 3 free nodes, got %d", len(freeNodes))
+
+	// find contiguous nodes of at least 30 minutes
+	freeChan = slice2chan(freeNodes)
+	free30 := chan2slice(contiguous(freeChan, 30*time.Minute))
+	Tassert(t, len(free30) == 1, "Expected 1 free30 node, got %d", len(free30))
+
+	// find contiguous nodes of at least 60 minutes
+	freeChan = slice2chan(freeNodes)
+	free60 := chan2slice(contiguous(freeChan, 60*time.Minute))
+	Tassert(t, len(free60) == 1, "Expected 1 free60 node, got %d", len(free60))
+
+	// find contiguous nodes of at least 90 minutes
+	freeChan = slice2chan(freeNodes)
+	free90 := chan2slice(contiguous(freeChan, 90*time.Minute))
+	Tassert(t, len(free90) == 2, "Expected 2 free90 nodes, got %d", len(free90))
+
+}
+
 // test accumulator
 func TestAccumulator(t *testing.T) {
 	top := NewTree()

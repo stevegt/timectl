@@ -17,22 +17,25 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 
 	// get the nodes that overlap the range
 	acc := t.accumulate(first, searchStart, searchEnd)
+
 	// filter the nodes to only include those with a priority less
 	// than priority
 	low := filter(acc, func(node *Tree) bool {
 		return node.Interval.Priority() < priority
 	})
+
 	// filter the nodes to only include those that are contiguous
 	// for at least duration
 	cont := contiguous(low, duration)
 	if !first {
 		cont = reverse(cont)
 	}
+
 	res := chan2slice(cont)
 	return res
 }
 
-// accumulate returns a channel of nodes in the tree that overlap the
+// accumulate returns a channel of nodes in the tree that wrap the
 // given range of start and end times. The nodes are returned in order
 // of start time.
 func (t *Tree) accumulate(fwd bool, start, end time.Time) (out <-chan *Tree) {
@@ -88,13 +91,18 @@ func filter(in <-chan *Tree, filterFn func(tree *Tree) bool) <-chan *Tree {
 // channel that are contiguous and have a total duration of at
 // least the given duration.  The nodes may be provided in
 // either forward or reverse order, and will be returned in the
-// order they are provided.
+// order they are provided.  The channel is closed when the
+// first matching set of nodes is found.
 func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
 	out := make(chan *Tree)
 	go func() {
+		defer close(out)
 		var sum time.Duration
 		var nodes []*Tree
 		for n := range ch {
+			if sum >= duration {
+				break
+			}
 			i := n.Interval
 			if len(nodes) == 0 {
 				nodes = append(nodes, n)
@@ -109,19 +117,16 @@ func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
 			if okFwd || okRev {
 				nodes = append(nodes, n)
 				sum += i.Duration()
-				if sum >= duration {
-					for _, i := range nodes {
-						out <- i
-					}
-					close(out)
-					return
-				}
 			} else {
 				nodes = []*Tree{n}
 				sum = i.Duration()
 			}
 		}
-		close(out)
+		if sum >= duration {
+			for _, n := range nodes {
+				out <- n
+			}
+		}
 	}()
 	return out
 }
