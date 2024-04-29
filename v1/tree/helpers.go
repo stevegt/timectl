@@ -3,8 +3,10 @@ package tree
 import (
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,21 +42,20 @@ func Get(tree *Tree, pathStr string) *Tree {
 // means to go left and 'r' means to go right.  An empty pathStr means
 // to check the root node.
 func Expect(tree *Tree, pathStr, startStr, endStr string, priority float64) error {
+	expectStr := Spf("expect %v %v %v %v\n", pathStr, startStr, endStr, priority)
 	node := Get(tree, pathStr)
 	if node == nil {
 		return fmt.Errorf("no node at path: %v", pathStr)
-	}
-	nodeInterval := node.Interval
-	if nodeInterval.Priority() != priority {
-		return fmt.Errorf("Expected priority=%v, got priority=%v", priority, nodeInterval.Priority())
 	}
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
 	ev := interval.NewInterval(start, end, priority)
-	if !node.Interval.Equal(ev) {
-		return fmt.Errorf("Expected %v, got %v", ev, node.Interval)
+	ok := node.Interval.Equal(ev)
+	ok = ok && node.Interval.Priority() == priority
+	if !ok {
+		return fmt.Errorf("%vExpected %v, got %v", expectStr, ev, node.Interval)
 	}
 	return nil
 }
@@ -132,7 +133,7 @@ func Verify(t *testing.T, tree *Tree, show bool) {
 		msg := Spf("%v:%v %v\n", file, line, err)
 		Pl(msg)
 		if show {
-			showDot(tree, false)
+			ShowDot(tree, false)
 		}
 		t.Fatal(msg)
 	}
@@ -149,4 +150,19 @@ func Dump(tree *Tree, path string) {
 	if tree.Right != nil {
 		Dump(tree.Right, path+"r")
 	}
+}
+
+// ShowDot displays the tree in xdot.  If bg is true, then the xdot
+// window is displayed from a background process.
+func ShowDot(tree *Tree, bg bool) {
+	dot := tree.AsDot(nil)
+	// call 'xdot -' passing the dot file as input
+	cmd := exec.Command("xdot", "-")
+	cmd.Stdin = strings.NewReader(dot)
+	if bg {
+		cmd.Start()
+		go cmd.Wait()
+		return
+	}
+	cmd.Run()
 }

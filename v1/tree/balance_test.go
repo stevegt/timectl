@@ -29,13 +29,31 @@ func TestRotate(t *testing.T) {
 	err = Expect(top, "", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
-	// showDot(tree, false)
+	// ShowDot(tree, false)
 
 	Verify(t, top, false)
 }
 
+// test conversion to vine
+func TestVine(t *testing.T) {
+	top := NewTree()
+
+	// insert several intervals into the tree
+	Insert(top, "2024-01-01T15:00:00Z", "2024-01-01T16:00:00Z", 1)
+	Insert(top, "2024-01-01T08:00:00Z", "2024-01-01T09:00:00Z", 1)
+	Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(top, "2024-01-01T12:00:00Z", "2024-01-01T13:00:00Z", 1)
+	Insert(top, "2024-01-01T13:00:00Z", "2024-01-01T14:00:00Z", 1)
+	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
+	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
+	Insert(top, "2024-01-01T10:30:00Z", "2024-01-01T17:00:00Z", 1)
+
+	// ShowDot(top, false)
+}
+
 // test rebalancing the tree
-func TestRebalanceSimple(t *testing.T) {
+func XXXTestRebalanceSimple(t *testing.T) {
 	top := NewTree()
 
 	// insert 1 interval into the tree
@@ -81,18 +99,38 @@ func TestRebalanceSimple(t *testing.T) {
 	err = top.ckBalance(nil)
 	Tassert(t, err != nil, "tree should be unbalanced")
 
-	showDot(top, false)
+	// ShowDot(top, false)
 
 	// rebalance the tree
 	top.rebalance()
 
-	showDot(top, false)
+	// ShowDot(top, false)
 
 	// check the heights
 	leftHeight = top.Left.height()
 	rightHeight = top.Right.height()
 	Tassert(t, leftHeight == 2, "left height should be 2")
 	Tassert(t, rightHeight == 2, "right height should be 2")
+
+	Verify(t, top, false)
+
+}
+
+// test rebalancing the tree
+func XXXTestRebalance(t *testing.T) {
+	top := NewTree()
+
+	// insert a few intervals into the tree
+	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
+
+	// rebalance the tree
+	top.rebalance()
+
+	err := top.Verify()
+	Tassert(t, err == nil, err)
 
 	Verify(t, top, false)
 

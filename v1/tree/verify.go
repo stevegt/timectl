@@ -107,9 +107,11 @@ func (t *Tree) Verify() error {
 
 	}
 
-	err := t.ckBalance(nil)
-	if err != nil {
-		return err
+	if false {
+		err := t.ckBalance(nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

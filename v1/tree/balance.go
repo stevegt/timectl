@@ -1,48 +1,63 @@
 package tree
 
-// rebalance restructures the tree to maintain or improve balance. It does not require
-// an 'ancestors' variable as initially indicated by mistaken code implementation.
-// It is called after insertions or deletions that might have left the tree unbalanced.
+// rebalance performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
 func (t *Tree) rebalance() {
-	if t == nil {
-		return
-	}
+	t.treeToVine()
+	t.vineToTree()
+}
 
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
-
-	leftHeight := t.Left.height()
-	rightHeight := t.Right.height()
-
-	// If left is heavier, check if a right rotation is needed
-	if leftHeight > rightHeight+1 {
-		leftLeftHeight := t.Left.Left.height()
-		leftRightHeight := t.Left.Right.height()
-
-		// Left-Right Case: Left rotation on left child before right rotation on self
-		if leftRightHeight > leftLeftHeight {
-			t.Left = t.Left.rotateLeft()
+// treeToVine converts the tree into a "vine" (a sorted linked list) using right rotations.
+func (t *Tree) treeToVine() {
+	tail := t
+	remainder := t.Right
+	for remainder != nil {
+		if remainder.Left != nil {
+			oldRemainder := remainder
+			remainder = remainder.Left
+			oldRemainder.Left = remainder.Right
+			remainder.Right = oldRemainder
+			tail.Right = remainder
+		} else {
+			tail = remainder
+			remainder = remainder.Right
 		}
-		// Left-Left Case: Right rotation on self
-		t = t.rotateRight()
 	}
+}
 
-	// If right is heavier, check if a left rotation is needed
-	if rightHeight > leftHeight+1 {
-		rightRightHeight := t.Right.Right.height()
-		rightLeftHeight := t.Right.Left.height()
-
-		// Right-Left Case: Right rotation on right child before left rotation on self
-		if rightLeftHeight > rightRightHeight {
-			t.Right = t.Right.rotateRight()
-		}
-		// Right-Right Case: Left rotation on self
-		t = t.rotateLeft()
+// vineToTree converts the "vine" back into a balanced tree using left rotations.
+func (t *Tree) vineToTree() {
+	n := 0
+	for temp := t; temp != nil; temp = temp.Right {
+		n++
 	}
+	leafNodes := n + 1 - (1 << (log2(n + 1))) // Number of "incomplete" nodes at the bottom level of the tree
+	t.compress(leafNodes)
 
-	// Note: The original code had references to a nonexistent 'ancestors' slice,
-	// which was incorrect. Furthermore, the rebalance process is self-contained within
-	// the node 't', and manual reassignment 't = newRoot' is not applicable as 't' is
-	// a local copy of the pointer. The proper tree structure adjustment is handled within
-	// rotateLeft and rotateRight method calls, which correctly modify the tree structure.
+	// Now, double the tree size until it's just less than 2^k - 1
+	for n > 1 { // Whilst there are still nodes to be rotated into the tree
+		n >>= 1 // Divide by 2 using a bitwise right shift
+		t.compress(n)
+	}
+}
+
+// compress performs left rotations to construct the tree from the "vine".
+func (t *Tree) compress(count int) {
+	scanner := t
+	for i := 0; i < count; i++ {
+		child := scanner.Right
+		scanner.Right = child.Right
+		scanner = scanner.Right
+		child.Right = scanner.Left
+		scanner.Left = child
+	}
+}
+
+// log2 computes the binary logarithm of n using bit shifting.
+func log2(n int) int {
+	result := 0
+	for n > 1 {
+		n >>= 1
+		result++
+	}
+	return result
 }

@@ -2,8 +2,6 @@ package tree
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/reugn/async"
@@ -63,7 +61,8 @@ func newTreeFromInterval(interval interval.Interval) *Tree {
 
 // Insert adds a new interval to the tree, adjusting the structure as
 // necessary.  Insertion fails if the new interval conflicts with any
-// existing interval in the tree.  The new interval must be busy.
+// existing interval in the tree with a priority greater than 0.
+// Insertion fails if the new interval is not busy.
 func (t *Tree) Insert(newInterval interval.Interval) bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
@@ -73,21 +72,31 @@ func (t *Tree) Insert(newInterval interval.Interval) bool {
 		return false
 	}
 
+	// if newInterval is outside the bounds of this node, then we can't
+	// insert it here
+	if newInterval.Start().Before(t.MinStart) || newInterval.End().After(t.MaxEnd) {
+		return false
+	}
+
+	// if this node is busy, then we need to try to insert the new
+	// interval into a free child node
+	// XXX add an "hasFree" flag to the tree to indicate that there is
+	// at least one free node in the tree
+	// XXX add a "hasBusy" flag to the tree to indicate that there is at
+	// least one busy node in the tree
 	if t.Busy() {
-		if t.Left != nil && newInterval.Start().Before(t.Left.End()) {
+		if t.Left != nil {
 			if t.Left.Insert(newInterval) {
 				t.setMinMax()
 				return true
 			}
 		}
-		if t.Right != nil && newInterval.End().After(t.Right.Start()) {
+		if t.Right != nil {
 			if t.Right.Insert(newInterval) {
-				t.MaxEnd = t.Right.MaxEnd
-				t.setMaxPriority()
+				t.setMinMax()
 				return true
 			}
 		}
-		return false
 	}
 
 	// t is a free node, possibly with free children -- we're going to
@@ -410,21 +419,6 @@ func (t *Tree) AsDot(path Path) string {
 		out += "}\n"
 	}
 	return out
-}
-
-// showDot displays the tree in xdot.  If bg is true, then the xdot
-// window is displayed from a background process.
-func showDot(tree *Tree, bg bool) {
-	dot := tree.AsDot(nil)
-	// call 'xdot -' passing the dot file as input
-	cmd := exec.Command("xdot", "-")
-	cmd.Stdin = strings.NewReader(dot)
-	if bg {
-		cmd.Start()
-		go cmd.Wait()
-		return
-	}
-	cmd.Run()
 }
 
 // rotateLeft performs a Left rotation on this node.

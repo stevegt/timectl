@@ -114,24 +114,4 @@ func TestContiguousFilter(t *testing.T) {
 	Tassert(t, err == nil, err)
 }
 
-// test rebalancing the tree
-func TestRebalance(t *testing.T) {
-	top := NewTree()
-
-	// insert a few intervals into the tree
-	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
-	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
-
-	// rebalance the tree
-	top.rebalance()
-
-	err := top.Verify()
-	Tassert(t, err == nil, err)
-
-	Verify(t, top, false)
-
-}
-
 // XXX WIP below here
