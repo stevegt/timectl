@@ -43,7 +43,7 @@ func (t *Tree) accumulate(fwd bool, start, end time.Time) (out <-chan *Tree) {
 		return i.OverlapsRange(start, end)
 	}
 
-	allNodes := t.allNodes(fwd)
+	allNodes := t.allNodes(fwd, start, end)
 	out = filter(allNodes, filterFn)
 	return
 }

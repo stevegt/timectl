@@ -366,15 +366,15 @@ func (t *Tree) allPathsBlocking(path Path, c chan Path) {
 	}
 }
 
-// allNodes returns a channel of all nodes in the tree.  The fwd
-// parameter determines whether the nodes are returned in depth-first
-// order, Left child first, or in reverse depth-first order, Right
-// child first.
-func (t *Tree) allNodes(fwd bool) (c chan *Tree) {
-	c = make(chan *Tree)
+// allNodes returns a channel of all nodes in the tree that are
+// between the start and end times.  The fwd parameter determines
+// whether the nodes are returned in depth-first order, Left child
+// first, or in reverse depth-first order, Right child first.
+func (t *Tree) allNodes(fwd bool, start, end time.Time) <-chan *Tree {
+	c := make(chan *Tree)
 	go func() {
 		defer close(c)
-		t.allNodesBlocking(fwd, c)
+		t.allNodesBlocking(fwd, start, end, c)
 	}()
 	return c
 }
@@ -383,23 +383,26 @@ func (t *Tree) allNodes(fwd bool) (c chan *Tree) {
 // channel of all nodes in the tree.  The fwd parameter determines
 // whether the nodes are returned in depth-first order, Left child
 // first, or in reverse depth-first order, Right child first.
-func (t *Tree) allNodesBlocking(fwd bool, c chan *Tree) {
+func (t *Tree) allNodesBlocking(fwd bool, start, end time.Time, c chan *Tree) {
+	if t == nil {
+		return
+	}
+
+	if t.MaxEnd.Before(start) {
+		return
+	}
+	if t.MinStart.After(end) {
+		return
+	}
+
 	if fwd {
-		if t.Left != nil {
-			t.Left.allNodesBlocking(fwd, c)
-		}
+		t.Left.allNodesBlocking(fwd, start, end, c)
 		c <- t
-		if t.Right != nil {
-			t.Right.allNodesBlocking(fwd, c)
-		}
+		t.Right.allNodesBlocking(fwd, start, end, c)
 	} else {
-		if t.Right != nil {
-			t.Right.allNodesBlocking(fwd, c)
-		}
+		t.Right.allNodesBlocking(fwd, start, end, c)
 		c <- t
-		if t.Left != nil {
-			t.Left.allNodesBlocking(fwd, c)
-		}
+		t.Left.allNodesBlocking(fwd, start, end, c)
 	}
 }
 
