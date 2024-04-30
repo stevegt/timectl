@@ -10,7 +10,7 @@ import (
 // Verify checks the integrity of the tree structure. It makes sure
 // that all nodes and intervals are correctly placed within the tree
 // according to the interval tree properties.
-func (t *Tree) Verify() error {
+func (t *Tree) Verify(ckBalance bool) error {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -107,7 +107,7 @@ func (t *Tree) Verify() error {
 
 	}
 
-	if false {
+	if ckBalance {
 		err := t.ckBalance(nil)
 		if err != nil {
 			return err

@@ -532,27 +532,92 @@ func (t *Tree) AsDot(path Path) string {
 	return out
 }
 
-// rotateLeft performs a Left rotation on this node.
-func (t *Tree) rotateLeft() (newRoot *Tree) {
-	newRoot = t.Right
-	newLeftRight := t.Right.Left
-	newRoot.Left = t
-	newRoot.Left.Right = newLeftRight
-	newRoot.Left.setMinMax()
-	newRoot.Right.setMinMax()
-	newRoot.setMinMax()
+// rotateLeft performs a Left rotation on this node. The new root is
+// the current node's Right child.  The current node becomes the new
+// root's Left child.
+func (t *Tree) rotateLeft() (R *Tree) {
+	if t == nil || t.Right == nil {
+		return
+	}
+	// we start like this:
+	//
+	//       t
+	//        \
+	//         R
+	//        / \
+	//       x   y
+	//
+	// the new root is the current node's right child
+	R = t.Right
+	// save a pointer to the new root's current Left child
+	x := R.Left
+
+	// the current node becomes the new root's left child
+	//
+	//       t
+	//        \
+	//         R
+	//        / \
+	//       t   y
+	//
+	R.Left = t
+
+	// finally, we set the current node's right child to the new
+	// root's old left child
+	//
+	//         R
+	//        / \
+	//       t   y
+	//		  \
+	//		   x
+	//
+	R.Left.Right = x
+
+	R.Left.setMinMax()
+	R.Right.setMinMax()
+	R.setMinMax()
 	return
 }
 
 // rotateRight performs a Right rotation on this node.
-func (t *Tree) rotateRight() (newRoot *Tree) {
-	newRoot = t.Left
-	newRightLeft := t.Left.Right
-	newRoot.Right = t
-	newRoot.Right.Left = newRightLeft
-	newRoot.Left.setMinMax()
-	newRoot.Right.setMinMax()
-	newRoot.setMinMax()
+func (t *Tree) rotateRight() (R *Tree) {
+	// we start like this:
+	//
+	//       t
+	//      /
+	//     R
+	//    / \
+	//   x   y
+	//
+	// the new root is the current node's left child
+	R = t.Left
+	// save a pointer to the new root's current right child
+	y := R.Right
+
+	// the current node becomes the new root's right child
+	//
+	//       t
+	//      /
+	//     R
+	//    / \
+	//   x   t
+	//
+	R.Right = t
+
+	// finally, we set the current node's left child to the new root's
+	// old right child
+	//
+	//     R
+	//    / \
+	//   x   t
+	//      /
+	//     y
+	//
+	R.Right.Left = y
+
+	R.Left.setMinMax()
+	R.Right.setMinMax()
+	R.setMinMax()
 	return
 }
 

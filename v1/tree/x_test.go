@@ -22,7 +22,7 @@ func XXXTestMergeFree(t *testing.T) {
 	top.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
 	top.Right = &Tree{Interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
 
-	err = top.Verify()
+	err = top.Verify(true)
 	Tassert(t, err != nil, "Expected error, got nil")
 
 	// merge the free nodes

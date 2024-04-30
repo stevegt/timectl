@@ -35,7 +35,7 @@ func TestRotate(t *testing.T) {
 }
 
 // test conversion to vine
-func TestVine(t *testing.T) {
+func TestTreeToVine(t *testing.T) {
 	top := NewTree()
 
 	// insert several intervals into the tree
@@ -51,9 +51,11 @@ func TestVine(t *testing.T) {
 	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
 
 	// convert the tree into a vine
-	top = top.treeToVine()
+	var size int
+	top, size = top.treeToVine()
 	// ShowDot(top, false)
 
+	Tassert(t, size == 10, "should be 10 nodes")
 	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
 	pathChan := top.allPaths(nil)
 	expect := "t"
@@ -61,6 +63,46 @@ func TestVine(t *testing.T) {
 		Tassert(t, path.String() == expect, "path should be %v, got %v", expect, path)
 		expect += "r"
 	}
+}
+
+// test vineToTree
+func TestVineToTree(t *testing.T) {
+	top := NewTree()
+
+	// insert several intervals into the tree
+	Insert(top, "2024-01-01T15:00:00Z", "2024-01-01T16:00:00Z", 1)
+	Insert(top, "2024-01-01T08:00:00Z", "2024-01-01T09:00:00Z", 1)
+	Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
+	Insert(top, "2024-01-01T12:00:00Z", "2024-01-01T13:00:00Z", 1)
+	Insert(top, "2024-01-01T13:00:00Z", "2024-01-01T14:00:00Z", 1)
+	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
+	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
+
+	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+
+	// convert the tree into a vine
+	var size int
+	top, size = top.treeToVine()
+	// ShowDot(top, false)
+
+	Tassert(t, size == 10, "should be 10 nodes, got %v", size)
+	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+	pathChan := top.allPaths(nil)
+	expect := "t"
+	for path := range pathChan {
+		Tassert(t, path.String() == expect, "path should be %v, got %v", expect, path)
+		expect += "r"
+	}
+
+	// convert the vine into a balanced tree using the DSW algorithm
+	// and the existing rotateLeft() and rotateRight() functions
+	top = top.vineToTree(size)
+	ShowDot(top, false)
+
+	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+
+	Verify(t, top, false)
 }
 
 // test rebalancing the tree
@@ -140,7 +182,7 @@ func XXXTestRebalance(t *testing.T) {
 	// rebalance the tree
 	top.rebalance()
 
-	err := top.Verify()
+	err := top.Verify(true)
 	Tassert(t, err == nil, err)
 
 	Verify(t, top, false)
