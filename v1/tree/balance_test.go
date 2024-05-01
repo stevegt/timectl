@@ -1,9 +1,12 @@
 package tree
 
 import (
+	"math/rand"
 	"testing"
+	"time"
 
 	. "github.com/stevegt/goadapt"
+	"github.com/stevegt/timectl/interval"
 )
 
 // test rotation
@@ -31,7 +34,7 @@ func TestRotate(t *testing.T) {
 
 	// ShowDot(tree, false)
 
-	Verify(t, top, false)
+	Verify(t, top, false, false)
 }
 
 // test conversion to vine
@@ -98,93 +101,60 @@ func TestVineToTree(t *testing.T) {
 	// convert the vine into a balanced tree using the DSW algorithm
 	// and the existing rotateLeft() and rotateRight() functions
 	top = top.vineToTree(size)
-	ShowDot(top, false)
+	// ShowDot(top, false)
 
 	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
 
-	Verify(t, top, false)
+	Verify(t, top, true, false)
 }
 
-// test rebalancing the tree
-func XXXTestRebalanceSimple(t *testing.T) {
-	top := NewTree()
+// test rebalance with large random trees
+func TestRebalanceRandom(t *testing.T) {
+	rand.Seed(1)
 
-	// insert 1 interval into the tree
-	err := InsertExpect(top, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Tassert(t, err == nil, err)
-	// check the nodes
-	err = Expect(top, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
-	Tassert(t, err == nil, err)
-	err = Expect(top, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
-	Tassert(t, err == nil, err)
+	// do a bunch of times
+	for round := 0; round < 10; round++ {
+		top := NewTree()
+		// insert random intervals into the tree
+		inserted := 0
+		for i := 0; i < 10; i++ {
+			startMonth := time.Month(rand.Intn(12) + 1)
+			startDay := rand.Intn(31) + 1
+			startHour := rand.Intn(24)
+			startMinute := rand.Intn(60)
+			duration := rand.Intn(600) + 1
+			startTime := time.Date(2024, startMonth, startDay, startHour, startMinute, 0, 0, time.UTC)
+			endTime := startTime.Add(time.Minute * time.Duration(duration))
+			iv := interval.NewInterval(startTime, endTime, 1)
+			ok := top.Insert(iv)
+			if ok {
+				inserted++
+			}
+		}
 
-	Verify(t, top, false)
+		// check the counts
+		countAll := len(top.AllIntervals())
+		countBusy := len(top.BusyIntervals())
+		Tassert(t, countBusy == inserted, "should be %v intervals, got %v", inserted, countBusy)
 
-	// rebalance is a function that rebalances the tree using the DSW
-	// algorithm.  It calls rotateLeft() and rotateRight() to first
-	// convert the tree into a vine and then convert the vine into a
-	// balanced tree.
+		// rebalance the tree
+		top = top.rebalance()
 
-	// rebalance the tree
-	top.rebalance()
-	// nodes should be the same
-	err = Expect(top, "l", TreeStartStr, "2024-01-01T10:00:00Z", 0)
-	Tassert(t, err == nil, err)
-	err = Expect(top, "", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Tassert(t, err == nil, err)
-	err = Expect(top, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
-	Tassert(t, err == nil, err)
+		// verify the tree
+		err := top.Verify(true)
+		if err != nil {
+			Pf("round %v\n", round)
+			Pf("inserted: %v\n", inserted)
+			Pf("busy intervals: %v\n", len(top.BusyIntervals()))
+			Pf("all intervals: %v\n", len(top.AllIntervals()))
+			ShowDot(top, false)
+			Tassert(t, false, err)
+		}
 
-	Verify(t, top, false)
-
-	// insert more intervals
-	err = InsertExpect(top, "r", "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	Tassert(t, err == nil, err)
-	err = InsertExpect(top, "rr", "2024-01-01T12:30:00Z", "2024-01-01T13:00:00Z", 1)
-	Tassert(t, err == nil, err)
-
-	// check the heights
-	leftHeight := top.Left.height()
-	rightHeight := top.Right.height()
-	Tassert(t, leftHeight == 1, "left height should be 1")
-	Tassert(t, rightHeight == 3, "right height should be 3")
-
-	err = top.ckBalance(nil)
-	Tassert(t, err != nil, "tree should be unbalanced")
-
-	// ShowDot(top, false)
-
-	// rebalance the tree
-	top.rebalance()
-
-	// ShowDot(top, false)
-
-	// check the heights
-	leftHeight = top.Left.height()
-	rightHeight = top.Right.height()
-	Tassert(t, leftHeight == 2, "left height should be 2")
-	Tassert(t, rightHeight == 2, "right height should be 2")
-
-	Verify(t, top, false)
-
-}
-
-// test rebalancing the tree
-func XXXTestRebalance(t *testing.T) {
-	top := NewTree()
-
-	// insert a few intervals into the tree
-	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
-	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
-	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
-
-	// rebalance the tree
-	top.rebalance()
-
-	err := top.Verify(true)
-	Tassert(t, err == nil, err)
-
-	Verify(t, top, false)
-
+		// check the counts
+		gotCountAll := len(top.AllIntervals())
+		gotCountBusy := len(top.BusyIntervals())
+		Tassert(t, gotCountBusy == inserted, "should be %v intervals, got %v", inserted, gotCountBusy)
+		Tassert(t, gotCountAll == countAll, "should be %v intervals, got %v", countAll, gotCountAll)
+	}
 }

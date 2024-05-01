@@ -10,7 +10,8 @@ import (
 func (t *Tree) rebalance() (out *Tree) {
 	var size int
 	out, size = t.treeToVine()
-	out = t.vineToTree(size)
+	// ShowDot(out, false)
+	out = out.vineToTree(size)
 	return
 }
 
@@ -34,15 +35,25 @@ func (t *Tree) treeToVine() (out *Tree, size int) {
 func (t *Tree) vineToTree(size int) (out *Tree) {
 	out = t
 	sizef := float64(size)
-	pow := math.Pow
+	// pow := math.Pow
 	floor := math.Floor
-	log2 := math.Log2
-	rotations := sizef + 1 - pow(floor(log2(sizef+1)), 2)
-	// out = out.compress(rotations)
-	rotations = sizef - rotations
-	Pf("size: %d, rotations: %f\n", size, rotations)
-	for rotations > 1 {
-		rotations = rotations / 2
+	// log2 := math.Log2
+
+	// number of nodes in a balanced tree of height h is:
+	// n = 2^h - 1
+	// solving for h to get the final height of the tree:
+	// h = log2(n + 1)
+	// targetHeight := log2(sizef + 1)
+
+	// We rotate every other node to the left to build the tree, so
+	// each compression (round of rotations) will reduce the height of
+	// the tree by half.  Looked at another way, we'll need to do
+	// m = n/2 rotations to reduce the height of the tree in the first
+	// compression, then m/2 rotations in the next compression, and so
+	// on.
+	rotations := int(floor(sizef / 2.0))
+
+	for ; rotations > 1; rotations /= 2 {
 		out = out.compress(rotations)
 	}
 	return
@@ -87,7 +98,7 @@ func (t *Tree) vineToTree(size int) (out *Tree) {
 // A  C E  G
 //
 
-func (t *Tree) compress(rotations float64) (out *Tree) {
+func (t *Tree) compress(rotations int) (out *Tree) {
 
 	if rotations == 0 || t == nil || t.Right == nil {
 		return t
@@ -105,7 +116,7 @@ func (t *Tree) compress(rotations float64) (out *Tree) {
 
 	A := t
 	// do the rotations
-	for i := 0; i < int(rotations); i++ {
+	for i := 0; i < rotations; i++ {
 		// Odd node, e.g. (A): rotate the node, promoting
 		// and returning (B), which is even.  We'll need to
 		// hang onto (B) so we can attach the next even node
@@ -117,6 +128,9 @@ func (t *Tree) compress(rotations float64) (out *Tree) {
 		//              \
 		//               D
 		//
+		if A == nil || A.Right == nil {
+			break
+		}
 		B := A.rotateLeft()
 		C := B.Right
 
@@ -129,6 +143,8 @@ func (t *Tree) compress(rotations float64) (out *Tree) {
 		// C becomes the new A
 		A = C
 	}
+
+	// ShowDot(out, false)
 
 	return
 }

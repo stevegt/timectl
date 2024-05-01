@@ -80,6 +80,6 @@ func TestConcurrent(t *testing.T) {
 		goadapt.Tassert(t, conflicts[0].Equal(expect), fmt.Sprintf("Expected %v, got %v", expect, conflicts[0]))
 	}
 
-	tree2.Verify(t, tree, false)
+	tree2.Verify(t, tree, false, false)
 
 }

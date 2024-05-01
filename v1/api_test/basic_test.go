@@ -22,7 +22,7 @@ func TestTreeStructure(t *testing.T) {
 	err = tree.Expect(top, "r", "2024-01-01T11:00:00Z", tree.TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
-	tree.Verify(t, top, false)
+	tree.Verify(t, top, false, false)
 }
 
 func TestInsertMany(t *testing.T) {
@@ -30,28 +30,28 @@ func TestInsertMany(t *testing.T) {
 
 	// insert several intervals into the tree
 	err := tree.InsertExpect(top, "", "2024-01-01T15:00:00Z", "2024-01-01T16:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "l", "2024-01-01T08:00:00Z", "2024-01-01T09:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "lr", "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "lrr", "2024-01-01T12:00:00Z", "2024-01-01T13:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "lrrr", "2024-01-01T13:00:00Z", "2024-01-01T14:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "lrlr", "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "lrrrr", "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 	err = tree.InsertExpect(top, "lrl", "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
-	tree.Verify(t, top, true)
+	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 
 }
@@ -70,7 +70,7 @@ func TestInsertConflict(t *testing.T) {
 	interval := tree.Insert(top, "2024-01-01T10:30:00Z", "2024-01-01T11:30:00Z", 1)
 	Tassert(t, interval == nil, "Expected nil interval")
 
-	tree.Verify(t, top, false)
+	tree.Verify(t, top, false, false)
 
 }
 
@@ -99,6 +99,6 @@ func TestConflicts(t *testing.T) {
 	Tassert(t, intervals[1].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, intervals[1]))
 	Tassert(t, intervals[2].Equal(i1130_1200), fmt.Sprintf("Expected %v, got %v", i1130_1200, intervals[2]))
 
-	tree.Verify(t, top, false)
+	tree.Verify(t, top, false, false)
 
 }

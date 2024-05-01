@@ -124,7 +124,7 @@ func SaveDot(tree *Tree) {
 
 // Verify is a test helper function that verifies the tree.  If
 // there is an error, it shows the tree as a dot file.
-func Verify(t *testing.T, tree *Tree, show bool) {
+func Verify(t *testing.T, tree *Tree, ckBalance bool, show bool) {
 	err := tree.Verify(false)
 	if err != nil {
 		// get caller's file and line number
