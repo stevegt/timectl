@@ -1,8 +1,6 @@
 package tree
 
 import (
-	"fmt"
-
 	"github.com/stevegt/timectl/interval"
 )
 
@@ -27,9 +25,6 @@ func (t *Tree) delete(path []*Tree, node *Tree) bool {
 }
 
 func (t *Tree) free(node *Tree) error {
-	if node.Left != nil || node.Right != nil {
-		return fmt.Errorf("cannot free node with children")
-	}
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
 	node.Interval = freeInterval
 	return nil

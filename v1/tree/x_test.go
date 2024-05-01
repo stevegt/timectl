@@ -56,7 +56,7 @@ func TestMergeFree(t *testing.T) {
 */
 
 // test delete
-func XXXTestDeleteSimple(t *testing.T) {
+func TestDeleteSimple(t *testing.T) {
 	top := NewTree()
 
 	// insert an interval into the tree
