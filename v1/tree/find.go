@@ -22,23 +22,19 @@ func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree)
 // current node during recursion.
 func (t *Tree) findExact(interval interval.Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
 
-	if t.Interval == nil {
-		// non-leaf node
-		// try left
-		path := append(pathIn, t)
-		if t.Left != nil {
-			pathOut, found = t.Left.findExact(interval, path)
-		}
-		// try right
-		if found == nil && t.Right != nil {
-			pathOut, found = t.Right.findExact(interval, path)
-		}
-		return
-	}
-
-	// leaf node
 	if t.Interval.Equal(interval) {
 		return pathIn, t
+	}
+
+	path := append(pathIn, t)
+
+	// try left
+	if t.Left != nil {
+		return t.Left.findExact(interval, path)
+	}
+	// try right
+	if found == nil && t.Right != nil {
+		return t.Right.findExact(interval, path)
 	}
 
 	return nil, nil

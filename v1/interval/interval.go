@@ -108,6 +108,7 @@ func (i *IntervalBase) Equal(other Interval) bool {
 	tolerance := time.Second
 	startDiff := i.Start().Sub(other.Start())
 	endDiff := i.End().Sub(other.End())
+
 	if startDiff < -tolerance || startDiff > tolerance {
 		return false
 	}

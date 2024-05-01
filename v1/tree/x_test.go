@@ -55,8 +55,8 @@ func TestMergeFree(t *testing.T) {
 
 */
 
-// test delete
-func TestDeleteSimple(t *testing.T) {
+// test free
+func TestFree(t *testing.T) {
 	top := NewTree()
 
 	// insert an interval into the tree
@@ -91,21 +91,35 @@ func TestDeleteSimple(t *testing.T) {
 	Tassert(t, freeInterval.End().Equal(TreeEnd), fmt.Sprintf("Expected %v, got %v", TreeEnd, freeInterval.End()))
 
 	Verify(t, top, false, false)
+}
 
-	/*
-		// delete is simply a process of finding and freeing the target
-		// interval and then merging free nodes.
-		ok = tree.Insert(interval)
-		Tassert(t, ok, "Failed to insert interval")
-		deletedInterval = tree.delete(interval)
-		Tassert(t, deletedInterval != nil, "Expected non-nil interval")
-		Tassert(t, deletedInterval.Equal(interval), fmt.Sprintf("Expected %v, got %v", interval, deletedInterval))
-		allIntervals := tree.AllIntervals()
-		Tassert(t, len(allIntervals) == 1, "Expected 1 interval, got %d", len(allIntervals))
-		Tassert(t, allIntervals[0].Equal(freeInterval), fmt.Sprintf("Expected %v, got %v", freeInterval, allIntervals[0]))
+// test delete
+func TestDelete(t *testing.T) {
+	top := NewTree()
 
-		verify(t, tree)
-	*/
+	// insert an interval into the tree
+	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	ok := top.Insert(iv)
+	Tassert(t, ok, "Failed to insert interval")
+
+	// find the node containing the interval
+	path, found := top.FindExact(iv)
+	_ = path
+
+	// delete the node. The Delete() function replaces the interval in the
+	// node with a free interval that spans the same range, and then merges
+	// free nodes.
+	err := top.Delete(found.Interval)
+	Tassert(t, err == nil, err)
+
+	// check that the interval is no longer in the tree
+	intervals := top.BusyIntervals()
+	Tassert(t, len(intervals) == 0, "Expected 0 intervals, got %d", len(intervals))
+	// we've merged free nodes, so there should be one free node
+	freeIntervals := top.FreeIntervals()
+	Tassert(t, len(freeIntervals) == 1, "Expected 1 free intervals, got %d", len(freeIntervals))
+
+	Verify(t, top, false, false)
 
 }
 
