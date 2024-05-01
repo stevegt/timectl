@@ -12,15 +12,21 @@ import (
 // . "github.com/stevegt/goadapt"
 
 // test merging free nodes
-func XXXTestMergeFree(t *testing.T) {
+func TestMergeFree(t *testing.T) {
 	top := NewTree()
 
-	// split the root node into two free children
+	// split the root node into three free nodes
 	splitAt1200, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
+	splitAt1400, err := time.Parse(time.RFC3339, "2024-01-01T14:00:00Z")
 	Ck(err)
-	top.Interval = nil
-	top.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0).(*interval.IntervalBase)}
-	top.Right = &Tree{Interval: interval.NewInterval(splitAt1200, TreeEnd, 0).(*interval.IntervalBase)}
+	top.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0)}
+	top.Interval = interval.NewInterval(splitAt1200, splitAt1400, 0)
+	top.Right = &Tree{Interval: interval.NewInterval(splitAt1400, TreeEnd, 0)}
+	top.Left.setMinMax()
+	top.Right.setMinMax()
+	top.setMinMax()
+
+	Verify(t, top, false, true)
 
 	err = top.Verify(true)
 	Tassert(t, err != nil, "Expected error, got nil")
@@ -28,7 +34,7 @@ func XXXTestMergeFree(t *testing.T) {
 	// merge the free nodes
 	top.mergeFree()
 
-	Verify(t, top, false, false)
+	Verify(t, top, false, true)
 
 	// check that the tree has one free interval
 	freeIntervals := top.FreeIntervals()
