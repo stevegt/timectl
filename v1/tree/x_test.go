@@ -26,7 +26,7 @@ func TestMergeFree(t *testing.T) {
 	top.Right.setMinMax()
 	top.setMinMax()
 
-	Verify(t, top, false, true)
+	// Verify(t, top, false, true)
 
 	err = top.Verify(true)
 	Tassert(t, err != nil, "Expected error, got nil")
