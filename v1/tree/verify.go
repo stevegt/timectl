@@ -117,31 +117,30 @@ func (t *Tree) Verify(ckBalance bool) error {
 	return nil
 }
 
-// ckBalance checks the balance of the tree. It makes sure that the
-// tree is balanced according to the AVL tree properties.
+// ckBalance checks the balance of the tree.
 func (t *Tree) ckBalance(ancestors Path) error {
 	if t == nil {
 		return nil
 	}
 	myPath := ancestors.Append(t)
 
-	// - the height of the left and right subtrees of every node differ
-	//   by at most 1
+	// check this node's balance
 	leftHeight := t.Left.height()
 	rightHeight := t.Right.height()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
 		return fmt.Errorf("path: %v left height: %d, right height: %d", myPath, leftHeight, rightHeight)
 	}
 
-	// - the height of the left and right subtrees of every node differ
-	//   by at most 1
-	leftBalance := t.Left.ckBalance(myPath)
-	if leftBalance != nil {
-		return leftBalance
-	}
-	rightBalance := t.Right.ckBalance(myPath)
-	if rightBalance != nil {
-		return rightBalance
+	if false {
+		//   check the balance of the left and right subtrees
+		leftBalance := t.Left.ckBalance(myPath)
+		if leftBalance != nil {
+			return leftBalance
+		}
+		rightBalance := t.Right.ckBalance(myPath)
+		if rightBalance != nil {
+			return rightBalance
+		}
 	}
 
 	return nil

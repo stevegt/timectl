@@ -2,8 +2,7 @@ package tree
 
 import (
 	"math"
-
-	. "github.com/stevegt/goadapt"
+	// . "github.com/stevegt/goadapt"
 )
 
 // rebalance performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
@@ -36,14 +35,14 @@ func (t *Tree) vineToTree(size int) (out *Tree) {
 	out = t
 	sizef := float64(size)
 	// pow := math.Pow
-	floor := math.Floor
-	// log2 := math.Log2
+	// floor := math.Floor
+	log2 := math.Log2
 
 	// number of nodes in a balanced tree of height h is:
 	// n = 2^h - 1
 	// solving for h to get the final height of the tree:
 	// h = log2(n + 1)
-	// targetHeight := log2(sizef + 1)
+	targetHeight := int(log2(sizef + 1))
 
 	// We rotate every other node to the left to build the tree, so
 	// each compression (round of rotations) will reduce the height of
@@ -51,10 +50,23 @@ func (t *Tree) vineToTree(size int) (out *Tree) {
 	// m = n/2 rotations to reduce the height of the tree in the first
 	// compression, then m/2 rotations in the next compression, and so
 	// on.
-	rotations := int(floor(sizef / 2.0))
+	// rotations := int(floor(sizef / 2.0))
+	// for ; rotations > 1; rotations /= 2 {
+	// 	  out = out.compress(rotations)
+	// }
 
-	for ; rotations > 1; rotations /= 2 {
-		out = out.compress(rotations)
+	// Hang on.  The only reason we're doing all this math is so we
+	// can use it in O() analysis.  We don't need to do that.  We can
+	// just keep compressing the tree until we're done.  Geez.
+	for done := false; !done; {
+		out, done = out.compress(targetHeight)
+	}
+
+	// One last rotation to make sure we're balanced.
+	if out.Right != nil && out.Left != nil {
+		for out.Right.height() > out.Left.height() {
+			out = out.rotateLeft()
+		}
 	}
 	return
 }
@@ -98,13 +110,11 @@ func (t *Tree) vineToTree(size int) (out *Tree) {
 // A  C E  G
 //
 
-func (t *Tree) compress(rotations int) (out *Tree) {
+func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
 
-	if rotations == 0 || t == nil || t.Right == nil {
-		return t
+	if t == nil || t.Right == nil {
+		return t, true
 	}
-
-	Pf("compress: rotations %d\n", int(rotations))
 
 	// new root is the current root's right child
 	out = t.Right
@@ -116,7 +126,8 @@ func (t *Tree) compress(rotations int) (out *Tree) {
 
 	A := t
 	// do the rotations
-	for i := 0; i < rotations; i++ {
+	height := 0
+	for {
 		// Odd node, e.g. (A): rotate the node, promoting
 		// and returning (B), which is even.  We'll need to
 		// hang onto (B) so we can attach the next even node
@@ -142,7 +153,11 @@ func (t *Tree) compress(rotations int) (out *Tree) {
 
 		// C becomes the new A
 		A = C
+
+		// increment the height by 2 since we're rotating the odd nodes
+		height += 2
 	}
+	done = height <= targetHeight
 
 	// ShowDot(out, false)
 

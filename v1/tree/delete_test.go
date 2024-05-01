@@ -129,7 +129,34 @@ func TestDeleteComplex(t *testing.T) {
 	rand.Seed(1)
 	top := NewTree()
 
-	// insert several random intervals
+	// do a bunch of times
+	for round := 0; round < 10; round++ {
+		top := NewTree()
+		// insert random intervals into the tree
+		inserted := 0
+		for i := 0; i < 10; i++ {
+			startMonth := time.Month(rand.Intn(12) + 1)
+			startDay := rand.Intn(31) + 1
+			startHour := rand.Intn(24)
+			startMinute := rand.Intn(60)
+			duration := rand.Intn(600) + 1
+			startTime := time.Date(2024, startMonth, startDay, startHour, startMinute, 0, 0, time.UTC)
+			endTime := startTime.Add(time.Minute * time.Duration(duration))
+			iv := interval.NewInterval(startTime, endTime, 1)
+			ok := top.Insert(iv)
+			if ok {
+				inserted++
+			}
+		}
+
+		// check the counts
+		countAll := len(top.AllIntervals())
+		countBusy := len(top.BusyIntervals())
+		Tassert(t, countBusy == inserted, "should be %v intervals, got %v", inserted, countBusy)
+
+		XXX
+
+	// insert a bunch of random intervals
 	for i := 0; i < 10; i++ {
 		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
 		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
