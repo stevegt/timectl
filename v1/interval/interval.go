@@ -22,6 +22,8 @@ type Interval interface {
 	Intersection(other Interval) Interval
 	// Wraps returns true if the current interval completely contains the other interval.
 	Wraps(other Interval) bool
+	// OverlapDuration returns the duration of the overlap between the current interval and the given range.
+	OverlapDuration(start, end time.Time) time.Duration
 	// Overlaps returns true if the current interval intersects with the given interval.
 	Overlaps(other Interval) bool
 	// OverlapsRange returns true if the current interval intersects with the given range.
@@ -214,4 +216,16 @@ func (i *IntervalBase) OverlapsRange(start, end time.Time) bool {
 		return true
 	}
 	return false
+}
+
+// OverlapDuration returns the duration of the overlap between the
+// current interval and the given range.
+func (i *IntervalBase) OverlapDuration(start, end time.Time) time.Duration {
+	maxStart := util.MaxTime(i.Start(), start)
+	minEnd := util.MinTime(i.End(), end)
+	duration := minEnd.Sub(maxStart)
+	if duration < 0 {
+		return 0
+	}
+	return duration
 }

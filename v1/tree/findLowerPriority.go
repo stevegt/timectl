@@ -15,6 +15,157 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
+	// if the search range fits entirely within the left or right
+	// child, then recurse into that child.
+	for _, child := range []*Tree{t.Left, t.Right} {
+		if child == nil {
+			continue
+		}
+		if searchStart.Before(child.MinStart) {
+			// child starts too late
+			continue
+		}
+		if searchEnd.After(child.MaxEnd) {
+			// child ends too soon
+			continue
+		}
+		// search range fits entirely within child
+		return child.FindLowerPriority(first, searchStart, searchEnd, duration, priority)
+	}
+
+	// manage a sliding window of a candidate node set
+	var window []*Tree
+	var sum time.Duration
+	// iterate over the nodes in the tree; either in order or reverse
+	// order depending on the value of first.
+	iter := NewIterator(t, first)
+	for {
+		node := iter.Next()
+		if node == nil {
+			break
+		}
+		// if the node priority is too high, then reset the window
+		if node.Interval.Priority() >= priority {
+			window = nil
+			sum = 0
+			continue
+		}
+		// get the overlap of the node with the search range
+		overlap := node.Interval.OverlapDuration(searchStart, searchEnd)
+		// if the node does not overlap the search range, then reset
+		// the window
+		if overlap == 0 {
+			window = nil
+			sum = 0
+			continue
+		}
+		// add the node to the window
+		window = append(window, node)
+		sum += overlap
+		// if the window is long enough, then return the window
+		if sum >= duration {
+			if !first {
+				// reverse the window if we are iterating in reverse order
+				// so that the nodes are in order of start time.
+				newWindow := make([]*Tree, len(window))
+				for i, j := len(window)-1, 0; i >= 0; i, j = i-1, j+1 {
+					newWindow[j] = window[i]
+				}
+				window = newWindow
+			}
+			return window
+		}
+	}
+	return nil
+}
+
+// Iterator allows iterating over the nodes in the tree in either
+// forward or reverse order.  If fwd is true, then the iterator will
+// iterate in forward order, otherwise it will iterate in reverse
+// order.
+type Iterator struct {
+	Tree *Tree
+	path []*Tree
+	Fwd  bool
+}
+
+// NewIterator returns a new iterator for the given tree and direction.
+func NewIterator(t *Tree, fwd bool) *Iterator {
+	it := &Iterator{Tree: t, Fwd: fwd}
+	// find the path to the first or last node in the tree
+	it.path = t.buildpath(fwd)
+	return it
+}
+
+// buildpath builds a path to the first or last node in the tree.
+func (t *Tree) buildpath(fwd bool) []*Tree {
+	node := t
+	path := []*Tree{node}
+	if fwd {
+		for node.Left != nil {
+			node = node.Left
+			path = append(path, node)
+		}
+	} else {
+		for node.Right != nil {
+			node = node.Right
+			path = append(path, node)
+		}
+	}
+	return path
+}
+
+// Next returns the next node in the tree.  If the iterator is in
+// forward mode, then the nodes are returned in order of start time.
+// If the iterator is in reverse mode, then the nodes are returned in
+// reverse order of start time.
+func (it *Iterator) Next() *Tree {
+	if len(it.path) == 0 {
+		return nil
+	}
+	res := it.path[len(it.path)-1]
+	if it.Fwd {
+		if res.Right != nil {
+			it.path = append(it.path, res.Right.buildpath(it.Fwd)...)
+		} else {
+			// pop nodes off the tail of the path until we find a node
+			// that starts later than res
+			for {
+				try := it.path[len(it.path)-1]
+				if try.Interval.Start().After(res.Interval.Start()) {
+					break
+				}
+				it.path = it.path[:len(it.path)-1]
+				if len(it.path) == 0 {
+					break
+				}
+			}
+		}
+	} else {
+		if res.Left != nil {
+			it.path = append(it.path, res.Left.buildpath(it.Fwd)...)
+		} else {
+			// pop nodes off the tail of the path until we find a node
+			// that starts earlier than res
+			for {
+				try := it.path[len(it.path)-1]
+				if try.Interval.Start().Before(res.Interval.Start()) {
+					break
+				}
+				it.path = it.path[:len(it.path)-1]
+				if len(it.path) == 0 {
+					break
+				}
+			}
+		}
+	}
+	return res
+}
+
+func (t *Tree) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Tree {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+
 	// get the nodes that overlap the range
 	acc := t.accumulate(first, searchStart, searchEnd)
 
@@ -135,6 +286,7 @@ func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
 func reverse(ch <-chan *Tree) <-chan *Tree {
 	out := make(chan *Tree)
 	go func() {
+		defer close(out)
 		nodes := []*Tree{}
 		for i := range ch {
 			nodes = append(nodes, i)
@@ -142,7 +294,6 @@ func reverse(ch <-chan *Tree) <-chan *Tree {
 		for i := len(nodes) - 1; i >= 0; i-- {
 			out <- nodes[i]
 		}
-		close(out)
 	}()
 	return out
 }

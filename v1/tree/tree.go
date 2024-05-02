@@ -39,8 +39,12 @@ type Tree struct {
 	MaxEnd time.Time
 
 	// MaxPriority is the highest priority of any Interval in the subtree
-	// rooted at this node
+	// rooted at this node, including this node
 	MaxPriority float64
+
+	// MinPriority is the lowest priority of any Interval in the subtree
+	// rooted at this node, including this node
+	MinPriority float64
 
 	// Height is the height of the node's subtree, including the node
 	Height int
@@ -192,16 +196,6 @@ func (t *Tree) ckHeight() {
 	calculatedHeight := t.Height
 	actualHeight := t.height()
 	Assert(calculatedHeight == actualHeight, "height mismatch Height: %d height(): %d", calculatedHeight, actualHeight)
-}
-
-func (t *Tree) setMaxPriority() {
-	t.MaxPriority = t.Interval.Priority()
-	if t.Left != nil {
-		t.MaxPriority = max(t.MaxPriority, t.Left.MaxPriority)
-	}
-	if t.Right != nil {
-		t.MaxPriority = max(t.MaxPriority, t.Right.MaxPriority)
-	}
 }
 
 // BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
@@ -623,7 +617,17 @@ func (t *Tree) setMinMax() {
 		rightHeight = t.Right.Height
 		rightSize = t.Right.Size
 	}
-	t.setMaxPriority()
+
+	t.MaxPriority = t.Interval.Priority()
+	t.MinPriority = t.Interval.Priority()
+	if t.Left != nil {
+		t.MaxPriority = max(t.MaxPriority, t.Left.MaxPriority)
+		t.MinPriority = min(t.MinPriority, t.Left.MinPriority)
+	}
+	if t.Right != nil {
+		t.MaxPriority = max(t.MaxPriority, t.Right.MaxPriority)
+		t.MinPriority = min(t.MinPriority, t.Right.MinPriority)
+	}
 
 	// the height of the node is the height of the tallest child plus 1
 	t.Height = 1 + max(leftHeight, rightHeight)

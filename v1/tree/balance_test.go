@@ -114,11 +114,11 @@ func TestRebalanceRandom(t *testing.T) {
 	rand.Seed(1)
 
 	// do a bunch of times
-	for round := 0; round < 10; round++ {
+	for round := 0; round < 1; round++ {
 		top := NewTree()
 		// insert random intervals into the tree
 		inserted := 0
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 1000; i++ {
 			startMonth := time.Month(rand.Intn(12) + 1)
 			startDay := rand.Intn(31) + 1
 			startHour := rand.Intn(24)
@@ -139,7 +139,8 @@ func TestRebalanceRandom(t *testing.T) {
 		Tassert(t, countBusy == inserted, "should be %v intervals, got %v", inserted, countBusy)
 
 		// rebalance the tree
-		top = top.rebalance()
+		// top = top.rebalance()
+		top = top.rebalanceDSW()
 
 		// verify the tree
 		err := top.Verify(true)
