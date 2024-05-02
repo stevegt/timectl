@@ -57,9 +57,9 @@ func (t *Tree) mergeFree() {
 		t.Interval = interval.NewInterval(leaf.Interval.Start(), t.Interval.End(), 0)
 		// remove leaf
 		if parent == t {
-			t.Left = nil
+			t.SetLeft(nil)
 		} else {
-			parent.Right = nil
+			parent.SetRight(nil)
 		}
 		parent.setMinMax()
 	}
@@ -77,9 +77,9 @@ func (t *Tree) mergeFree() {
 		t.Interval = interval.NewInterval(t.Interval.Start(), leaf.Interval.End(), 0)
 		// remove leaf
 		if parent == t {
-			t.Right = nil
+			t.SetRight(nil)
 		} else {
-			parent.Left = nil
+			parent.SetLeft(nil)
 		}
 		parent.setMinMax()
 	}

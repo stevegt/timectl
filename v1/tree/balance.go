@@ -5,8 +5,58 @@ import (
 	// . "github.com/stevegt/goadapt"
 )
 
-// rebalance performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
+// rebalance uses the Height and Size fields to balance the tree.
 func (t *Tree) rebalance() (out *Tree) {
+	if t == nil {
+		return
+	}
+
+	out = t
+
+	for i := 0; i < 200; i++ {
+		var leftSize, rightSize int
+		var leftHeight, rightHeight int
+		if out.Left != nil {
+			out.SetLeft(out.Left.rebalance())
+			leftSize = out.Left.Size
+			leftHeight = out.Left.Height
+		}
+		if out.Right != nil {
+			out.SetRight(out.Right.rebalance())
+			rightSize = out.Right.Size
+			rightHeight = out.Right.Height
+		}
+		// Pf("rebalance: %d - %d\n", leftHeight, rightHeight)
+		if leftHeight-rightHeight > 1 {
+			// Pf("rotateRight leftHeight: %d - rightHeight: %d\n", leftHeight, rightHeight)
+			out = out.rotateRight()
+			continue
+		}
+		if rightHeight-leftHeight > 1 {
+			// Pf("rotateLeft rightHeight: %d - leftHeight: %d\n", rightHeight, leftHeight)
+			out = out.rotateLeft()
+			continue
+		}
+		if false && leftSize-rightSize > 1 {
+			// Pf("rotateRight leftSize: %d - rightSize: %d\n", leftSize, rightSize)
+			out = out.rotateRight()
+			continue
+		}
+		if false && rightSize-leftSize > 1 {
+			// Pf("rotateLeft rightSize: %d - leftSize: %d\n", rightSize, leftSize)
+			out = out.rotateLeft()
+			continue
+		}
+		break
+	}
+	return
+}
+
+// rebalanceDSW performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
+func (t *Tree) rebalanceDSW() (out *Tree) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+
 	var size int
 	out, size = t.treeToVine()
 	// ShowDot(out, false)
@@ -62,7 +112,7 @@ func (t *Tree) vineToTree(size int) (out *Tree) {
 		out, done = out.compress(targetHeight)
 	}
 
-	// One last rotation to make sure we're balanced.
+	// One last check to make sure the tree is balanced.
 	if out.Right != nil && out.Left != nil {
 		for out.Right.height() > out.Left.height() {
 			out = out.rotateLeft()
@@ -118,6 +168,10 @@ func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
 
 	// new root is the current root's right child
 	out = t.Right
+	// old root's parent is now the new root
+	t.Parent = out
+	// new root's parent is nil
+	out.Parent = nil
 
 	// we're going to rotate the odd nodes to the left, so we need to
 	// keep track of the previous even node so we can attach the next
@@ -147,7 +201,7 @@ func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
 
 		// attach B to the previous even node (if there is one)
 		if prevEven != nil {
-			prevEven.Right = B
+			prevEven.SetRight(B)
 		}
 		prevEven = B
 
@@ -162,4 +216,12 @@ func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
 	// ShowDot(out, false)
 
 	return
+}
+
+// absInt returns the absolute value of an integer.
+func absInt(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
 }

@@ -26,6 +26,7 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 // Tree represents a node in an interval tree.
 type Tree struct {
 	Interval interval.Interval
+	Parent   *Tree // Pointer to this node's parent
 	Left     *Tree // Pointer to the Left child
 	Right    *Tree // Pointer to the Right child
 
@@ -40,6 +41,12 @@ type Tree struct {
 	// MaxPriority is the highest priority of any Interval in the subtree
 	// rooted at this node
 	MaxPriority float64
+
+	// Height is the height of the node's subtree, including the node
+	Height int
+
+	// Size is the number of nodes in the node's subtree, including the node
+	Size int
 
 	Mu async.ReentrantLock
 }
@@ -57,6 +64,34 @@ func newTreeFromInterval(interval interval.Interval) *Tree {
 		MaxEnd:      interval.End(),
 		MaxPriority: interval.Priority(),
 	}
+}
+
+// SetLeft sets the Left child of this node.  It returns the old Left
+// child or nil if there was no old Left child.
+func (t *Tree) SetLeft(left *Tree) (old *Tree) {
+	old = t.Left
+	t.Left = left
+	if t.Left != nil {
+		t.Left.Parent = t
+		t.Left.setMinMax()
+	} else {
+		t.setMinMax()
+	}
+	return
+}
+
+// SetRight sets the Right child of this node.  It returns the old Right
+// child or nil if there was no old Right child.
+func (t *Tree) SetRight(right *Tree) (old *Tree) {
+	old = t.Right
+	t.Right = right
+	if t.Right != nil {
+		t.Right.Parent = t
+		t.Right.setMinMax()
+	} else {
+		t.setMinMax()
+	}
+	return
 }
 
 // Insert adds a new interval to the tree, adjusting the structure as
@@ -111,110 +146,52 @@ func (t *Tree) Insert(newInterval interval.Interval) bool {
 		// create a new right child for the second interval and make
 		// the old right child the right child of it
 		newNode := newTreeFromInterval(newIntervals[1])
-		newNode.Right = f.Right
-		newNode.setMinMax()
-		f.Right = newNode
-		f.setMinMax()
+		oldRight := f.SetRight(newNode)
+		f.Right.SetRight(oldRight)
 		return true
 	case 3:
 		// newInterval fits in this node's interval with free intervals
-		// left over to the left and right
-		// put the first interval in a new left child
+		// remaining to the left and right, so...
+
+		// put the first interval in a new left child, moving the old
+		// left child to the left of the new left child
 		newLeftNode := newTreeFromInterval(newIntervals[0])
-		newLeftNode.Left = f.Left
-		newLeftNode.setMinMax()
-		f.Left = newLeftNode
+		oldLeft := f.SetLeft(newLeftNode)
+		f.Left.SetLeft(oldLeft)
+
 		// put the second interval in this node
 		f.Interval = newIntervals[1]
-		// put the third interval in a new right child
+
+		// put the third interval in a new right child, moving the old
+		// right child to the right of the new right child
 		newRightNode := newTreeFromInterval(newIntervals[2])
-		newRightNode.Right = f.Right
-		newRightNode.setMinMax()
-		f.Right = newRightNode
-		f.setMinMax()
+		oldRight := f.SetRight(newRightNode)
+		f.Right.SetRight(oldRight)
 		return true
 	default:
 		Assert(false, "unexpected number of intervals")
 	}
 
+	// check everything
+	// XXX either remove this or refactor all of the above to use
+	// Height in the first place and not need rebalancing
+	f.ckHeight()
+	f.Right.ckHeight()
+	f.Left.ckHeight()
+
 	Assert(false, "unexpected code path")
 	return false
 }
 
-func (t *Tree) XXXInsert(newInterval interval.Interval) bool {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
-
-	if !newInterval.Busy() {
-		// XXX return a meaningful error
-		return false
+// ckHeight checks the calculated height of the node against the actual
+// height of the node's subtree.
+func (t *Tree) ckHeight() {
+	if t == nil {
+		return
 	}
-
-	// if newInterval is outside the bounds of this node, then we can't
-	// insert it here
-	if newInterval.Start().Before(t.MinStart) || newInterval.End().After(t.MaxEnd) {
-		return false
-	}
-
-	// if this node is busy, then we need to try to insert the new
-	// interval into a free child node
-	// XXX add an "hasFree" flag to the tree to indicate that there is
-	// at least one free node in the tree
-	// XXX add a "hasBusy" flag to the tree to indicate that there is at
-	// least one busy node in the tree
-	if t.Busy() {
-		if t.Left != nil {
-			if t.Left.Insert(newInterval) {
-				t.setMinMax()
-				return true
-			}
-		}
-		if t.Right != nil {
-			if t.Right.Insert(newInterval) {
-				t.setMinMax()
-				return true
-			}
-		}
-	}
-
-	// t is a free node, possibly with free children -- we're going to
-	// completely replace it with the results of punching a hole in
-	// this node's interval
-	newIntervals := t.Interval.Punch(newInterval)
-	switch len(newIntervals) {
-	case 0:
-		// newInterval doesn't fit in this node's interval
-		return false
-	case 1:
-		// newInterval fits exactly in this node's interval
-		t.Interval = newInterval
-		// clear out any children, because free nodes aren't supposed
-		// to have children
-		t.Left = nil
-		t.Right = nil
-		t.setMinMax()
-		return true
-	case 2:
-		// newInterval fits in this node's interval, so we put the
-		// first interval in this node and the second interval in a
-		// new right child
-		t.Interval = newIntervals[0]
-		t.Left = nil
-		t.Right = newTreeFromInterval(newIntervals[1])
-		t.setMinMax()
-		return true
-	case 3:
-		// newInterval fits in this node's interval, so we put the
-		// first interval in the left child, the second interval in
-		// this node, and the third interval in the right child
-		t.Left = newTreeFromInterval(newIntervals[0])
-		t.Interval = newIntervals[1]
-		t.Right = newTreeFromInterval(newIntervals[2])
-		t.setMinMax()
-		return true
-	default:
-		panic("unexpected number of intervals")
-	}
+	calculatedHeight := t.Height
+	actualHeight := t.height()
+	Assert(calculatedHeight == actualHeight, "height mismatch Height: %d height(): %d", calculatedHeight, actualHeight)
 }
 
 func (t *Tree) setMaxPriority() {
@@ -507,7 +484,9 @@ func (t *Tree) AsDot(path Path) string {
 		out += "digraph G {\n"
 	}
 	id := path.String()
-	label := Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart, t.MaxEnd, t.MaxPriority)
+	label := Spf("parent %p\\nthis %p\\n", t.Parent, t)
+	label += Spf("left %p    right %p\\n", t.Left, t.Right)
+	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart, t.MaxEnd, t.MaxPriority)
 	if t.Interval != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval)
 	} else {
@@ -549,20 +528,20 @@ func (t *Tree) rotateLeft() (R *Tree) {
 	//
 	// the new root is the current node's right child
 	R = t.Right
-	// save a pointer to the new root's current Left child
-	x := R.Left
 
 	// the current node becomes the new root's left child
 	//
-	//       t
-	//        \
 	//         R
 	//        / \
-	//       t   y
+	//   x   t   y
 	//
-	R.Left = t
+	// detach t and R from each other
+	t.Right = nil
+	R.Parent = nil
+	// set t as R's left child and save a pointer to x
+	x := R.SetLeft(t)
 
-	// finally, we set the current node's right child to the new
+	// set the current node's right child to the new
 	// root's old left child
 	//
 	//         R
@@ -571,70 +550,88 @@ func (t *Tree) rotateLeft() (R *Tree) {
 	//		  \
 	//		   x
 	//
-	R.Left.Right = x
+	R.Left.SetRight(x)
 
-	R.Left.setMinMax()
+	// XXX is this needed?
 	R.Right.setMinMax()
-	R.setMinMax()
 	return
 }
 
 // rotateRight performs a Right rotation on this node.
-func (t *Tree) rotateRight() (R *Tree) {
+func (t *Tree) rotateRight() (L *Tree) {
+	if t == nil || t.Left == nil {
+		return
+	}
 	// we start like this:
 	//
 	//       t
 	//      /
-	//     R
+	//     L
 	//    / \
 	//   x   y
 	//
 	// the new root is the current node's left child
-	R = t.Left
-	// save a pointer to the new root's current right child
-	y := R.Right
+	L = t.Left
 
 	// the current node becomes the new root's right child
 	//
-	//       t
-	//      /
-	//     R
+	//     L
 	//    / \
-	//   x   t
+	//   x   t   y
 	//
-	R.Right = t
+	// detach t and L from each other
+	t.Left = nil
+	L.Parent = nil
+	// set t as L's right child and save a pointer to y
+	y := L.SetRight(t)
 
 	// finally, we set the current node's left child to the new root's
 	// old right child
 	//
-	//     R
+	//     L
 	//    / \
 	//   x   t
 	//      /
 	//     y
 	//
-	R.Right.Left = y
+	L.Right.SetLeft(y)
 
-	R.Left.setMinMax()
-	R.Right.setMinMax()
-	R.setMinMax()
+	// XXX is this needed?
+	L.Left.setMinMax()
 	return
 }
 
-// setMinMax updates the minimum and maximum values of this node.
+// setMinMax updates the minimum and maximum values of this node and
+// its ancestors.
 func (t *Tree) setMinMax() {
 	if t == nil {
 		return
 	}
+	var leftHeight, rightHeight int
+	var leftSize, rightSize int
 	if t.Left == nil {
 		t.MinStart = t.Interval.Start()
 	} else {
 		t.MinStart = t.Left.MinStart
+		leftHeight = t.Left.Height
+		leftSize = t.Left.Size
 	}
 	if t.Right == nil {
 		t.MaxEnd = t.Interval.End()
 	} else {
 		t.MaxEnd = t.Right.MaxEnd
+		rightHeight = t.Right.Height
+		rightSize = t.Right.Size
 	}
 	t.setMaxPriority()
+
+	// the height of the node is the height of the tallest child plus 1
+	t.Height = 1 + max(leftHeight, rightHeight)
+	// the size of the node is the size of the left child plus the size
+	// of the right child plus 1
+	t.Size = 1 + leftSize + rightSize
+
+	if t.Parent != nil {
+		t.Parent.setMinMax()
+	}
 }

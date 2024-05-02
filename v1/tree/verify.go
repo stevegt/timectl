@@ -55,6 +55,16 @@ func (t *Tree) Verify(ckBalance bool) error {
 			return fmt.Errorf("node interval is nil")
 		}
 
+		// the node's parent should not be nil unless it is the root
+		if node.Parent == nil && node != t {
+			return fmt.Errorf("node parent is nil")
+		}
+
+		// the node should be a child of its parent
+		if node.Parent != nil && node.Parent.Left != node && node.Parent.Right != node {
+			return fmt.Errorf("node is not a child of its parent")
+		}
+
 		start := node.Interval.Start()
 		end := node.Interval.End()
 

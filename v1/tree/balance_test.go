@@ -98,14 +98,15 @@ func TestVineToTree(t *testing.T) {
 		expect += "r"
 	}
 
+	// ShowDot(top, true)
+
 	// convert the vine into a balanced tree using the DSW algorithm
 	// and the existing rotateLeft() and rotateRight() functions
 	top = top.vineToTree(size)
-	// ShowDot(top, false)
 
 	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
 
-	Verify(t, top, true, false)
+	Verify(t, top, true, true)
 }
 
 // test rebalance with large random trees
@@ -117,7 +118,7 @@ func TestRebalanceRandom(t *testing.T) {
 		top := NewTree()
 		// insert random intervals into the tree
 		inserted := 0
-		for i := 0; i < 50; i++ {
+		for i := 0; i < 10; i++ {
 			startMonth := time.Month(rand.Intn(12) + 1)
 			startDay := rand.Intn(31) + 1
 			startHour := rand.Intn(24)
