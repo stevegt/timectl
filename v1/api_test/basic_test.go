@@ -54,6 +54,7 @@ func TestInsertMany(t *testing.T) {
 	tree.Verify(t, top, false, true)
 	Tassert(t, err == nil, err)
 
+	// tree.ShowDot(top, false)
 }
 
 // TestInsertConflict tests inserting an interval that conflicts with

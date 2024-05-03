@@ -2,6 +2,7 @@ package tree
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -123,7 +124,6 @@ func TestDelete(t *testing.T) {
 
 }
 
-/*
 // test complex delete
 func TestDeleteComplex(t *testing.T) {
 	rand.Seed(1)
@@ -150,66 +150,38 @@ func TestDeleteComplex(t *testing.T) {
 		}
 
 		// check the counts
-		countAll := len(top.AllIntervals())
 		countBusy := len(top.BusyIntervals())
 		Tassert(t, countBusy == inserted, "should be %v intervals, got %v", inserted, countBusy)
-
-		XXX
-
-	// insert a bunch of random intervals
-	for i := 0; i < 10; i++ {
-		start := time.Date(2024, 1, 1, rand.Intn(24), rand.Intn(60), 0, 0, time.UTC)
-		end := start.Add(time.Duration(rand.Intn(60)) * time.Minute)
-		// ignore return value
-		insert(tree, start.Format("2006-01-02T15:04:05Z"), end.Format("2006-01-02T15:04:05Z"), 1)
 	}
 
 	// loop until all busy intervals are deleted
-	busyCount := len(tree.BusyIntervals())
+	busyCount := len(top.BusyIntervals())
 	for i := busyCount; i > 0; i-- {
-		busyIntervals := tree.BusyIntervals()
+		busyIntervals := top.BusyIntervals()
 		Tassert(t, len(busyIntervals) == i, "Expected %d intervals, got %d", i, len(busyIntervals))
 		// delete a random interval
 		interval := busyIntervals[rand.Intn(len(busyIntervals))]
-		ok := tree.Delete(interval)
-		Tassert(t, ok, "Failed to delete interval")
+		err := top.Delete(interval)
+		Tassert(t, err == nil, err)
 		// check that the interval is no longer in the tree
-		for _, busyInterval := range tree.BusyIntervals() {
+		for _, busyInterval := range top.BusyIntervals() {
 			Tassert(t, !busyInterval.Equal(interval), fmt.Sprintf("Expected interval to be deleted, got %v", interval))
 		}
 		// check that the interval has no conflicts
-		conflicts := tree.Conflicts(interval, false)
+		conflicts := top.Conflicts(interval, false)
 		Tassert(t, len(conflicts) == 0, "Expected 0 conflicts, got %d", len(conflicts))
-		// check that there are no adjacent free intervals
-		freeIntervals := tree.FreeIntervals()
-		prev := freeIntervals[0]
-		for j := 1; j < len(freeIntervals); j++ {
-			if prev.End().Equal(freeIntervals[j].Start()) {
-				t.Logf("prev: %v", prev)
-				t.Logf("next: %v", freeIntervals[j])
-				t.Fatalf("Expected no adjacent free intervals")
-			}
-			prev = freeIntervals[j]
-		}
-		// check that there are no gaps between intervals
-		allIntervals := tree.AllIntervals()
-		prev = allIntervals[0]
-		for j := 1; j < len(allIntervals); j++ {
-			if prev.End().Before(allIntervals[j].Start()) {
-				t.Logf("prev: %v", prev)
-				t.Logf("next: %v", allIntervals[j])
-				t.Fatalf("Expected no gaps between intervals")
-			}
-			prev = allIntervals[j]
-		}
+
+		// verify the tree
+		err = top.Verify(false)
+		Tassert(t, err == nil, err)
 	}
 
 	// check that all busy intervals are deleted
-	busyIntervals := tree.BusyIntervals()
+	busyIntervals := top.BusyIntervals()
 	Tassert(t, len(busyIntervals) == 0, "Expected 0 intervals, got %d", len(busyIntervals))
 
 	// check that there is one big free interval
-	freeIntervals := tree.FreeIntervals()
+	freeIntervals := top.FreeIntervals()
 	Tassert(t, len(freeIntervals) == 1, "Expected 1 interval, got %d", len(freeIntervals))
 	start, err := time.Parse(time.RFC3339, TreeStartStr)
 	Ck(err)
@@ -221,6 +193,7 @@ func TestDeleteComplex(t *testing.T) {
 	Tassert(t, freeIntervals[0].Priority() == 0, fmt.Sprintf("Expected %v, got %v", 0, freeIntervals[0].Priority()))
 }
 
+/*
 func TestRemoveRange(t *testing.T) {
 	top := NewTree()
 

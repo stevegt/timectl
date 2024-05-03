@@ -10,7 +10,7 @@ import (
 // matches the given interval, along with the path of ancestor nodes.
 // If the exact interval is not found, then the path and found node
 // are both nil.  If the exact interval is in the root node, then the
-// Muth is nil.
+// path is nil.
 func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
