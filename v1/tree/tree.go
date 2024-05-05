@@ -240,7 +240,7 @@ func (t *Node) ckHeight() {
 		return
 	}
 	calculatedHeight := t.Height
-	actualHeight := t.height()
+	actualHeight := t.GetHeight()
 	Assert(calculatedHeight == actualHeight, "height mismatch Height: %d height(): %d", calculatedHeight, actualHeight)
 }
 

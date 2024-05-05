@@ -141,8 +141,8 @@ func (t *Node) ckBalance(ancestors Path) error {
 	myPath := ancestors.Append(t)
 
 	// check this node's balance
-	leftHeight := t.Left.height()
-	rightHeight := t.Right.height()
+	leftHeight := t.Left.GetHeight()
+	rightHeight := t.Right.GetHeight()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
 		return fmt.Errorf("path: %v left height: %d, right height: %d", myPath, leftHeight, rightHeight)
 	}
@@ -163,9 +163,9 @@ func (t *Node) ckBalance(ancestors Path) error {
 }
 
 // height returns the height of the tree.
-func (t *Node) height() int {
+func (t *Node) GetHeight() int {
 	if t == nil {
 		return 0
 	}
-	return 1 + max(t.Left.height(), t.Right.height())
+	return 1 + max(t.Left.GetHeight(), t.Right.GetHeight())
 }
