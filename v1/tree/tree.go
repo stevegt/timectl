@@ -408,7 +408,7 @@ func (t *Node) AsDot(path Path) string {
 	id := path.String()
 	label := Spf("parent %p\\nthis %p\\n", t.parent, t)
 	label += Spf("left %p    right %p\\n", t.left, t.right)
-	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.maxPriority)
+	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.MaxPriority())
 	if t.Interval() != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval())
 	} else {
@@ -575,11 +575,11 @@ func (t *Node) setMinMax() {
 	t.SetMaxPriority(t.Interval().Priority())
 	t.SetMinPriority(t.Interval().Priority())
 	if t.left != nil {
-		t.SetMaxPriority(max(t.maxPriority, t.left.maxPriority))
+		t.SetMaxPriority(max(t.MaxPriority(), t.left.MaxPriority()))
 		t.SetMinPriority(min(t.MinPriority(), t.left.MinPriority()))
 	}
 	if t.right != nil {
-		t.SetMaxPriority(max(t.maxPriority, t.right.maxPriority))
+		t.SetMaxPriority(max(t.MaxPriority(), t.right.MaxPriority()))
 		t.SetMinPriority(min(t.MinPriority(), t.right.MinPriority()))
 	}
 
