@@ -1,4 +1,4 @@
-package concurrent
+package v1
 
 import (
 	"fmt"
