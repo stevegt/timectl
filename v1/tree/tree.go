@@ -586,11 +586,11 @@ func (t *Node) setMinMax() {
 	t.SetMinPriority(t.Interval().Priority())
 	if t.left != nil {
 		t.maxPriority = max(t.maxPriority, t.left.maxPriority)
-		t.SetMinPriority(min(t.minPriority, t.left.minPriority))
+		t.SetMinPriority(min(t.MinPriority(), t.left.MinPriority()))
 	}
 	if t.right != nil {
 		t.maxPriority = max(t.maxPriority, t.right.maxPriority)
-		t.SetMinPriority(min(t.minPriority, t.right.minPriority))
+		t.SetMinPriority(min(t.MinPriority(), t.right.MinPriority()))
 	}
 
 	// the height of the node is the height of the tallest child plus 1
