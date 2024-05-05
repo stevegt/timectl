@@ -39,6 +39,14 @@ type Node struct {
 	mu async.ReentrantLock
 }
 
+func (t *Node) Size() int {
+	return t.size
+}
+
+func (t *Node) SetSize(size int) {
+	t.size = size
+}
+
 // String returns a string representation of the node.
 func (t *Node) String() string {
 	t.mu.Lock()
