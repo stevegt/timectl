@@ -11,7 +11,7 @@ import (
 // If the exact interval is not found, then the path and found node
 // are both nil.  If the exact interval is in the root node, then the
 // path is nil.
-func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree) {
+func (t *Node) FindExact(interval interval.Interval) (path []*Node, found *Node) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	return t.findExact(interval, nil)
@@ -20,7 +20,7 @@ func (t *Tree) FindExact(interval interval.Interval) (path []*Tree, found *Tree)
 // findExact is a recursive version of FindExact for internal
 // use.  The path parameter is used to track the path to the
 // current node during recursion.
-func (t *Tree) findExact(interval interval.Interval, pathIn []*Tree) (pathOut []*Tree, found *Tree) {
+func (t *Node) findExact(interval interval.Interval, pathIn []*Node) (pathOut []*Node, found *Node) {
 
 	if t.Interval.Equal(interval) {
 		return pathIn, t

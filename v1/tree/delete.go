@@ -9,7 +9,7 @@ import (
 )
 
 // Delete removes an interval from the tree
-func (t *Tree) Delete(interval interval.Interval) (out *Tree, err error) {
+func (t *Node) Delete(interval interval.Interval) (out *Node, err error) {
 	defer Return(&err)
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
@@ -30,7 +30,7 @@ func (t *Tree) Delete(interval interval.Interval) (out *Tree, err error) {
 // the min/max values.  The node's old interval is still intact, but
 // no longer part of the tree.  We return the old interval so that the
 // caller can decide what to do with it.
-func (t *Tree) free(node *Tree) (old interval.Interval) {
+func (t *Node) free(node *Node) (old interval.Interval) {
 	old = node.Interval
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
 	node.Interval = freeInterval
@@ -42,7 +42,7 @@ func (t *Tree) free(node *Tree) (old interval.Interval) {
 // given time range.  It returns the removed intervals.  It does not
 // return intervals that are marked as free (priority 0) -- it
 // instead adjusts free intervals to fill gaps in the tree.
-func (t *Tree) RemoveRange(start, end time.Time) (out *Tree, removed []interval.Interval) {
+func (t *Node) RemoveRange(start, end time.Time) (out *Node, removed []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 

@@ -18,7 +18,7 @@ import (
 // given path in the tree.  pathStr is the path to the node in the
 // tree, where 'l' means to go left and 'r' means to go right.  An
 // empty pathStr means to return the root node.
-func Get(tree *Tree, pathStr string) *Tree {
+func Get(tree *Node, pathStr string) *Node {
 	path := []rune(pathStr)
 	if len(path) == 0 {
 		return tree
@@ -41,7 +41,7 @@ func Get(tree *Tree, pathStr string) *Tree {
 // pathStr is the path to the node in the tree, where 'l'
 // means to go left and 'r' means to go right.  An empty pathStr means
 // to check the root node.
-func Expect(tree *Tree, pathStr, startStr, endStr string, priority float64) error {
+func Expect(tree *Node, pathStr, startStr, endStr string, priority float64) error {
 	expectStr := Spf("expect %v %v %v %v\n", pathStr, startStr, endStr, priority)
 	node := Get(tree, pathStr)
 	if node == nil {
@@ -62,7 +62,7 @@ func Expect(tree *Tree, pathStr, startStr, endStr string, priority float64) erro
 
 // InsertExpect is a test helper function that inserts an interval
 // into the tree and checks if the tree has the expected structure.
-func InsertExpect(tree *Tree, pathStr, startStr, endStr string, priority float64) error {
+func InsertExpect(tree *Node, pathStr, startStr, endStr string, priority float64) error {
 	interval := Insert(tree, startStr, endStr, priority)
 	if interval == nil {
 		return fmt.Errorf("Failed to insert interval")
@@ -82,7 +82,7 @@ func NewInterval(startStr, endStr string, priority float64) interval.Interval {
 
 // Insert is a test helper function that inserts an interval into the
 // tree and returns the interval that was inserted.
-func Insert(tree *Tree, startStr, endStr string, priority float64) interval.Interval {
+func Insert(tree *Node, startStr, endStr string, priority float64) interval.Interval {
 	interval := NewInterval(startStr, endStr, priority)
 	// Insert adds a new interval to the tree, adjusting the structure as
 	// necessary.  Insertion fails if the new interval conflicts with any
@@ -110,7 +110,7 @@ func Match(iv interval.Interval, startStr, endStr string, priority float64) erro
 }
 
 // SaveDot is a test helper function that saves the tree as a dot file
-func SaveDot(tree *Tree) {
+func SaveDot(tree *Node) {
 	// get caller's file and line number
 	_, file, line, ok := runtime.Caller(1)
 	Assert(ok, "Failed to get caller")
@@ -124,7 +124,7 @@ func SaveDot(tree *Tree) {
 
 // Verify is a test helper function that verifies the tree.  If
 // there is an error, it shows the tree as a dot file.
-func Verify(t *testing.T, tree *Tree, ckBalance bool, show bool) {
+func Verify(t *testing.T, tree *Node, ckBalance bool, show bool) {
 	err := tree.Verify(false)
 	if err != nil {
 		// get caller's file and line number
@@ -141,7 +141,7 @@ func Verify(t *testing.T, tree *Tree, ckBalance bool, show bool) {
 
 // Dump is a helper function that prints the tree structure to
 // stdout.
-func Dump(tree *Tree, path string) {
+func Dump(tree *Node, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
 	if tree.Left != nil {
 		Dump(tree.Left, path+"l")
@@ -154,7 +154,7 @@ func Dump(tree *Tree, path string) {
 
 // ShowDot displays the tree in xdot.  If bg is true, then the xdot
 // window is displayed from a background process.
-func ShowDot(tree *Tree, bg bool) {
+func ShowDot(tree *Node, bg bool) {
 	dot := tree.AsDot(nil)
 	// call 'xdot -' passing the dot file as input
 	cmd := exec.Command("xdot", "-")

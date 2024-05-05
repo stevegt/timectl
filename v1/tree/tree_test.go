@@ -33,7 +33,7 @@ func TestContiguous(t *testing.T) {
 	}
 
 	// put them in tree nodes
-	nodes := make([]*Tree, len(ivs))
+	nodes := make([]*Node, len(ivs))
 	for i, iv := range ivs {
 		nodes[i] = newTreeFromInterval(iv)
 	}
@@ -41,7 +41,7 @@ func TestContiguous(t *testing.T) {
 
 	// keep only the free intervals
 	nodeChan := slice2chan(nodes)
-	freeChan := filter(nodeChan, func(node *Tree) bool {
+	freeChan := filter(nodeChan, func(node *Node) bool {
 		iv := node.Interval
 		return iv.Priority() < 1
 	})
@@ -101,7 +101,7 @@ func TestFilter(t *testing.T) {
 	Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T12:00:00Z", 1)
 	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
-	fn := func(t *Tree) bool {
+	fn := func(t *Node) bool {
 		iv := t.Interval
 		return iv.Priority() < 2
 	}
@@ -137,7 +137,7 @@ func TestContiguousFilter(t *testing.T) {
 	// get the nodes that overlap the range
 	acc := top.accumulate(true, searchStart, searchEnd)
 	// filter the nodes to only include those with a priority less than 2
-	low := filter(acc, func(t *Tree) bool {
+	low := filter(acc, func(t *Node) bool {
 		iv := t.Interval
 		return iv.Priority() < 2
 	})

@@ -23,12 +23,12 @@ var TreeStartStr = TreeStart.Format(time.RFC3339)
 // TreeEndStr is the string representation of TreeEnd.
 var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
-// Tree represents a node in an interval tree.
-type Tree struct {
+// Node represents a node in an interval tree.
+type Node struct {
 	Interval interval.Interval
-	Parent   *Tree // Pointer to this node's parent
-	Left     *Tree // Pointer to the Left child
-	Right    *Tree // Pointer to the Right child
+	Parent   *Node // Pointer to this node's parent
+	Left     *Node // Pointer to the Left child
+	Right    *Node // Pointer to the Right child
 
 	// MinStart is the earliest start time of any Interval in the subtree
 	// rooted at this node
@@ -56,7 +56,7 @@ type Tree struct {
 }
 
 // String returns a string representation of the node.
-func (t *Tree) String() string {
+func (t *Node) String() string {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	out := Spf("Tree: %p\n", t)
@@ -74,13 +74,13 @@ func (t *Tree) String() string {
 }
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
-func NewTree() *Tree {
+func NewTree() *Node {
 	return newTreeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
 }
 
 // newTreeFromInterval creates and returns a new Tree node containing the given interval.
-func newTreeFromInterval(interval interval.Interval) *Tree {
-	return &Tree{
+func newTreeFromInterval(interval interval.Interval) *Node {
+	return &Node{
 		Interval:    interval,
 		MinStart:    interval.Start(),
 		MaxEnd:      interval.End(),
@@ -93,7 +93,7 @@ func newTreeFromInterval(interval interval.Interval) *Tree {
 // is already a child of another node, the Right child of this node,
 // or the Parent of this node, then this function clears the old
 // relationship before setting the new one.
-func (t *Tree) SetLeft(left *Tree) (old *Tree) {
+func (t *Node) SetLeft(left *Node) (old *Node) {
 	old = t.Left
 	if left != nil && left.Parent != nil {
 		if left.Parent.Left == left {
@@ -121,7 +121,7 @@ func (t *Tree) SetLeft(left *Tree) (old *Tree) {
 // is already a child of another node, the Left child of this node,
 // or the Parent of this node, then this function clears the old
 // relationship before setting the new one.
-func (t *Tree) SetRight(right *Tree) (old *Tree) {
+func (t *Node) SetRight(right *Node) (old *Node) {
 	old = t.Right
 	if right != nil && right.Parent != nil {
 		if right.Parent.Left == right {
@@ -148,7 +148,7 @@ func (t *Tree) SetRight(right *Tree) (old *Tree) {
 // necessary.  Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
-func (t *Tree) Insert(newInterval interval.Interval) bool {
+func (t *Node) Insert(newInterval interval.Interval) bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -235,7 +235,7 @@ func (t *Tree) Insert(newInterval interval.Interval) bool {
 
 // ckHeight checks the calculated height of the node against the actual
 // height of the node's subtree.
-func (t *Tree) ckHeight() {
+func (t *Node) ckHeight() {
 	if t == nil {
 		return
 	}
@@ -245,7 +245,7 @@ func (t *Tree) ckHeight() {
 }
 
 // BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
-func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
+func (t *Node) BusyIntervals() (intervals []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	// XXX inefficient -- use MaxPriority
@@ -258,7 +258,7 @@ func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
 }
 
 // AllIntervals returns a slice of all intervals in all leaf nodes of the tree.
-func (t *Tree) AllIntervals() []interval.Interval {
+func (t *Node) AllIntervals() []interval.Interval {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -274,7 +274,7 @@ func (t *Tree) AllIntervals() []interval.Interval {
 }
 
 // Busy returns true if the interval is busy.
-func (t *Tree) Busy() bool {
+func (t *Node) Busy() bool {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -283,14 +283,14 @@ func (t *Tree) Busy() bool {
 }
 
 // Start returns the start time of the interval in the node.
-func (t *Tree) Start() time.Time {
+func (t *Node) Start() time.Time {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	return t.Interval.Start()
 }
 
 // End returns the end time of the interval in the node.
-func (t *Tree) End() time.Time {
+func (t *Node) End() time.Time {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	return t.Interval.End()
@@ -299,7 +299,7 @@ func (t *Tree) End() time.Time {
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
 // If includeFree is true, then this function returns all intervals that conflict with the given
 // interval, otherwise it returns only busy intervals.
-func (t *Tree) Conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
+func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -328,7 +328,7 @@ func (t *Tree) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 // This function works by walking the tree in a depth-first manner,
 // following the left child first if first is set, otherwise following
 // the right child first.
-func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.Interval) {
+func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -341,12 +341,12 @@ func (t *Tree) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		return sub
 	}
 
-	var children []*Tree
+	var children []*Node
 	var start, end time.Time
 	if first {
-		children = []*Tree{t.Left, t.Right}
+		children = []*Node{t.Left, t.Right}
 	} else {
-		children = []*Tree{t.Right, t.Left}
+		children = []*Node{t.Right, t.Left}
 	}
 
 	for _, child := range children {
@@ -382,7 +382,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 }
 
 // FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
-func (t *Tree) FreeIntervals() (intervals []interval.Interval) {
+func (t *Node) FreeIntervals() (intervals []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	for _, i := range t.AllIntervals() {
@@ -394,10 +394,10 @@ func (t *Tree) FreeIntervals() (intervals []interval.Interval) {
 }
 
 // Path is a slice of Tree nodes.
-type Path []*Tree
+type Path []*Node
 
 // Append returns a new Path with the given node appended to the end.
-func (p Path) Append(t *Tree) Path {
+func (p Path) Append(t *Node) Path {
 	// because append may reallocate the underlying array, we need to
 	// use copy instead of append to avoid modifying the original path
 	newPath := make(Path, len(p)+1)
@@ -407,14 +407,14 @@ func (p Path) Append(t *Tree) Path {
 }
 
 // Last returns the last node in the path.
-func (p Path) Last() *Tree {
+func (p Path) Last() *Node {
 	return p[len(p)-1]
 }
 
 // String returns a string representation of the path.
 func (p Path) String() string {
 	var s string
-	var parent *Tree
+	var parent *Node
 	for _, t := range p {
 		if parent != nil {
 			if t == parent.Left {
@@ -432,7 +432,7 @@ func (p Path) String() string {
 
 // allPaths returns a channel of all paths to all nodes in the tree.
 // The paths are sorted in depth-first order, Left child first.
-func (t *Tree) allPaths(path Path) (c chan Path) {
+func (t *Node) allPaths(path Path) (c chan Path) {
 	c = make(chan Path)
 	go func() {
 		defer close(c)
@@ -444,7 +444,7 @@ func (t *Tree) allPaths(path Path) (c chan Path) {
 // allPathsBlocking is a helper function for allPaths that returns a
 // channel of all paths to all nodes in the tree.  The paths are sorted
 // in depth-first order, Left child first.
-func (t *Tree) allPathsBlocking(path Path, c chan Path) {
+func (t *Node) allPathsBlocking(path Path, c chan Path) {
 	myPath := path.Append(t)
 	// Pf("path %p myPath %p\n", path, myPath)
 	// Pf("send: %-10s %v\n", myPath, t.leafInterval)
@@ -461,8 +461,8 @@ func (t *Tree) allPathsBlocking(path Path, c chan Path) {
 // between the start and end times.  The fwd parameter determines
 // whether the nodes are returned in depth-first order, Left child
 // first, or in reverse depth-first order, Right child first.
-func (t *Tree) allNodes(fwd bool, start, end time.Time) <-chan *Tree {
-	c := make(chan *Tree)
+func (t *Node) allNodes(fwd bool, start, end time.Time) <-chan *Node {
+	c := make(chan *Node)
 	go func() {
 		defer close(c)
 		t.allNodesBlocking(fwd, start, end, c)
@@ -474,7 +474,7 @@ func (t *Tree) allNodes(fwd bool, start, end time.Time) <-chan *Tree {
 // channel of all nodes in the tree.  The fwd parameter determines
 // whether the nodes are returned in depth-first order, Left child
 // first, or in reverse depth-first order, Right child first.
-func (t *Tree) allNodesBlocking(fwd bool, start, end time.Time, c chan *Tree) {
+func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 
 	if t == nil {
 		return
@@ -499,7 +499,7 @@ func (t *Tree) allNodesBlocking(fwd bool, start, end time.Time, c chan *Tree) {
 }
 
 // FirstNode returns the first node in the tree.
-func (t *Tree) FirstNode() *Tree {
+func (t *Node) FirstNode() *Node {
 	if t.Left != nil {
 		return t.Left.FirstNode()
 	}
@@ -507,7 +507,7 @@ func (t *Tree) FirstNode() *Tree {
 }
 
 // LastNode returns the last node in the tree.
-func (t *Tree) LastNode() *Tree {
+func (t *Node) LastNode() *Node {
 	if t.Right != nil {
 		return t.Right.LastNode()
 	}
@@ -516,7 +516,7 @@ func (t *Tree) LastNode() *Tree {
 
 // AsDot returns a string representation of the tree in Graphviz DOT
 // format without relying on any other Tree methods.
-func (t *Tree) AsDot(path Path) string {
+func (t *Node) AsDot(path Path) string {
 	// t.Mu.Lock()
 	// defer t.Mu.Unlock()
 
@@ -562,7 +562,7 @@ func (t *Tree) AsDot(path Path) string {
 }
 
 // rotateLeft performs a Left rotation on this node.
-func (t *Tree) rotateLeft() (R *Tree) {
+func (t *Node) rotateLeft() (R *Node) {
 	if t == nil || t.Right == nil {
 		return
 	}
@@ -609,7 +609,7 @@ func (t *Tree) rotateLeft() (R *Tree) {
 }
 
 // rotateRight performs a Right rotation on this node.
-func (t *Tree) rotateRight() (L *Tree) {
+func (t *Node) rotateRight() (L *Node) {
 	if t == nil || t.Left == nil {
 		return
 	}
@@ -657,7 +657,7 @@ func (t *Tree) rotateRight() (L *Tree) {
 
 // setMinMax updates the minimum and maximum values of this node and
 // its ancestors.
-func (t *Tree) setMinMax() {
+func (t *Node) setMinMax() {
 	if t == nil {
 		return
 	}
@@ -717,4 +717,4 @@ func (t *Tree) setMinMax() {
 	}
 }
 
-var seen []*Tree
+var seen []*Node

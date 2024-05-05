@@ -20,7 +20,7 @@ import (
 // time range. Shuffle does not return intervals that are
 // marked as free (priority 0) -- it instead adjusts free intervals
 // to fill gaps in the tree.
-func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Interval) (newIv interval.Interval, removed []interval.Interval, err error) {
+func (t *Node) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Interval) (newIv interval.Interval, removed []interval.Interval, err error) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 

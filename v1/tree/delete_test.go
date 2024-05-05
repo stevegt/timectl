@@ -21,9 +21,9 @@ func TestMergeFree(t *testing.T) {
 	splitAt1200, err := time.Parse(time.RFC3339, "2024-01-01T12:00:00Z")
 	splitAt1400, err := time.Parse(time.RFC3339, "2024-01-01T14:00:00Z")
 	Ck(err)
-	top.Left = &Tree{Interval: interval.NewInterval(TreeStart, splitAt1200, 0)}
+	top.Left = &Node{Interval: interval.NewInterval(TreeStart, splitAt1200, 0)}
 	top.Interval = interval.NewInterval(splitAt1200, splitAt1400, 0)
-	top.Right = &Tree{Interval: interval.NewInterval(splitAt1400, TreeEnd, 0)}
+	top.Right = &Node{Interval: interval.NewInterval(splitAt1400, TreeEnd, 0)}
 	top.Left.setMinMax()
 	top.Right.setMinMax()
 	top.setMinMax()

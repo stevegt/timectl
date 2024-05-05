@@ -6,7 +6,7 @@ import (
 )
 
 // rebalance uses the Height and Size fields to balance the tree.
-func (t *Tree) rebalance() (out *Tree) {
+func (t *Node) rebalance() (out *Node) {
 	if t == nil {
 		return
 	}
@@ -53,7 +53,7 @@ func (t *Tree) rebalance() (out *Tree) {
 }
 
 // rebalanceDSW performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
-func (t *Tree) rebalanceDSW() (out *Tree) {
+func (t *Node) rebalanceDSW() (out *Node) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -65,7 +65,7 @@ func (t *Tree) rebalanceDSW() (out *Tree) {
 }
 
 // treeToVine converts the tree into a "vine" (a sorted linked list) using right rotations.
-func (t *Tree) treeToVine() (out *Tree, size int) {
+func (t *Node) treeToVine() (out *Node, size int) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -79,7 +79,7 @@ func (t *Tree) treeToVine() (out *Tree, size int) {
 	}
 	// continue down the right side of the tree
 	if out.Right != nil {
-		var right *Tree
+		var right *Node
 		right, size = out.Right.treeToVine()
 		out.SetRight(right)
 	}
@@ -88,7 +88,7 @@ func (t *Tree) treeToVine() (out *Tree, size int) {
 }
 
 // vineToTree converts the "vine" back into a balanced tree using left rotations.
-func (t *Tree) vineToTree(size int) (out *Tree) {
+func (t *Node) vineToTree(size int) (out *Node) {
 	out = t
 	sizef := float64(size)
 	// pow := math.Pow
@@ -167,7 +167,7 @@ func (t *Tree) vineToTree(size int) (out *Tree) {
 // A  C E  G
 //
 
-func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
+func (t *Node) compress(targetHeight int) (out *Node, done bool) {
 
 	if t == nil || t.Right == nil {
 		return t, true
@@ -179,7 +179,7 @@ func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
 	// we're going to rotate the odd nodes to the left, so we need to
 	// keep track of the previous even node so we can attach the next
 	// even node to it.
-	var prevEven *Tree
+	var prevEven *Node
 
 	A := t
 	// do the rotations

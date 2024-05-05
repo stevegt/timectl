@@ -14,13 +14,13 @@ import (
 // XXX this should be refactored to find and return a tree instead of
 // a slice; the common parent of the set will always be a member of
 // the set.
-func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Tree {
+func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
 	// if the search range fits entirely within the left or right
 	// child, then recurse into that child.
-	for _, child := range []*Tree{t.Left, t.Right} {
+	for _, child := range []*Node{t.Left, t.Right} {
 		if child == nil {
 			continue
 		}
@@ -37,7 +37,7 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	}
 
 	// manage a sliding window of a candidate node set
-	var window []*Tree
+	var window []*Node
 	var sum time.Duration
 	// iterate over the nodes in the tree; either in order or reverse
 	// order depending on the value of first.
@@ -70,7 +70,7 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 			if !first {
 				// reverse the window if we are iterating in reverse order
 				// so that the nodes are in order of start time.
-				newWindow := make([]*Tree, len(window))
+				newWindow := make([]*Node, len(window))
 				for i, j := len(window)-1, 0; i >= 0; i, j = i-1, j+1 {
 					newWindow[j] = window[i]
 				}
@@ -87,13 +87,13 @@ func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 // iterate in forward order, otherwise it will iterate in reverse
 // order.
 type Iterator struct {
-	Tree *Tree
-	path []*Tree
+	Tree *Node
+	path []*Node
 	Fwd  bool
 }
 
 // NewIterator returns a new iterator for the given tree and direction.
-func NewIterator(t *Tree, fwd bool) *Iterator {
+func NewIterator(t *Node, fwd bool) *Iterator {
 	it := &Iterator{Tree: t, Fwd: fwd}
 	// find the path to the first or last node in the tree
 	it.path = t.buildpath(fwd)
@@ -101,9 +101,9 @@ func NewIterator(t *Tree, fwd bool) *Iterator {
 }
 
 // buildpath builds a path to the first or last node in the tree.
-func (t *Tree) buildpath(fwd bool) []*Tree {
+func (t *Node) buildpath(fwd bool) []*Node {
 	node := t
-	path := []*Tree{node}
+	path := []*Node{node}
 	if fwd {
 		for node.Left != nil {
 			node = node.Left
@@ -122,7 +122,7 @@ func (t *Tree) buildpath(fwd bool) []*Tree {
 // forward mode, then the nodes are returned in order of start time.
 // If the iterator is in reverse mode, then the nodes are returned in
 // reverse order of start time.
-func (it *Iterator) Next() *Tree {
+func (it *Iterator) Next() *Node {
 	if len(it.path) == 0 {
 		return nil
 	}
@@ -165,7 +165,7 @@ func (it *Iterator) Next() *Tree {
 	return res
 }
 
-func (t *Tree) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Tree {
+func (t *Node) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -174,7 +174,7 @@ func (t *Tree) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time
 
 	// filter the nodes to only include those with a priority less
 	// than priority
-	low := filter(acc, func(node *Tree) bool {
+	low := filter(acc, func(node *Node) bool {
 		return node.Interval.Priority() < priority
 	})
 
@@ -192,10 +192,10 @@ func (t *Tree) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time
 // accumulate returns a channel of nodes in the tree that wrap the
 // given range of start and end times. The nodes are returned in order
 // of start time.
-func (t *Tree) accumulate(fwd bool, start, end time.Time) (out <-chan *Tree) {
+func (t *Node) accumulate(fwd bool, start, end time.Time) (out <-chan *Node) {
 
 	// filter function to check if an interval overlaps the given range.
-	filterFn := func(t *Tree) bool {
+	filterFn := func(t *Node) bool {
 		i := t.Interval
 		return i.OverlapsRange(start, end)
 	}
@@ -206,8 +206,8 @@ func (t *Tree) accumulate(fwd bool, start, end time.Time) (out <-chan *Tree) {
 }
 
 // slice2chan converts a slice of nodes to a channel of nodes.
-func slice2chan(nodes []*Tree) <-chan *Tree {
-	ch := make(chan *Tree)
+func slice2chan(nodes []*Node) <-chan *Node {
+	ch := make(chan *Node)
 	go func() {
 		for _, i := range nodes {
 			ch <- i
@@ -218,8 +218,8 @@ func slice2chan(nodes []*Tree) <-chan *Tree {
 }
 
 // chan2slice converts a channel of nodes to a slice of nodes.
-func chan2slice(ch <-chan *Tree) []*Tree {
-	nodes := []*Tree{}
+func chan2slice(ch <-chan *Node) []*Node {
+	nodes := []*Node{}
 	for i := range ch {
 		nodes = append(nodes, i)
 	}
@@ -228,8 +228,8 @@ func chan2slice(ch <-chan *Tree) []*Tree {
 
 // filter filters nodes from a channel of nodes based on a
 // filter function and returns a channel of nodes.
-func filter(in <-chan *Tree, filterFn func(tree *Tree) bool) <-chan *Tree {
-	out := make(chan *Tree)
+func filter(in <-chan *Node, filterFn func(tree *Node) bool) <-chan *Node {
+	out := make(chan *Node)
 	go func() {
 		for i := range in {
 			if filterFn(i) {
@@ -247,12 +247,12 @@ func filter(in <-chan *Tree, filterFn func(tree *Tree) bool) <-chan *Tree {
 // either forward or reverse order, and will be returned in the
 // order they are provided.  The channel is closed when the
 // first matching set of nodes is found.
-func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
-	out := make(chan *Tree)
+func contiguous(ch <-chan *Node, duration time.Duration) <-chan *Node {
+	out := make(chan *Node)
 	go func() {
 		defer close(out)
 		var sum time.Duration
-		var nodes []*Tree
+		var nodes []*Node
 		for n := range ch {
 			if sum >= duration {
 				break
@@ -272,7 +272,7 @@ func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
 				nodes = append(nodes, n)
 				sum += i.Duration()
 			} else {
-				nodes = []*Tree{n}
+				nodes = []*Node{n}
 				sum = i.Duration()
 			}
 		}
@@ -286,11 +286,11 @@ func contiguous(ch <-chan *Tree, duration time.Duration) <-chan *Tree {
 }
 
 // reverse reverses the order of nodes in a channel of nodes.
-func reverse(ch <-chan *Tree) <-chan *Tree {
-	out := make(chan *Tree)
+func reverse(ch <-chan *Node) <-chan *Node {
+	out := make(chan *Node)
 	go func() {
 		defer close(out)
-		nodes := []*Tree{}
+		nodes := []*Node{}
 		for i := range ch {
 			nodes = append(nodes, i)
 		}

@@ -11,7 +11,7 @@ import (
 // Verify checks the integrity of the tree structure. It makes sure
 // that all nodes and intervals are correctly placed within the tree
 // according to the interval tree properties.
-func (t *Tree) Verify(ckBalance bool) error {
+func (t *Node) Verify(ckBalance bool) error {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -46,7 +46,7 @@ func (t *Tree) Verify(ckBalance bool) error {
 		return fmt.Errorf("last interval is not free")
 	}
 
-	var prevNode *Tree
+	var prevNode *Node
 	iter := NewIterator(t, true)
 	for {
 		node := iter.Next()
@@ -134,7 +134,7 @@ func (t *Tree) Verify(ckBalance bool) error {
 }
 
 // ckBalance checks the balance of the tree.
-func (t *Tree) ckBalance(ancestors Path) error {
+func (t *Node) ckBalance(ancestors Path) error {
 	if t == nil {
 		return nil
 	}
@@ -163,7 +163,7 @@ func (t *Tree) ckBalance(ancestors Path) error {
 }
 
 // height returns the height of the tree.
-func (t *Tree) height() int {
+func (t *Node) height() int {
 	if t == nil {
 		return 0
 	}
