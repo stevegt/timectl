@@ -12,8 +12,8 @@ import (
 // are both nil.  If the exact interval is in the root node, then the
 // path is nil.
 func (t *Node) FindExact(interval interval.Interval) (path []*Node, found *Node) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.findExact(interval, nil)
 }
 

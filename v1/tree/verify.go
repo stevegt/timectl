@@ -12,8 +12,8 @@ import (
 // that all nodes and intervals are correctly placed within the tree
 // according to the interval tree properties.
 func (t *Node) Verify(ckBalance bool) error {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// the interval should not be nil
 	if t.Interval == nil {

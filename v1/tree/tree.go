@@ -52,13 +52,13 @@ type Node struct {
 	// Size is the number of nodes in the node's subtree, including the node
 	Size int
 
-	Mu async.ReentrantLock
+	mu async.ReentrantLock
 }
 
 // String returns a string representation of the node.
 func (t *Node) String() string {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	out := Spf("Tree: %p\n", t)
 	out += Spf("  Interval: %v\n", t.Interval)
 	out += Spf("  Parent: %p\n", t.Parent)
@@ -149,8 +149,8 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
 func (t *Node) Insert(newInterval interval.Interval) bool {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if !newInterval.Busy() {
 		// XXX return a meaningful error
@@ -246,8 +246,8 @@ func (t *Node) ckHeight() {
 
 // BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
 func (t *Node) BusyIntervals() (intervals []interval.Interval) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	// XXX inefficient -- use MaxPriority
 	for _, i := range t.AllIntervals() {
 		if i.Busy() {
@@ -259,8 +259,8 @@ func (t *Node) BusyIntervals() (intervals []interval.Interval) {
 
 // AllIntervals returns a slice of all intervals in all leaf nodes of the tree.
 func (t *Node) AllIntervals() []interval.Interval {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	var intervals []interval.Interval
 	if t.Left != nil {
@@ -275,8 +275,8 @@ func (t *Node) AllIntervals() []interval.Interval {
 
 // Busy returns true if the interval is busy.
 func (t *Node) Busy() bool {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	Assert(t.Interval != nil, "unexpected nil interval")
 	return t.Interval.Busy()
@@ -284,15 +284,15 @@ func (t *Node) Busy() bool {
 
 // Start returns the start time of the interval in the node.
 func (t *Node) Start() time.Time {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.Interval.Start()
 }
 
 // End returns the end time of the interval in the node.
 func (t *Node) End() time.Time {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.Interval.End()
 }
 
@@ -300,8 +300,8 @@ func (t *Node) End() time.Time {
 // If includeFree is true, then this function returns all intervals that conflict with the given
 // interval, otherwise it returns only busy intervals.
 func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if t == nil {
 		return nil
@@ -329,8 +329,8 @@ func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 // following the left child first if first is set, otherwise following
 // the right child first.
 func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.Interval) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
@@ -383,8 +383,8 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 
 // FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
 func (t *Node) FreeIntervals() (intervals []interval.Interval) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	for _, i := range t.AllIntervals() {
 		if !i.Busy() {
 			intervals = append(intervals, i)

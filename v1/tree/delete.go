@@ -11,8 +11,8 @@ import (
 // Delete removes an interval from the tree
 func (t *Node) Delete(interval interval.Interval) (out *Node, err error) {
 	defer Return(&err)
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	_, found := t.findExact(interval, nil)
 	Assert(found != nil, "Interval not found: %v", interval)
@@ -43,8 +43,8 @@ func (t *Node) free(node *Node) (old interval.Interval) {
 // return intervals that are marked as free (priority 0) -- it
 // instead adjusts free intervals to fill gaps in the tree.
 func (t *Node) RemoveRange(start, end time.Time) (out *Node, removed []interval.Interval) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// Find all nodes that start or end within the given range.
 	duration := end.Sub(start)

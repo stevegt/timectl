@@ -15,8 +15,8 @@ import (
 // a slice; the common parent of the set will always be a member of
 // the set.
 func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// if the search range fits entirely within the left or right
 	// child, then recurse into that child.
@@ -166,8 +166,8 @@ func (it *Iterator) Next() *Node {
 }
 
 func (t *Node) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// get the nodes that overlap the range
 	acc := t.accumulate(first, searchStart, searchEnd)

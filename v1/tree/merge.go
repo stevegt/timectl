@@ -5,8 +5,8 @@ import "github.com/stevegt/timectl/interval"
 // mergeFree merges adjacent free intervals in the tree and returns a
 // vine with the merged intervals.
 func (t *Node) mergeFree() (vine *Node) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if t == nil {
 		return

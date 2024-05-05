@@ -54,8 +54,8 @@ func (t *Node) rebalance() (out *Node) {
 
 // rebalanceDSW performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
 func (t *Node) rebalanceDSW() (out *Node) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	var size int
 	out, size = t.treeToVine()
@@ -66,8 +66,8 @@ func (t *Node) rebalanceDSW() (out *Node) {
 
 // treeToVine converts the tree into a "vine" (a sorted linked list) using right rotations.
 func (t *Node) treeToVine() (out *Node, size int) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if t == nil {
 		return

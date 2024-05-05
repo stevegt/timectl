@@ -21,8 +21,8 @@ import (
 // marked as free (priority 0) -- it instead adjusts free intervals
 // to fill gaps in the tree.
 func (t *Node) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Interval) (newIv interval.Interval, removed []interval.Interval, err error) {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	// ensure the new interval is busy
 	if iv.Priority() == 0 {
