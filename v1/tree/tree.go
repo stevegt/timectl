@@ -250,7 +250,7 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
 	if !t.Busy() {
-		start := util.MaxTime(minStart, t.minStart)
+		start := util.MaxTime(minStart, t.MinStart())
 		end := util.MinTime(t.MaxEnd(), maxEnd)
 		sub := subInterval(first, start, end, duration)
 		return sub
@@ -268,7 +268,7 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		if child == nil {
 			continue
 		}
-		start = util.MaxTime(minStart, child.minStart)
+		start = util.MaxTime(minStart, child.MinStart())
 		end = util.MinTime(child.MaxEnd(), maxEnd)
 		slot := child.FindFree(first, start, end, duration)
 		if slot != nil {
@@ -361,7 +361,7 @@ func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 	if t.MaxEnd().Before(start) {
 		return
 	}
-	if t.minStart.After(end) {
+	if t.MinStart().After(end) {
 		return
 	}
 
@@ -408,7 +408,7 @@ func (t *Node) AsDot(path Path) string {
 	id := path.String()
 	label := Spf("parent %p\\nthis %p\\n", t.parent, t)
 	label += Spf("left %p    right %p\\n", t.left, t.right)
-	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.MaxEnd(), t.MaxPriority())
+	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart(), t.MaxEnd(), t.MaxPriority())
 	if t.Interval() != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval())
 	} else {
@@ -560,7 +560,7 @@ func (t *Node) setMinMax() {
 	if t.left == nil {
 		t.SetMinStart(t.Interval().Start())
 	} else {
-		t.SetMinStart(t.left.minStart)
+		t.SetMinStart(t.left.MinStart())
 		leftHeight = t.left.Height()
 		leftSize = t.left.Size()
 	}
