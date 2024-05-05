@@ -22,7 +22,7 @@ func (t *Node) mergeFree() (vine *Node) {
 			break
 		}
 		if !node.Busy() && !node.right.Busy() {
-			node.SetInterval(interval.NewInterval(node.GetInterval().Start(), node.right.Interval.End(), 0))
+			node.SetInterval(interval.NewInterval(node.GetInterval().Start(), node.right.GetInterval().End(), 0))
 			node.right = node.right.right
 			// see if we can merge more intervals with this node
 			continue
