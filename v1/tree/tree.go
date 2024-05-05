@@ -594,7 +594,7 @@ func (t *Node) setMinMax() {
 	}
 
 	// the height of the node is the height of the tallest child plus 1
-	t.height = 1 + max(leftHeight, rightHeight)
+	t.SetHeight(1 + max(leftHeight, rightHeight))
 	// the size of the node is the size of the left child plus the size
 	// of the right child plus 1
 	t.SetSize(1 + leftSize + rightSize)
