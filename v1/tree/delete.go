@@ -33,7 +33,7 @@ func (t *Node) Delete(interval interval.Interval) (out *Node, err error) {
 func (t *Node) free(node *Node) (old interval.Interval) {
 	old = node.Interval
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
-	node.Interval = freeInterval
+	node.SetInterval(freeInterval)
 	node.setMinMax()
 	return
 }
