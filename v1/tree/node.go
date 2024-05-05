@@ -39,6 +39,14 @@ type Node struct {
 	mu async.ReentrantLock
 }
 
+func (t *Node) Height() int {
+	return t.height
+}
+
+func (t *Node) SetHeight(height int) {
+	t.height = height
+}
+
 func (t *Node) Size() int {
 	return t.size
 }
