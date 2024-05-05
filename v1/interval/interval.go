@@ -41,6 +41,8 @@ type Interval interface {
 	SetStart(time.Time)
 	// SetEnd sets the end time of the interval.
 	SetEnd(time.Time)
+	// SetPriority sets the priority of the interval.
+	SetPriority(float64)
 	// Clone returns a deep copy of the interval.
 	Clone() Interval
 }
@@ -192,6 +194,11 @@ func (i *IntervalBase) SetStart(start time.Time) {
 // SetEnd sets the end time of the interval.
 func (i *IntervalBase) SetEnd(end time.Time) {
 	i.end = end
+}
+
+// SetPriority sets the priority of the interval.
+func (i *IntervalBase) SetPriority(priority float64) {
+	i.priority = priority
 }
 
 // Clone returns a deep copy of the interval.

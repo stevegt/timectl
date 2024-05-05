@@ -2,87 +2,35 @@ package tree
 
 import "github.com/stevegt/timectl/interval"
 
-// mergeFree merges adjacent free intervals in the tree.
-func (t *Tree) mergeFree() {
+// mergeFree merges adjacent free intervals in the tree and returns a
+// vine with the merged intervals.
+func (t *Tree) mergeFree() (vine *Tree) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
-	// Check for nil because this function could be called on a nil receiver due to defer in Tree operations.
 	if t == nil {
 		return
 	}
 
-	// merge free intervals on the left
-	if t.Left != nil {
-		t.Left.mergeFree()
-	}
+	// turn the tree into a vine and merge free intervals
+	vine, _ = t.treeToVine()
 
-	// merge free intervals on the right
-	if t.Right != nil {
-		t.Right.mergeFree()
-	}
-
-	// let's say we have this tree:
-	//
-	//             a
-	//            / \
-	//           B   C
-	//          / \
-	//         D   e
-	//
-	// ...where lower case letters are free intervals and upper case letters are busy intervals.
-	//
-	// We want to merge the free intervals to get:
-	//
-	//             a
-	//            / \
-	//           B   C
-	//          /
-	//         D
-	//
-	// We can only merge a with the rightmost leaf of its left child,
-	// or a with the leftmost leaf of its right child.
-	//
-
-	// try the rightmost leaf of the left child
-	parent := t
-	leaf := t.Left
-	// find the rightmost leaf
-	for leaf != nil && leaf.Right != nil {
-		parent = leaf
-		leaf = leaf.Right
-	}
-	if leaf != nil && !leaf.Busy() {
-		// merge leaf with t
-		t.Interval = interval.NewInterval(leaf.Interval.Start(), t.Interval.End(), 0)
-		// remove leaf
-		if parent == t {
-			t.SetLeft(nil)
-		} else {
-			parent.SetRight(nil)
+	// merge free intervals
+	node := vine
+	for {
+		if node.Right == nil {
+			break
 		}
-		parent.setMinMax()
-	}
-
-	// try the leftmost leaf of the right child
-	parent = t
-	leaf = t.Right
-	// find the leftmost leaf
-	for leaf != nil && leaf.Left != nil {
-		parent = leaf
-		leaf = leaf.Left
-	}
-	if leaf != nil && !leaf.Busy() {
-		// merge leaf with t
-		t.Interval = interval.NewInterval(t.Interval.Start(), leaf.Interval.End(), 0)
-		// remove leaf
-		if parent == t {
-			t.SetRight(nil)
-		} else {
-			parent.SetLeft(nil)
+		if !node.Busy() && !node.Right.Busy() {
+			node.Interval = interval.NewInterval(node.Interval.Start(), node.Right.Interval.End(), 0)
+			node.Right = node.Right.Right
+			// see if we can merge more intervals with this node
+			continue
 		}
-		parent.setMinMax()
+		// advance node
+		node = node.Right
 	}
+	node.setMinMax()
 
-	t.setMinMax()
+	return
 }

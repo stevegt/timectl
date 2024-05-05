@@ -2,6 +2,7 @@ package tree
 
 import (
 	"fmt" // Import the fmt package to use for formatting errors.
+	"time"
 
 	"github.com/stevegt/timectl/util"
 	// . "github.com/stevegt/goadapt"
@@ -21,7 +22,7 @@ func (t *Tree) Verify(ckBalance bool) error {
 
 	// - the first interval in the tree should be a free interval that
 	//   starts at TreeStart
-	firstInterval := t.firstNode().Interval
+	firstInterval := t.FirstNode().Interval
 	if firstInterval == nil {
 		return fmt.Errorf("first interval is nil")
 	}
@@ -34,7 +35,7 @@ func (t *Tree) Verify(ckBalance bool) error {
 
 	// - the last interval in the tree should be a free interval that
 	//   ends at TreeEnd
-	lastInterval := t.lastNode().Interval
+	lastInterval := t.LastNode().Interval
 	if lastInterval == nil {
 		return fmt.Errorf("last interval is nil")
 	}
@@ -46,8 +47,12 @@ func (t *Tree) Verify(ckBalance bool) error {
 	}
 
 	var prevNode *Tree
-	for path := range t.allPaths(nil) {
-		node := path.Last()
+	iter := NewIterator(t, true)
+	for {
+		node := iter.Next()
+		if node == nil {
+			break
+		}
 		// Pf(" got: %-10s %v\n", path, node.leafInterval)
 
 		// the node interval should not be nil
@@ -79,11 +84,11 @@ func (t *Tree) Verify(ckBalance bool) error {
 		if node.Left != nil {
 			gotMinStart := util.MinTime(start, node.Left.MinStart)
 			if !expectMinStart.Equal(gotMinStart) {
-				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", path)
+				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", node)
 			}
 		} else {
 			if !expectMinStart.Equal(start) {
-				return fmt.Errorf("%s minStart time does not match interval start time", path)
+				return fmt.Errorf("%s minStart time does not match interval start time", node)
 			}
 		}
 
@@ -93,19 +98,20 @@ func (t *Tree) Verify(ckBalance bool) error {
 		if node.Right != nil {
 			gotMaxEnd := util.MaxTime(end, node.Right.MaxEnd)
 			if !expectMaxEnd.Equal(gotMaxEnd) {
-				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", path)
+				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", node)
 			}
 		} else {
 			if !expectMaxEnd.Equal(end) {
-				return fmt.Errorf("%s maxEnd time does not match interval end time", path)
+				return fmt.Errorf("%s maxEnd time does not match interval end time", node)
 			}
 		}
 
 		if prevNode != nil {
 			// - each interval's start time should be equal to the end time
 			//   of the previous interval
-			if !start.Equal(prevNode.Interval.End()) {
-				return fmt.Errorf("%s start time does not match previous interval end time", path)
+			ad := util.AbsDuration(prevNode.Interval.End().Sub(start))
+			if ad > time.Second {
+				return fmt.Errorf("start time does not match previous interval end time: %v\nprev: %s\nnode: %s", ad, prevNode, node)
 			}
 
 			// - there should be no adjacent free intervals

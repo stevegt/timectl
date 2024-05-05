@@ -66,6 +66,9 @@ func (t *Tree) rebalanceDSW() (out *Tree) {
 
 // treeToVine converts the tree into a "vine" (a sorted linked list) using right rotations.
 func (t *Tree) treeToVine() (out *Tree, size int) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+
 	if t == nil {
 		return
 	}
@@ -75,7 +78,11 @@ func (t *Tree) treeToVine() (out *Tree, size int) {
 		out = out.rotateRight()
 	}
 	// continue down the right side of the tree
-	out.Right, size = out.Right.treeToVine()
+	if out.Right != nil {
+		var right *Tree
+		right, size = out.Right.treeToVine()
+		out.SetRight(right)
+	}
 	size++
 	return
 }

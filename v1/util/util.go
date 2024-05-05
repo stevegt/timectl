@@ -28,3 +28,11 @@ func MaxDuration(a, b time.Duration) time.Duration {
 	}
 	return b
 }
+
+// AbsDuration returns the absolute value of a time.Duration.
+func AbsDuration(d time.Duration) time.Duration {
+	if d < 0 {
+		return -d
+	}
+	return d
+}

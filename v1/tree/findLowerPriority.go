@@ -11,6 +11,9 @@ import (
 // given duration, and may be longer.  If first is true, then the
 // search starts at minStart and proceeds in order, otherwise the
 // search starts at maxEnd and proceeds in reverse order.
+// XXX this should be refactored to find and return a tree instead of
+// a slice; the common parent of the set will always be a member of
+// the set.
 func (t *Tree) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Tree {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()

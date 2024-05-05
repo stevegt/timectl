@@ -32,7 +32,7 @@ func TestRotate(t *testing.T) {
 	err = Expect(top, "", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
-	// ShowDot(tree, false)
+	// ShowDot(top, false)
 
 	Verify(t, top, false, false)
 }
@@ -43,10 +43,10 @@ func TestTreeToVine(t *testing.T) {
 
 	// insert several intervals into the tree
 	Insert(top, "2024-01-01T15:00:00Z", "2024-01-01T16:00:00Z", 1)
-	Insert(top, "2024-01-01T08:00:00Z", "2024-01-01T09:00:00Z", 1)
 	Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
 	Insert(top, "2024-01-01T12:00:00Z", "2024-01-01T13:00:00Z", 1)
 	Insert(top, "2024-01-01T13:00:00Z", "2024-01-01T14:00:00Z", 1)
+	Insert(top, "2024-01-01T08:00:00Z", "2024-01-01T09:00:00Z", 1)
 	Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
 	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
@@ -60,6 +60,11 @@ func TestTreeToVine(t *testing.T) {
 
 	Tassert(t, size == 10, "should be 10 nodes")
 	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+
+	// the top node should be the free interval from TreeStart to 08:00
+	err := Expect(top, "", TreeStartStr, "2024-01-01T08:00:00Z", 0)
+	Tassert(t, err == nil, err)
+
 	pathChan := top.allPaths(nil)
 	expect := "t"
 	for path := range pathChan {
@@ -99,9 +104,8 @@ func TestVineToTree(t *testing.T) {
 	}
 
 	// ShowDot(top, true)
+	Verify(t, top, false, true)
 
-	// convert the vine into a balanced tree using the DSW algorithm
-	// and the existing rotateLeft() and rotateRight() functions
 	top = top.vineToTree(size)
 
 	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")

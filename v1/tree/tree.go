@@ -55,6 +55,24 @@ type Tree struct {
 	Mu async.ReentrantLock
 }
 
+// String returns a string representation of the node.
+func (t *Tree) String() string {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
+	out := Spf("Tree: %p\n", t)
+	out += Spf("  Interval: %v\n", t.Interval)
+	out += Spf("  Parent: %p\n", t.Parent)
+	out += Spf("  Left: %p\n", t.Left)
+	out += Spf("  Right: %p\n", t.Right)
+	out += Spf("  MinStart: %v\n", t.MinStart)
+	out += Spf("  MaxEnd: %v\n", t.MaxEnd)
+	out += Spf("  MaxPriority: %v\n", t.MaxPriority)
+	out += Spf("  MinPriority: %v\n", t.MinPriority)
+	out += Spf("  Height: %v\n", t.Height)
+	out += Spf("  Size: %v\n", t.Size)
+	return out
+}
+
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Tree {
 	return newTreeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
@@ -71,9 +89,23 @@ func newTreeFromInterval(interval interval.Interval) *Tree {
 }
 
 // SetLeft sets the Left child of this node.  It returns the old Left
-// child or nil if there was no old Left child.
+// child or nil if there was no old Left child.  If the given child node
+// is already a child of another node, the Right child of this node,
+// or the Parent of this node, then this function clears the old
+// relationship before setting the new one.
 func (t *Tree) SetLeft(left *Tree) (old *Tree) {
 	old = t.Left
+	if left != nil && left.Parent != nil {
+		if left.Parent.Left == left {
+			left.Parent.Left = nil
+		}
+		if left.Parent.Right == left {
+			left.Parent.Right = nil
+		}
+	}
+	if t.Right == left {
+		t.Right = nil
+	}
 	t.Left = left
 	if t.Left != nil {
 		t.Left.Parent = t
@@ -85,9 +117,23 @@ func (t *Tree) SetLeft(left *Tree) (old *Tree) {
 }
 
 // SetRight sets the Right child of this node.  It returns the old Right
-// child or nil if there was no old Right child.
+// child or nil if there was no old Right child.  If the given child node
+// is already a child of another node, the Left child of this node,
+// or the Parent of this node, then this function clears the old
+// relationship before setting the new one.
 func (t *Tree) SetRight(right *Tree) (old *Tree) {
 	old = t.Right
+	if right != nil && right.Parent != nil {
+		if right.Parent.Left == right {
+			right.Parent.Left = nil
+		}
+		if right.Parent.Right == right {
+			right.Parent.Right = nil
+		}
+	}
+	if t.Left == right {
+		t.Left = nil
+	}
 	t.Right = right
 	if t.Right != nil {
 		t.Right.Parent = t
@@ -202,6 +248,7 @@ func (t *Tree) ckHeight() {
 func (t *Tree) BusyIntervals() (intervals []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
+	// XXX inefficient -- use MaxPriority
 	for _, i := range t.AllIntervals() {
 		if i.Busy() {
 			intervals = append(intervals, i)
@@ -256,16 +303,19 @@ func (t *Tree) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
+	if t == nil {
+		return nil
+	}
+
 	var conflicts []interval.Interval
-	if t.Interval != nil && t.Interval.Conflicts(iv, includeFree) {
+	if t.Interval.Conflicts(iv, includeFree) {
 		conflicts = append(conflicts, t.Interval)
-	} else {
-		if t.Left != nil {
-			conflicts = append(conflicts, t.Left.Conflicts(iv, includeFree)...)
-		}
-		if t.Right != nil {
-			conflicts = append(conflicts, t.Right.Conflicts(iv, includeFree)...)
-		}
+	}
+	if t.Left != nil {
+		conflicts = append(conflicts, t.Left.Conflicts(iv, includeFree)...)
+	}
+	if t.Right != nil {
+		conflicts = append(conflicts, t.Right.Conflicts(iv, includeFree)...)
 	}
 	return conflicts
 }
@@ -448,18 +498,18 @@ func (t *Tree) allNodesBlocking(fwd bool, start, end time.Time, c chan *Tree) {
 	}
 }
 
-// firstNode returns the first node in the tree.
-func (t *Tree) firstNode() *Tree {
+// FirstNode returns the first node in the tree.
+func (t *Tree) FirstNode() *Tree {
 	if t.Left != nil {
-		return t.Left.firstNode()
+		return t.Left.FirstNode()
 	}
 	return t
 }
 
-// lastNode returns the last node in the tree.
-func (t *Tree) lastNode() *Tree {
+// LastNode returns the last node in the tree.
+func (t *Tree) LastNode() *Tree {
 	if t.Right != nil {
-		return t.Right.lastNode()
+		return t.Right.LastNode()
 	}
 	return t
 }
@@ -467,8 +517,8 @@ func (t *Tree) lastNode() *Tree {
 // AsDot returns a string representation of the tree in Graphviz DOT
 // format without relying on any other Tree methods.
 func (t *Tree) AsDot(path Path) string {
-	t.Mu.Lock()
-	defer t.Mu.Unlock()
+	// t.Mu.Lock()
+	// defer t.Mu.Unlock()
 
 	var out string
 	var top bool
@@ -492,11 +542,17 @@ func (t *Tree) AsDot(path Path) string {
 		out += t.Left.AsDot(path.Append(t.Left))
 		// add edge from this node to left child
 		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
+	} else {
+		out += fmt.Sprintf("  %sl [label=\"nil\" style=dotted];\n", id)
+		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
 	}
 	if t.Right != nil {
 		// get right child's dot representation
 		out += t.Right.AsDot(path.Append(t.Right))
 		// add edge from this node to right child
+		out += fmt.Sprintf("  %s -> %sr [label=%s];\n", id, id, "r")
+	} else {
+		out += fmt.Sprintf("  %sr [label=\"nil\" style=dotted];\n", id)
 		out += fmt.Sprintf("  %s -> %sr [label=%s];\n", id, id, "r")
 	}
 	if top {
@@ -522,6 +578,7 @@ func (t *Tree) rotateLeft() (R *Tree) {
 	//
 	// the new root is the current node's right child
 	R = t.Right
+	t.Right = nil
 
 	// the current node becomes the new root's left child
 	//
@@ -529,11 +586,17 @@ func (t *Tree) rotateLeft() (R *Tree) {
 	//        / \
 	//   x   t   y
 	//
-	// detach t and R from each other
-	t.Right = nil
-	R.Parent = nil
+	// have t's parent adopt R
+	R.Parent = t.Parent
+	t.Parent = nil
+	x := R.Left
+	R.Left = nil
+
+	if R.Parent != nil {
+		R.Parent.SetRight(R)
+	}
 	// set t as R's left child and save a pointer to x
-	x := R.SetLeft(t)
+	R.SetLeft(t)
 
 	// set the current node's right child to the new
 	// root's old left child
@@ -566,6 +629,7 @@ func (t *Tree) rotateRight() (L *Tree) {
 	//
 	// the new root is the current node's left child
 	L = t.Left
+	t.Left = nil
 
 	// the current node becomes the new root's right child
 	//
@@ -573,9 +637,12 @@ func (t *Tree) rotateRight() (L *Tree) {
 	//    / \
 	//   x   t   y
 	//
-	// detach t and L from each other
-	t.Left = nil
-	L.Parent = nil
+	// detach t from L and have t's parent adopt L
+	L.Parent = t.Parent
+	t.Parent = nil
+	if L.Parent != nil {
+		L.Parent.SetLeft(L)
+	}
 	// set t as L's right child and save a pointer to y
 	y := L.SetRight(t)
 
@@ -601,6 +668,20 @@ func (t *Tree) setMinMax() {
 	if t == nil {
 		return
 	}
+
+	for _, s := range seen {
+		if s == t {
+			Pf("seen:\n")
+			for _, s := range seen {
+				Pf("%s\n", s)
+			}
+			Pf("t: %s\n", t)
+			Assert(false, "cycle detected")
+		}
+	}
+
+	seen = append(seen, t)
+
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.Left == nil {
@@ -636,6 +717,11 @@ func (t *Tree) setMinMax() {
 	t.Size = 1 + leftSize + rightSize
 
 	if t.Parent != nil {
+		// Pf("setMinMax: %s\n", t.Interval)
 		t.Parent.setMinMax()
 	}
+
+	seen = seen[:len(seen)-1]
 }
+
+var seen []*Tree
