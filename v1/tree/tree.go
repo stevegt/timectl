@@ -187,7 +187,7 @@ func (t *Node) ckHeight() {
 	if t == nil {
 		return
 	}
-	calculatedHeight := t.height
+	calculatedHeight := t.Height()
 	actualHeight := t.CalcHeight()
 	Assert(calculatedHeight == actualHeight, "height mismatch Height: %d height(): %d", calculatedHeight, actualHeight)
 }
@@ -571,14 +571,14 @@ func (t *Node) setMinMax() {
 		t.minStart = t.Interval().Start()
 	} else {
 		t.minStart = t.left.minStart
-		leftHeight = t.left.height
+		leftHeight = t.left.Height()
 		leftSize = t.left.Size()
 	}
 	if t.right == nil {
 		t.maxEnd = t.Interval().End()
 	} else {
 		t.maxEnd = t.right.maxEnd
-		rightHeight = t.right.height
+		rightHeight = t.right.Height()
 		rightSize = t.right.Size()
 	}
 
