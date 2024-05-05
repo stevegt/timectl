@@ -42,7 +42,7 @@ func TestContiguous(t *testing.T) {
 	// keep only the free intervals
 	nodeChan := slice2chan(nodes)
 	freeChan := filter(nodeChan, func(node *Node) bool {
-		iv := node.GetInterval()
+		iv := node.Interval()
 		return iv.Priority() < 1
 	})
 	freeNodes := chan2slice(freeChan)
@@ -102,7 +102,7 @@ func TestFilter(t *testing.T) {
 	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 
 	fn := func(t *Node) bool {
-		iv := t.GetInterval()
+		iv := t.Interval()
 		return iv.Priority() < 2
 	}
 
@@ -138,7 +138,7 @@ func TestContiguousFilter(t *testing.T) {
 	acc := top.accumulate(true, searchStart, searchEnd)
 	// filter the nodes to only include those with a priority less than 2
 	low := filter(acc, func(t *Node) bool {
-		iv := t.GetInterval()
+		iv := t.Interval()
 		return iv.Priority() < 2
 	})
 	// filter the nodes to only include those that are contiguous
@@ -152,7 +152,7 @@ func TestContiguousFilter(t *testing.T) {
 	// check that we got the right nodes
 	var ivs []interval.IInterval
 	for _, n := range res {
-		ivs = append(ivs, n.GetInterval())
+		ivs = append(ivs, n.Interval())
 	}
 	err = Match(ivs[0], "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	Tassert(t, err == nil, err)

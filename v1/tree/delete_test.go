@@ -182,7 +182,7 @@ func TestDelete(t *testing.T) {
 	// delete the node. The Delete() function replaces the interval in the
 	// node with a free interval that spans the same range, and then merges
 	// free nodes.
-	top, err := top.Delete(found.GetInterval())
+	top, err := top.Delete(found.Interval())
 	Tassert(t, err == nil, err)
 
 	// check that the interval is no longer in the tree

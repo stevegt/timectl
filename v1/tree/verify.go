@@ -16,13 +16,13 @@ func (t *Node) Verify(ckBalance bool) error {
 	defer t.mu.Unlock()
 
 	// the interval should not be nil
-	if t.GetInterval() == nil {
+	if t.Interval() == nil {
 		return fmt.Errorf("root interval is nil")
 	}
 
 	// - the first interval in the tree should be a free interval that
 	//   starts at TreeStart
-	firstInterval := t.FirstNode().GetInterval()
+	firstInterval := t.FirstNode().Interval()
 	if firstInterval == nil {
 		return fmt.Errorf("first interval is nil")
 	}
@@ -35,7 +35,7 @@ func (t *Node) Verify(ckBalance bool) error {
 
 	// - the last interval in the tree should be a free interval that
 	//   ends at TreeEnd
-	lastInterval := t.LastNode().GetInterval()
+	lastInterval := t.LastNode().Interval()
 	if lastInterval == nil {
 		return fmt.Errorf("last interval is nil")
 	}
@@ -56,7 +56,7 @@ func (t *Node) Verify(ckBalance bool) error {
 		// Pf(" got: %-10s %v\n", path, node.leafInterval)
 
 		// the node interval should not be nil
-		if node.GetInterval() == nil {
+		if node.Interval() == nil {
 			return fmt.Errorf("node interval is nil")
 		}
 
@@ -70,8 +70,8 @@ func (t *Node) Verify(ckBalance bool) error {
 			return fmt.Errorf("node is not a child of its parent")
 		}
 
-		start := node.GetInterval().Start()
-		end := node.GetInterval().End()
+		start := node.Interval().Start()
+		end := node.Interval().End()
 
 		// - each interval's end time should be greater than its start time
 		if !end.After(start) {
@@ -109,7 +109,7 @@ func (t *Node) Verify(ckBalance bool) error {
 		if prevNode != nil {
 			// - each interval's start time should be equal to the end time
 			//   of the previous interval
-			ad := util.AbsDuration(prevNode.GetInterval().End().Sub(start))
+			ad := util.AbsDuration(prevNode.Interval().End().Sub(start))
 			if ad > time.Second {
 				return fmt.Errorf("start time does not match previous interval end time: %v\nprev: %s\nnode: %s", ad, prevNode, node)
 			}

@@ -48,13 +48,13 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 			break
 		}
 		// if the node priority is too high, then reset the window
-		if node.GetInterval().Priority() >= priority {
+		if node.Interval().Priority() >= priority {
 			window = nil
 			sum = 0
 			continue
 		}
 		// get the overlap of the node with the search range
-		overlap := node.GetInterval().OverlapDuration(searchStart, searchEnd)
+		overlap := node.Interval().OverlapDuration(searchStart, searchEnd)
 		// if the node does not overlap the search range, then reset
 		// the window
 		if overlap == 0 {
@@ -135,7 +135,7 @@ func (it *Iterator) Next() *Node {
 			// that starts later than res
 			for {
 				try := it.path[len(it.path)-1]
-				if try.GetInterval().Start().After(res.GetInterval().Start()) {
+				if try.Interval().Start().After(res.Interval().Start()) {
 					break
 				}
 				it.path = it.path[:len(it.path)-1]
@@ -152,7 +152,7 @@ func (it *Iterator) Next() *Node {
 			// that starts earlier than res
 			for {
 				try := it.path[len(it.path)-1]
-				if try.GetInterval().Start().Before(res.GetInterval().Start()) {
+				if try.Interval().Start().Before(res.Interval().Start()) {
 					break
 				}
 				it.path = it.path[:len(it.path)-1]
@@ -175,7 +175,7 @@ func (t *Node) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time
 	// filter the nodes to only include those with a priority less
 	// than priority
 	low := filter(acc, func(node *Node) bool {
-		return node.GetInterval().Priority() < priority
+		return node.Interval().Priority() < priority
 	})
 
 	// filter the nodes to only include those that are contiguous
@@ -196,7 +196,7 @@ func (t *Node) accumulate(fwd bool, start, end time.Time) (out <-chan *Node) {
 
 	// filter function to check if an interval overlaps the given range.
 	filterFn := func(t *Node) bool {
-		i := t.GetInterval()
+		i := t.Interval()
 		return i.OverlapsRange(start, end)
 	}
 
@@ -257,15 +257,15 @@ func contiguous(ch <-chan *Node, duration time.Duration) <-chan *Node {
 			if sum >= duration {
 				break
 			}
-			i := n.GetInterval()
+			i := n.Interval()
 			if len(nodes) == 0 {
 				nodes = append(nodes, n)
 				sum = i.Duration()
 				continue
 			}
-			lastInterval := nodes[len(nodes)-1].GetInterval()
-			nStart := n.GetInterval().Start()
-			nEnd := n.GetInterval().End()
+			lastInterval := nodes[len(nodes)-1].Interval()
+			nStart := n.Interval().Start()
+			nEnd := n.Interval().End()
 			okFwd := nStart.Equal(lastInterval.End())
 			okRev := nEnd.Equal(lastInterval.Start())
 			if okFwd || okRev {

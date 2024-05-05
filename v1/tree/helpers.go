@@ -52,10 +52,10 @@ func Expect(tree *Node, pathStr, startStr, endStr string, priority float64) erro
 	end, err := time.Parse(time.RFC3339, endStr)
 	Ck(err)
 	ev := interval.NewInterval(start, end, priority)
-	ok := node.GetInterval().Equal(ev)
-	ok = ok && node.GetInterval().Priority() == priority
+	ok := node.Interval().Equal(ev)
+	ok = ok && node.Interval().Priority() == priority
 	if !ok {
-		return fmt.Errorf("%vExpected %v, got %v", expectStr, ev, node.GetInterval())
+		return fmt.Errorf("%vExpected %v, got %v", expectStr, ev, node.Interval())
 	}
 	return nil
 }
@@ -142,11 +142,11 @@ func Verify(t *testing.T, tree *Node, ckBalance bool, show bool) {
 // Dump is a helper function that prints the tree structure to
 // stdout.
 func Dump(tree *Node, path string) {
-	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.GetInterval())
+	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.Interval())
 	if tree.left != nil {
 		Dump(tree.left, path+"l")
 	}
-	fmt.Printf("%-10v: %v\n", path, tree.GetInterval())
+	fmt.Printf("%-10v: %v\n", path, tree.Interval())
 	if tree.right != nil {
 		Dump(tree.right, path+"r")
 	}

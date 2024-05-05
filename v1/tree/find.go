@@ -22,7 +22,7 @@ func (t *Node) FindExact(interval interval.IInterval) (path []*Node, found *Node
 // current node during recursion.
 func (t *Node) findExact(interval interval.IInterval, pathIn []*Node) (pathOut []*Node, found *Node) {
 
-	if t.GetInterval().Equal(interval) {
+	if t.Interval().Equal(interval) {
 		return pathIn, t
 	}
 

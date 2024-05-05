@@ -31,7 +31,7 @@ func (t *Node) Delete(interval interval.IInterval) (out *Node, err error) {
 // no longer part of the tree.  We return the old interval so that the
 // caller can decide what to do with it.
 func (t *Node) free(node *Node) (old interval.IInterval) {
-	old = node.GetInterval()
+	old = node.Interval()
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
 	node.SetInterval(freeInterval)
 	node.setMinMax()

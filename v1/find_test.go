@@ -146,7 +146,7 @@ func TestFindExact(t *testing.T) {
 
 	path, found := top.FindExact(iv)
 	goadapt.Tassert(t, found != nil, "Expected non-nil interval")
-	goadapt.Tassert(t, found.GetInterval().Equal(iv), fmt.Sprintf("Expected %v, got %v", iv, found.GetInterval()))
+	goadapt.Tassert(t, found.Interval().Equal(iv), fmt.Sprintf("Expected %v, got %v", iv, found.Interval()))
 	goadapt.Tassert(t, len(path) == 0, "Expected empty path")
 
 	// try finding an interval that is not in the tree
@@ -191,10 +191,10 @@ func TestFindLowerPriority(t *testing.T) {
 	// 9:00 to 9:30 followed by the free interval from 9:30 to 10:00.
 	nodes := top.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 3)
 	goadapt.Tassert(t, len(nodes) > 0, "Expected at least 1 interval, got %d", len(nodes))
-	err = tree.Match(nodes[0].GetInterval(), "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	err = tree.Match(nodes[0].Interval(), "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 	goadapt.Tassert(t, err == nil, err)
 	goadapt.Tassert(t, len(nodes) == 2, "Expected 2 nodes, got %d", len(nodes))
-	err = tree.Match(nodes[1].GetInterval(), "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
+	err = tree.Match(nodes[1].Interval(), "2024-01-01T9:30:00Z", "2024-01-01T10:00:00Z", 0)
 	goadapt.Tassert(t, err == nil, err)
 
 	// find nodes spanning at least a 60 minute duration and lower
@@ -205,12 +205,12 @@ func TestFindLowerPriority(t *testing.T) {
 	// 11:00.
 	nodes = top.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 2)
 	goadapt.Tassert(t, len(nodes) > 0, "Expected at least 1 interval, got %d", len(nodes))
-	err = tree.Match(nodes[0].GetInterval(), "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
+	err = tree.Match(nodes[0].Interval(), "2024-01-01T09:30:00Z", "2024-01-01T10:00:00Z", 0)
 	goadapt.Tassert(t, err == nil, err)
 	goadapt.Tassert(t, len(nodes) == 2, "Expected 2 nodes, got %d", len(nodes))
-	err = tree.Match(nodes[1].GetInterval(), "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = tree.Match(nodes[1].Interval(), "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	goadapt.Tassert(t, err == nil, err)
-	goadapt.Tassert(t, nodes[1].GetInterval() == i1000_1100, "Expected %v, got %v", i1000_1100, nodes[1])
+	goadapt.Tassert(t, nodes[1].Interval() == i1000_1100, "Expected %v, got %v", i1000_1100, nodes[1])
 
 	// find nodes spanning at least a 60 minute duration and lower
 	// than priority 2 near the end time.  because priority 2 is not
@@ -220,11 +220,11 @@ func TestFindLowerPriority(t *testing.T) {
 	// to 11:30
 	nodes = top.FindLowerPriority(false, searchStart, searchEnd, 60*time.Minute, 2)
 	goadapt.Tassert(t, len(nodes) > 0, "Expected at least 1 interval, got %d", len(nodes))
-	err = tree.Match(nodes[0].GetInterval(), "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	err = tree.Match(nodes[0].Interval(), "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	goadapt.Tassert(t, err == nil, err)
-	goadapt.Tassert(t, nodes[0].GetInterval() == i1000_1100, "Expected %v, got %v", i1000_1100, nodes[0])
+	goadapt.Tassert(t, nodes[0].Interval() == i1000_1100, "Expected %v, got %v", i1000_1100, nodes[0])
 	goadapt.Tassert(t, len(nodes) == 2, "Expected 2 nodes, got %d", len(nodes))
-	err = tree.Match(nodes[1].GetInterval(), "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
+	err = tree.Match(nodes[1].Interval(), "2024-01-01T11:00:00Z", "2024-01-01T11:30:00Z", 0)
 	goadapt.Tassert(t, err == nil, err)
 
 	tree.Verify(t, top, false, false)
