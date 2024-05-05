@@ -49,7 +49,7 @@ type Node struct {
 	// height is the height of the node's subtree, including the node
 	height int
 
-	// Size is the number of nodes in the node's subtree, including the node
+	// size is the number of nodes in the node's subtree, including the node
 	size int
 
 	mu async.ReentrantLock

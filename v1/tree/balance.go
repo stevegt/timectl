@@ -5,7 +5,7 @@ import (
 	// . "github.com/stevegt/goadapt"
 )
 
-// rebalance uses the height and Size fields to balance the tree.
+// rebalance uses the height and size fields to balance the tree.
 func (t *Node) rebalance() (out *Node) {
 	if t == nil {
 		return
@@ -18,12 +18,12 @@ func (t *Node) rebalance() (out *Node) {
 		var leftHeight, rightHeight int
 		if out.Left != nil {
 			out.SetLeft(out.Left.rebalance())
-			leftSize = out.Left.Size
+			leftSize = out.Left.size
 			leftHeight = out.Left.height
 		}
 		if out.Right != nil {
 			out.SetRight(out.Right.rebalance())
-			rightSize = out.Right.Size
+			rightSize = out.Right.size
 			rightHeight = out.Right.height
 		}
 		// Pf("rebalance: %d - %d\n", leftHeight, rightHeight)
