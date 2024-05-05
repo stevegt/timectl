@@ -38,9 +38,9 @@ type Node struct {
 	// rooted at this node
 	MaxEnd time.Time
 
-	// MaxPriority is the highest priority of any Interval in the subtree
+	// maxPriority is the highest priority of any Interval in the subtree
 	// rooted at this node, including this node
-	MaxPriority float64
+	maxPriority float64
 
 	// minPriority is the lowest priority of any Interval in the subtree
 	// rooted at this node, including this node
@@ -66,7 +66,7 @@ func (t *Node) String() string {
 	out += Spf("  Right: %p\n", t.Right)
 	out += Spf("  MinStart: %v\n", t.MinStart)
 	out += Spf("  MaxEnd: %v\n", t.MaxEnd)
-	out += Spf("  MaxPriority: %v\n", t.MaxPriority)
+	out += Spf("  MaxPriority: %v\n", t.maxPriority)
 	out += Spf("  MinPriority: %v\n", t.minPriority)
 	out += Spf("  Height: %v\n", t.height)
 	out += Spf("  Size: %v\n", t.size)
@@ -84,7 +84,7 @@ func newTreeFromInterval(interval interval.Interval) *Node {
 		Interval:    interval,
 		MinStart:    interval.Start(),
 		MaxEnd:      interval.End(),
-		MaxPriority: interval.Priority(),
+		maxPriority: interval.Priority(),
 	}
 }
 
@@ -530,7 +530,7 @@ func (t *Node) AsDot(path Path) string {
 	id := path.String()
 	label := Spf("parent %p\\nthis %p\\n", t.Parent, t)
 	label += Spf("left %p    right %p\\n", t.Left, t.Right)
-	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart, t.MaxEnd, t.MaxPriority)
+	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart, t.MaxEnd, t.maxPriority)
 	if t.Interval != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval)
 	} else {
@@ -694,14 +694,14 @@ func (t *Node) setMinMax() {
 		rightSize = t.Right.size
 	}
 
-	t.MaxPriority = t.Interval.Priority()
+	t.maxPriority = t.Interval.Priority()
 	t.minPriority = t.Interval.Priority()
 	if t.Left != nil {
-		t.MaxPriority = max(t.MaxPriority, t.Left.MaxPriority)
+		t.maxPriority = max(t.maxPriority, t.Left.maxPriority)
 		t.minPriority = min(t.minPriority, t.Left.minPriority)
 	}
 	if t.Right != nil {
-		t.MaxPriority = max(t.MaxPriority, t.Right.MaxPriority)
+		t.maxPriority = max(t.maxPriority, t.Right.maxPriority)
 		t.minPriority = min(t.minPriority, t.Right.minPriority)
 	}
 
