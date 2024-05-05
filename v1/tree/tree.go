@@ -185,14 +185,14 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		Assert(false, "newInterval doesn't fit in freeNode's interval")
 	case 1:
 		// newInterval fits exactly in this node's interval
-		f.Interval = newInterval
+		f.SetInterval(newInterval)
 		f.setMinMax()
 		return true
 	case 2:
 		// newInterval fits in this node's interval with a free interval
 		// left over
 		// put the first interval in this node
-		f.Interval = newIntervals[0]
+		f.SetInterval(newIntervals[0])
 		// create a new right child for the second interval and make
 		// the old right child the right child of it
 		newNode := newTreeFromInterval(newIntervals[1])
@@ -210,7 +210,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		f.left.SetLeft(oldLeft)
 
 		// put the second interval in this node
-		f.Interval = newIntervals[1]
+		f.SetInterval(newIntervals[1])
 
 		// put the third interval in a new right child, moving the old
 		// right child to the right of the new right child
