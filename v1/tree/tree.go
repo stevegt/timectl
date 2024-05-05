@@ -716,5 +716,3 @@ func (t *Node) setMinMax() {
 		t.parent.setMinMax()
 	}
 }
-
-var seen []*Node
