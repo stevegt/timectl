@@ -164,6 +164,7 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 		interval:    interval,
 		minStart:    interval.Start(),
 		maxEnd:      interval.End(),
+		minPriority: interval.Priority(),
 		maxPriority: interval.Priority(),
 	}
 }
