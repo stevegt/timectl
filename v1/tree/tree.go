@@ -30,13 +30,13 @@ type Node struct {
 	Left     *Node // Pointer to the Left child
 	Right    *Node // Pointer to the Right child
 
-	// MinStart is the earliest start time of any Interval in the subtree
+	// minStart is the earliest start time of any Interval in the subtree
 	// rooted at this node
-	MinStart time.Time
+	minStart time.Time
 
-	// MaxEnd is the latest end time of any Interval in the subtree
+	// maxEnd is the latest end time of any Interval in the subtree
 	// rooted at this node
-	MaxEnd time.Time
+	maxEnd time.Time
 
 	// maxPriority is the highest priority of any Interval in the subtree
 	// rooted at this node, including this node
@@ -64,8 +64,8 @@ func (t *Node) String() string {
 	out += Spf("  Parent: %p\n", t.Parent)
 	out += Spf("  Left: %p\n", t.Left)
 	out += Spf("  Right: %p\n", t.Right)
-	out += Spf("  MinStart: %v\n", t.MinStart)
-	out += Spf("  MaxEnd: %v\n", t.MaxEnd)
+	out += Spf("  MinStart: %v\n", t.minStart)
+	out += Spf("  MaxEnd: %v\n", t.maxEnd)
 	out += Spf("  MaxPriority: %v\n", t.maxPriority)
 	out += Spf("  MinPriority: %v\n", t.minPriority)
 	out += Spf("  Height: %v\n", t.height)
@@ -82,8 +82,8 @@ func NewTree() *Node {
 func newTreeFromInterval(interval interval.Interval) *Node {
 	return &Node{
 		Interval:    interval,
-		MinStart:    interval.Start(),
-		MaxEnd:      interval.End(),
+		minStart:    interval.Start(),
+		maxEnd:      interval.End(),
 		maxPriority: interval.Priority(),
 	}
 }
@@ -335,8 +335,8 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	// Pf("FindFree: first: %v minStart: %v maxEnd: %v duration: %v\n", first, minStart, maxEnd, duration)
 	// Pf("busy: %v\n", t.Busy())
 	if !t.Busy() {
-		start := util.MaxTime(minStart, t.MinStart)
-		end := util.MinTime(t.MaxEnd, maxEnd)
+		start := util.MaxTime(minStart, t.minStart)
+		end := util.MinTime(t.maxEnd, maxEnd)
 		sub := subInterval(first, start, end, duration)
 		return sub
 	}
@@ -353,8 +353,8 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 		if child == nil {
 			continue
 		}
-		start = util.MaxTime(minStart, child.MinStart)
-		end = util.MinTime(child.MaxEnd, maxEnd)
+		start = util.MaxTime(minStart, child.minStart)
+		end = util.MinTime(child.maxEnd, maxEnd)
 		slot := child.FindFree(first, start, end, duration)
 		if slot != nil {
 			return slot
@@ -480,10 +480,10 @@ func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 		return
 	}
 
-	if t.MaxEnd.Before(start) {
+	if t.maxEnd.Before(start) {
 		return
 	}
-	if t.MinStart.After(end) {
+	if t.minStart.After(end) {
 		return
 	}
 
@@ -530,7 +530,7 @@ func (t *Node) AsDot(path Path) string {
 	id := path.String()
 	label := Spf("parent %p\\nthis %p\\n", t.Parent, t)
 	label += Spf("left %p    right %p\\n", t.Left, t.Right)
-	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart, t.MaxEnd, t.maxPriority)
+	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.maxPriority)
 	if t.Interval != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval)
 	} else {
@@ -680,16 +680,16 @@ func (t *Node) setMinMax() {
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.Left == nil {
-		t.MinStart = t.Interval.Start()
+		t.minStart = t.Interval.Start()
 	} else {
-		t.MinStart = t.Left.MinStart
+		t.minStart = t.Left.minStart
 		leftHeight = t.Left.height
 		leftSize = t.Left.size
 	}
 	if t.Right == nil {
-		t.MaxEnd = t.Interval.End()
+		t.maxEnd = t.Interval.End()
 	} else {
-		t.MaxEnd = t.Right.MaxEnd
+		t.maxEnd = t.Right.maxEnd
 		rightHeight = t.Right.height
 		rightSize = t.Right.size
 	}

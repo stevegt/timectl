@@ -24,11 +24,11 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 		if child == nil {
 			continue
 		}
-		if searchStart.Before(child.MinStart) {
+		if searchStart.Before(child.minStart) {
 			// child starts too late
 			continue
 		}
-		if searchEnd.After(child.MaxEnd) {
+		if searchEnd.After(child.maxEnd) {
 			// child ends too soon
 			continue
 		}
