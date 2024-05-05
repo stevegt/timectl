@@ -58,9 +58,9 @@ func TestConcurrent(t *testing.T) {
 	wgInsert.Wait()
 
 	// copy the intervals from insertMap to a slice
-	var inserted []interval.IInterval
+	var inserted []interval.Interval
 	insertMap.Range(func(key, value any) bool {
-		inserted = append(inserted, value.(interval.IInterval))
+		inserted = append(inserted, value.(interval.Interval))
 		return true
 	})
 

@@ -8,24 +8,24 @@ import (
 	// . "github.com/stevegt/goadapt"
 )
 
-// An IInterval represents a time interval with a start and end time.
-type IInterval interface {
+// An Interval represents a time interval with a start and end time.
+type Interval interface {
 	// Start returns the start time of the interval.
 	Start() time.Time
 	// End returns the end time of the interval.
 	End() time.Time
 	// Conflicts checks if the current interval conflicts with the given interval.
-	Conflicts(other IInterval, includeFree bool) bool
+	Conflicts(other Interval, includeFree bool) bool
 	// Equal checks if the current interval is equal to the given interval.
-	Equal(other IInterval) bool
+	Equal(other Interval) bool
 	// Intersection returns an interval that is the intersection of two intervals.
-	Intersection(other IInterval) IInterval
+	Intersection(other Interval) Interval
 	// Wraps returns true if the current interval completely contains the other interval.
-	Wraps(other IInterval) bool
+	Wraps(other Interval) bool
 	// OverlapDuration returns the duration of the overlap between the current interval and the given range.
 	OverlapDuration(start, end time.Time) time.Duration
 	// Overlaps returns true if the current interval intersects with the given interval.
-	Overlaps(other IInterval) bool
+	Overlaps(other Interval) bool
 	// OverlapsRange returns true if the current interval intersects with the given range.
 	OverlapsRange(start, end time.Time) bool
 	// Duration returns the duration of the interval.
@@ -33,7 +33,7 @@ type IInterval interface {
 	// Busy returns true if the interval is busy.  The interval is busy if the priority is greater than zero.
 	Busy() bool
 	// Punch creates one to three new intervals by punching a hole in the current interval.
-	Punch(hole IInterval) []IInterval
+	Punch(hole Interval) []Interval
 	// Priority returns the priority of the interval.  Priority zero
 	// is the lowest priority, and means that the interval is free.
 	Priority() float64
@@ -44,7 +44,7 @@ type IInterval interface {
 	// SetPriority sets the priority of the interval.
 	SetPriority(float64)
 	// Clone returns a deep copy of the interval.
-	Clone() IInterval
+	Clone() Interval
 }
 
 // IntervalBase is the base type for all interval types.
@@ -54,8 +54,8 @@ type IntervalBase struct {
 	priority float64
 }
 
-// NewInterval creates and returns a new IInterval with the specified start and end times.
-func NewInterval(start, end time.Time, priority float64) IInterval {
+// NewInterval creates and returns a new Interval with the specified start and end times.
+func NewInterval(start, end time.Time, priority float64) Interval {
 	if end.Sub(start) <= 0 {
 		return nil
 	}
@@ -88,7 +88,7 @@ func (i *IntervalBase) End() time.Time {
 // parameter is true, then a conflict is also detected if either interval
 // is free (priority 0).  If the includeFree parameter is false, then
 // a conflict is only detected if both intervals are busy (priority > 0).
-func (i *IntervalBase) Conflicts(other IInterval, includeFree bool) bool {
+func (i *IntervalBase) Conflicts(other Interval, includeFree bool) bool {
 	if !includeFree {
 		if i.Priority() == 0 || other.Priority() == 0 {
 			return false
@@ -105,7 +105,7 @@ func (i *IntervalBase) Conflicts(other IInterval, includeFree bool) bool {
 
 // Equal checks if the current interval is equal to the given interval.
 // Two intervals are equal if their start and end times are the same.
-func (i *IntervalBase) Equal(other IInterval) bool {
+func (i *IntervalBase) Equal(other Interval) bool {
 	// this is too strict
 	// return i.Start().Equal(other.Start()) && i.End().Equal(other.End())
 	// XXX tolerance should be an argument
@@ -126,7 +126,7 @@ func (i *IntervalBase) Equal(other IInterval) bool {
 // other interval.  In other words, the current interval's start time is
 // before or equal to the other interval's start time, and the current
 // interval's end time is after or equal to the other interval's end time.
-func (i *IntervalBase) Wraps(other IInterval) bool {
+func (i *IntervalBase) Wraps(other Interval) bool {
 	if other.Start().Before(i.Start()) {
 		return false
 	}
@@ -154,7 +154,7 @@ func (i *IntervalBase) Busy() bool {
 // current interval.  The current interval must not be busy and must
 // completely contain the hole interval.  The hole interval must be
 // busy. Punch does not modify the current interval.
-func (i *IntervalBase) Punch(hole IInterval) (intervals []IInterval) {
+func (i *IntervalBase) Punch(hole Interval) (intervals []Interval) {
 	if i.Busy() || !i.Wraps(hole) || !hole.Busy() {
 		return nil
 	}
@@ -177,7 +177,7 @@ func (i *IntervalBase) Priority() float64 {
 // Intersection returns an interval that is the intersection of two
 // intervals.  The intersection is the interval that overlaps both
 // intervals.
-func (i *IntervalBase) Intersection(other IInterval) IInterval {
+func (i *IntervalBase) Intersection(other Interval) Interval {
 	start := util.MaxTime(i.Start(), other.Start())
 	end := util.MinTime(i.End(), other.End())
 	if start.Before(end) {
@@ -202,12 +202,12 @@ func (i *IntervalBase) SetPriority(priority float64) {
 }
 
 // Clone returns a deep copy of the interval.
-func (i *IntervalBase) Clone() IInterval {
+func (i *IntervalBase) Clone() Interval {
 	return NewInterval(i.Start(), i.End(), i.Priority())
 }
 
 // Overlaps returns true if the current interval intersects with the given interval.
-func (i *IntervalBase) Overlaps(other IInterval) bool {
+func (i *IntervalBase) Overlaps(other Interval) bool {
 	if i.Start().Before(other.End()) && i.End().After(other.Start()) {
 		return true
 	}

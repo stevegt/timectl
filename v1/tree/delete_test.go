@@ -78,7 +78,7 @@ func TestMergeFreeComplex(t *testing.T) {
 	rand.Seed(1)
 	top := NewTree()
 
-	var inserted []interval.IInterval
+	var inserted []interval.Interval
 	for i := 0; i < 100; i++ {
 		// randomly insert or free an interval
 		switch rand.Intn(2) {

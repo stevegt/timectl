@@ -10,7 +10,7 @@ import (
 	"github.com/stevegt/timectl/tree"
 )
 
-// ConcreteInterval tests the interval.IInterval interface and interval.IntervalBase type.
+// ConcreteInterval tests the interval.Interval interface and interval.IntervalBase type.
 type ConcreteInterval struct {
 	*interval.IntervalBase
 }
@@ -23,7 +23,7 @@ func NewConcreteInterval(start, end time.Time, priority float64) *ConcreteInterv
 }
 
 func TestInterface(t *testing.T) {
-	// This test checks the basic functionality of the interval.IInterval interface
+	// This test checks the basic functionality of the interval.Interval interface
 	// and interval.IntervalBase type.
 	top := tree.NewTree()
 

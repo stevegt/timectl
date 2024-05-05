@@ -72,7 +72,7 @@ func InsertExpect(tree *Node, pathStr, startStr, endStr string, priority float64
 
 // NewInterval is a test helper function that creates a new interval
 // with the given start and end times and priority.
-func NewInterval(startStr, endStr string, priority float64) interval.IInterval {
+func NewInterval(startStr, endStr string, priority float64) interval.Interval {
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
@@ -82,7 +82,7 @@ func NewInterval(startStr, endStr string, priority float64) interval.IInterval {
 
 // Insert is a test helper function that inserts an interval into the
 // tree and returns the interval that was inserted.
-func Insert(tree *Node, startStr, endStr string, priority float64) interval.IInterval {
+func Insert(tree *Node, startStr, endStr string, priority float64) interval.Interval {
 	interval := NewInterval(startStr, endStr, priority)
 	// Insert adds a new interval to the tree, adjusting the structure as
 	// necessary.  Insertion fails if the new interval conflicts with any
@@ -97,7 +97,7 @@ func Insert(tree *Node, startStr, endStr string, priority float64) interval.IInt
 
 // Match is a test helper function that checks if the given interval
 // has the expected start and end times and priority.
-func Match(iv interval.IInterval, startStr, endStr string, priority float64) error {
+func Match(iv interval.Interval, startStr, endStr string, priority float64) error {
 	start, err := time.Parse(time.RFC3339, startStr)
 	Ck(err)
 	end, err := time.Parse(time.RFC3339, endStr)
