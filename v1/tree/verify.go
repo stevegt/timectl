@@ -94,9 +94,9 @@ func (t *Node) Verify(ckBalance bool) error {
 
 		// - each interval's maxEnd time should be equal to the maximum
 		//   of its end time and the end time of its right child
-		expectMaxEnd := node.maxEnd
+		expectMaxEnd := node.MaxEnd()
 		if node.right != nil {
-			gotMaxEnd := util.MaxTime(end, node.right.maxEnd)
+			gotMaxEnd := util.MaxTime(end, node.right.MaxEnd())
 			if !expectMaxEnd.Equal(gotMaxEnd) {
 				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", node)
 			}
