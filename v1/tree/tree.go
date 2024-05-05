@@ -572,14 +572,14 @@ func (t *Node) setMinMax() {
 	} else {
 		t.minStart = t.left.minStart
 		leftHeight = t.left.height
-		leftSize = t.left.size
+		leftSize = t.left.Size()
 	}
 	if t.right == nil {
 		t.maxEnd = t.Interval().End()
 	} else {
 		t.maxEnd = t.right.maxEnd
 		rightHeight = t.right.height
-		rightSize = t.right.size
+		rightSize = t.right.Size()
 	}
 
 	t.maxPriority = t.Interval().Priority()
@@ -597,7 +597,7 @@ func (t *Node) setMinMax() {
 	t.height = 1 + max(leftHeight, rightHeight)
 	// the size of the node is the size of the left child plus the size
 	// of the right child plus 1
-	t.size = 1 + leftSize + rightSize
+	t.SetSize(1 + leftSize + rightSize)
 
 	if t.parent != nil {
 		// Pf("setMinMax: %s\n", t.Interval())
