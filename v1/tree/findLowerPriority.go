@@ -135,7 +135,7 @@ func (it *Iterator) Next() *Node {
 			// that starts later than res
 			for {
 				try := it.path[len(it.path)-1]
-				if try.GetInterval().Start().After(res.Interval.Start()) {
+				if try.GetInterval().Start().After(res.GetInterval().Start()) {
 					break
 				}
 				it.path = it.path[:len(it.path)-1]
@@ -152,7 +152,7 @@ func (it *Iterator) Next() *Node {
 			// that starts earlier than res
 			for {
 				try := it.path[len(it.path)-1]
-				if try.GetInterval().Start().Before(res.Interval.Start()) {
+				if try.GetInterval().Start().Before(res.GetInterval().Start()) {
 					break
 				}
 				it.path = it.path[:len(it.path)-1]
