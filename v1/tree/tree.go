@@ -42,9 +42,9 @@ type Node struct {
 	// rooted at this node, including this node
 	MaxPriority float64
 
-	// MinPriority is the lowest priority of any Interval in the subtree
+	// minPriority is the lowest priority of any Interval in the subtree
 	// rooted at this node, including this node
-	MinPriority float64
+	minPriority float64
 
 	// height is the height of the node's subtree, including the node
 	height int
@@ -67,7 +67,7 @@ func (t *Node) String() string {
 	out += Spf("  MinStart: %v\n", t.MinStart)
 	out += Spf("  MaxEnd: %v\n", t.MaxEnd)
 	out += Spf("  MaxPriority: %v\n", t.MaxPriority)
-	out += Spf("  MinPriority: %v\n", t.MinPriority)
+	out += Spf("  MinPriority: %v\n", t.minPriority)
 	out += Spf("  Height: %v\n", t.height)
 	out += Spf("  Size: %v\n", t.size)
 	return out
@@ -695,14 +695,14 @@ func (t *Node) setMinMax() {
 	}
 
 	t.MaxPriority = t.Interval.Priority()
-	t.MinPriority = t.Interval.Priority()
+	t.minPriority = t.Interval.Priority()
 	if t.Left != nil {
 		t.MaxPriority = max(t.MaxPriority, t.Left.MaxPriority)
-		t.MinPriority = min(t.MinPriority, t.Left.MinPriority)
+		t.minPriority = min(t.minPriority, t.Left.minPriority)
 	}
 	if t.Right != nil {
 		t.MaxPriority = max(t.MaxPriority, t.Right.MaxPriority)
-		t.MinPriority = min(t.MinPriority, t.Right.MinPriority)
+		t.minPriority = min(t.minPriority, t.Right.minPriority)
 	}
 
 	// the height of the node is the height of the tallest child plus 1
