@@ -582,14 +582,14 @@ func (t *Node) setMinMax() {
 		rightSize = t.right.Size()
 	}
 
-	t.maxPriority = t.Interval().Priority()
+	t.SetMaxPriority(t.Interval().Priority())
 	t.SetMinPriority(t.Interval().Priority())
 	if t.left != nil {
-		t.maxPriority = max(t.maxPriority, t.left.maxPriority)
+		t.SetMaxPriority(max(t.maxPriority, t.left.maxPriority))
 		t.SetMinPriority(min(t.MinPriority(), t.left.MinPriority()))
 	}
 	if t.right != nil {
-		t.maxPriority = max(t.maxPriority, t.right.maxPriority)
+		t.SetMaxPriority(max(t.maxPriority, t.right.maxPriority))
 		t.SetMinPriority(min(t.MinPriority(), t.right.MinPriority()))
 	}
 
