@@ -716,3 +716,17 @@ func (t *Node) setMinMax() {
 		t.parent.setMinMax()
 	}
 }
+
+// GetInterval returns the node's interval.
+func (t *Node) GetInterval() interval.Interval {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Interval
+}
+
+// SetInterval sets the node's interval.
+func (t *Node) SetInterval(iv interval.Interval) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.Interval = iv
+}
