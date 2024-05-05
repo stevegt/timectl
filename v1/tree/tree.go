@@ -23,11 +23,11 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Node {
-	return newTreeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
+	return newNodeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
 }
 
-// newTreeFromInterval creates and returns a new Tree node containing the given interval.
-func newTreeFromInterval(interval interval.Interval) *Node {
+// newNodeFromInterval creates and returns a new Tree node containing the given interval.
+func newNodeFromInterval(interval interval.Interval) *Node {
 	return &Node{
 		interval:    interval,
 		minStart:    interval.Start(),
@@ -143,7 +143,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		f.SetInterval(newIntervals[0])
 		// create a new right child for the second interval and make
 		// the old right child the right child of it
-		newNode := newTreeFromInterval(newIntervals[1])
+		newNode := newNodeFromInterval(newIntervals[1])
 		oldRight := f.SetRight(newNode)
 		f.right.SetRight(oldRight)
 		return true
@@ -153,7 +153,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 
 		// put the first interval in a new left child, moving the old
 		// left child to the left of the new left child
-		newLeftNode := newTreeFromInterval(newIntervals[0])
+		newLeftNode := newNodeFromInterval(newIntervals[0])
 		oldLeft := f.SetLeft(newLeftNode)
 		f.left.SetLeft(oldLeft)
 
@@ -162,7 +162,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 
 		// put the third interval in a new right child, moving the old
 		// right child to the right of the new right child
-		newRightNode := newTreeFromInterval(newIntervals[2])
+		newRightNode := newNodeFromInterval(newIntervals[2])
 		oldRight := f.SetRight(newRightNode)
 		f.right.SetRight(oldRight)
 		return true

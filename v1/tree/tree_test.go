@@ -35,7 +35,7 @@ func TestContiguous(t *testing.T) {
 	// put them in tree nodes
 	nodes := make([]*Node, len(ivs))
 	for i, iv := range ivs {
-		nodes[i] = newTreeFromInterval(iv)
+		nodes[i] = newNodeFromInterval(iv)
 	}
 	Tassert(t, len(nodes) == 5, "Expected 5 nodes, got %d", len(nodes))
 
