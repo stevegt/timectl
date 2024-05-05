@@ -46,11 +46,11 @@ type Node struct {
 	// rooted at this node, including this node
 	MinPriority float64
 
-	// Height is the height of the node's subtree, including the node
-	Height int
+	// height is the height of the node's subtree, including the node
+	height int
 
 	// Size is the number of nodes in the node's subtree, including the node
-	Size int
+	size int
 
 	mu async.ReentrantLock
 }
@@ -68,8 +68,8 @@ func (t *Node) String() string {
 	out += Spf("  MaxEnd: %v\n", t.MaxEnd)
 	out += Spf("  MaxPriority: %v\n", t.MaxPriority)
 	out += Spf("  MinPriority: %v\n", t.MinPriority)
-	out += Spf("  Height: %v\n", t.Height)
-	out += Spf("  Size: %v\n", t.Size)
+	out += Spf("  Height: %v\n", t.height)
+	out += Spf("  Size: %v\n", t.size)
 	return out
 }
 
@@ -239,7 +239,7 @@ func (t *Node) ckHeight() {
 	if t == nil {
 		return
 	}
-	calculatedHeight := t.Height
+	calculatedHeight := t.height
 	actualHeight := t.GetHeight()
 	Assert(calculatedHeight == actualHeight, "height mismatch Height: %d height(): %d", calculatedHeight, actualHeight)
 }
@@ -683,15 +683,15 @@ func (t *Node) setMinMax() {
 		t.MinStart = t.Interval.Start()
 	} else {
 		t.MinStart = t.Left.MinStart
-		leftHeight = t.Left.Height
-		leftSize = t.Left.Size
+		leftHeight = t.Left.height
+		leftSize = t.Left.size
 	}
 	if t.Right == nil {
 		t.MaxEnd = t.Interval.End()
 	} else {
 		t.MaxEnd = t.Right.MaxEnd
-		rightHeight = t.Right.Height
-		rightSize = t.Right.Size
+		rightHeight = t.Right.height
+		rightSize = t.Right.size
 	}
 
 	t.MaxPriority = t.Interval.Priority()
@@ -706,10 +706,10 @@ func (t *Node) setMinMax() {
 	}
 
 	// the height of the node is the height of the tallest child plus 1
-	t.Height = 1 + max(leftHeight, rightHeight)
+	t.height = 1 + max(leftHeight, rightHeight)
 	// the size of the node is the size of the left child plus the size
 	// of the right child plus 1
-	t.Size = 1 + leftSize + rightSize
+	t.size = 1 + leftSize + rightSize
 
 	if t.Parent != nil {
 		// Pf("setMinMax: %s\n", t.Interval)
