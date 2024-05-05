@@ -25,24 +25,24 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
 // Node represents a node in an interval tree.
 type Node struct {
-	Interval interval.IInterval
+	interval interval.IInterval
 	parent   *Node // Pointer to this node's parent
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
 
-	// minStart is the earliest start time of any Interval in the subtree
+	// minStart is the earliest start time of any interval in the subtree
 	// rooted at this node
 	minStart time.Time
 
-	// maxEnd is the latest end time of any Interval in the subtree
+	// maxEnd is the latest end time of any interval in the subtree
 	// rooted at this node
 	maxEnd time.Time
 
-	// maxPriority is the highest priority of any Interval in the subtree
+	// maxPriority is the highest priority of any interval in the subtree
 	// rooted at this node, including this node
 	maxPriority float64
 
-	// minPriority is the lowest priority of any Interval in the subtree
+	// minPriority is the lowest priority of any interval in the subtree
 	// rooted at this node, including this node
 	minPriority float64
 
@@ -81,7 +81,7 @@ func NewTree() *Node {
 // newTreeFromInterval creates and returns a new Tree node containing the given interval.
 func newTreeFromInterval(interval interval.IInterval) *Node {
 	return &Node{
-		Interval:    interval,
+		interval:    interval,
 		minStart:    interval.Start(),
 		maxEnd:      interval.End(),
 		maxPriority: interval.Priority(),
@@ -721,12 +721,12 @@ func (t *Node) setMinMax() {
 func (t *Node) GetInterval() interval.IInterval {
 	// t.mu.Lock()
 	// defer t.mu.Unlock()
-	return t.Interval
+	return t.interval
 }
 
 // SetInterval sets the node's interval.
 func (t *Node) SetInterval(iv interval.IInterval) {
 	// t.mu.Lock()
 	// defer t.mu.Unlock()
-	t.Interval = iv
+	t.interval = iv
 }
