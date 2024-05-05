@@ -157,3 +157,13 @@ func (t *Node) SetInterval(iv interval.Interval) {
 	// defer t.mu.Unlock()
 	t.interval = iv
 }
+
+// newNodeFromInterval creates and returns a new Tree node containing the given interval.
+func newNodeFromInterval(interval interval.Interval) *Node {
+	return &Node{
+		interval:    interval,
+		minStart:    interval.Start(),
+		maxEnd:      interval.End(),
+		maxPriority: interval.Priority(),
+	}
+}

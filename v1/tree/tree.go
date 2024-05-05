@@ -26,16 +26,6 @@ func NewTree() *Node {
 	return newNodeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
 }
 
-// newNodeFromInterval creates and returns a new Tree node containing the given interval.
-func newNodeFromInterval(interval interval.Interval) *Node {
-	return &Node{
-		interval:    interval,
-		minStart:    interval.Start(),
-		maxEnd:      interval.End(),
-		maxPriority: interval.Priority(),
-	}
-}
-
 // SetLeft sets the left child of this node.  It returns the old left
 // child or nil if there was no old left child.  If the given child node
 // is already a child of another node, the right child of this node,
