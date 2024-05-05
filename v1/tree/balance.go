@@ -121,7 +121,7 @@ func (t *Node) vineToTree(size int) (out *Node) {
 
 	// One last check to make sure the tree is balanced.
 	if out.right != nil && out.left != nil {
-		for out.right.GetHeight() > out.left.GetHeight() {
+		for out.right.CalcHeight() > out.left.CalcHeight() {
 			out = out.rotateLeft()
 		}
 	}
