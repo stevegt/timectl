@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/reugn/async"
-
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
 	"github.com/stevegt/timectl/util"
@@ -22,56 +20,6 @@ var TreeStartStr = TreeStart.Format(time.RFC3339)
 
 // TreeEndStr is the string representation of TreeEnd.
 var TreeEndStr = TreeEnd.Format(time.RFC3339)
-
-// Node represents a node in an interval tree.
-type Node struct {
-	interval interval.Interval
-	parent   *Node // Pointer to this node's parent
-	left     *Node // Pointer to the left child
-	right    *Node // Pointer to the right child
-
-	// minStart is the earliest start time of any interval in the subtree
-	// rooted at this node
-	minStart time.Time
-
-	// maxEnd is the latest end time of any interval in the subtree
-	// rooted at this node
-	maxEnd time.Time
-
-	// maxPriority is the highest priority of any interval in the subtree
-	// rooted at this node, including this node
-	maxPriority float64
-
-	// minPriority is the lowest priority of any interval in the subtree
-	// rooted at this node, including this node
-	minPriority float64
-
-	// height is the height of the node's subtree, including the node
-	height int
-
-	// size is the number of nodes in the node's subtree, including the node
-	size int
-
-	mu async.ReentrantLock
-}
-
-// String returns a string representation of the node.
-func (t *Node) String() string {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	out := Spf("Tree: %p\n", t)
-	out += Spf("  Interval: %v\n", t.Interval())
-	out += Spf("  Parent: %p\n", t.parent)
-	out += Spf("  Left: %p\n", t.left)
-	out += Spf("  Right: %p\n", t.right)
-	out += Spf("  MinStart: %v\n", t.minStart)
-	out += Spf("  MaxEnd: %v\n", t.maxEnd)
-	out += Spf("  MaxPriority: %v\n", t.maxPriority)
-	out += Spf("  MinPriority: %v\n", t.minPriority)
-	out += Spf("  Height: %v\n", t.height)
-	out += Spf("  Size: %v\n", t.size)
-	return out
-}
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Node {
@@ -271,29 +219,6 @@ func (t *Node) AllIntervals() []interval.Interval {
 		intervals = append(intervals, t.right.AllIntervals()...)
 	}
 	return intervals
-}
-
-// Busy returns true if the interval is busy.
-func (t *Node) Busy() bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	Assert(t.Interval() != nil, "unexpected nil interval")
-	return t.Interval().Busy()
-}
-
-// Start returns the start time of the interval in the node.
-func (t *Node) Start() time.Time {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Interval().Start()
-}
-
-// End returns the end time of the interval in the node.
-func (t *Node) End() time.Time {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.Interval().End()
 }
 
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
@@ -715,18 +640,4 @@ func (t *Node) setMinMax() {
 		// Pf("setMinMax: %s\n", t.Interval())
 		t.parent.setMinMax()
 	}
-}
-
-// Interval returns the node's interval.
-func (t *Node) Interval() interval.Interval {
-	// t.mu.Lock()
-	// defer t.mu.Unlock()
-	return t.interval
-}
-
-// SetInterval sets the node's interval.
-func (t *Node) SetInterval(iv interval.Interval) {
-	// t.mu.Lock()
-	// defer t.mu.Unlock()
-	t.interval = iv
 }
