@@ -19,12 +19,12 @@ func (t *Node) rebalance() (out *Node) {
 		if out.left != nil {
 			out.SetLeft(out.left.rebalance())
 			leftSize = out.left.Size()
-			leftHeight = out.left.height
+			leftHeight = out.left.Height()
 		}
 		if out.right != nil {
 			out.SetRight(out.right.rebalance())
 			rightSize = out.right.Size()
-			rightHeight = out.right.height
+			rightHeight = out.right.Height()
 		}
 		// Pf("rebalance: %d - %d\n", leftHeight, rightHeight)
 		if leftHeight-rightHeight > 1 {
