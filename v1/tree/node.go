@@ -39,6 +39,54 @@ type Node struct {
 	mu async.ReentrantLock
 }
 
+func (t *Node) MinPriority() float64 {
+	return t.minPriority
+}
+
+func (t *Node) SetMinPriority(minPriority float64) {
+	t.minPriority = minPriority
+}
+
+func (t *Node) MaxPriority() float64 {
+	return t.maxPriority
+}
+
+func (t *Node) SetMaxPriority(maxPriority float64) {
+	t.maxPriority = maxPriority
+}
+
+func (t *Node) MaxEnd() time.Time {
+	return t.maxEnd
+}
+
+func (t *Node) SetMaxEnd(maxEnd time.Time) {
+	t.maxEnd = maxEnd
+}
+
+func (t *Node) MinStart() time.Time {
+	return t.minStart
+}
+
+func (t *Node) SetMinStart(minStart time.Time) {
+	t.minStart = minStart
+}
+
+func (t *Node) Right() *Node {
+	return t.right
+}
+
+func (t *Node) Left() *Node {
+	return t.left
+}
+
+func (t *Node) Parent() *Node {
+	return t.parent
+}
+
+func (t *Node) SetParent(parent *Node) {
+	t.parent = parent
+}
+
 func (t *Node) Height() int {
 	return t.height
 }
