@@ -24,7 +24,7 @@ import (
 // test contiguous as a standalone function without a tree
 func TestContiguous(t *testing.T) {
 	// create some intervals
-	ivs := []interval.Interval{
+	ivs := []interval.IInterval{
 		NewInterval("2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 0),
 		NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1),
 		NewInterval("2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 0),
@@ -150,7 +150,7 @@ func TestContiguousFilter(t *testing.T) {
 	Tassert(t, len(res) == 4, "Expected 4 nodes, got %d", len(res))
 
 	// check that we got the right nodes
-	var ivs []interval.Interval
+	var ivs []interval.IInterval
 	for _, n := range res {
 		ivs = append(ivs, n.Interval)
 	}

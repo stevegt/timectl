@@ -12,7 +12,7 @@ import (
 // applications.
 
 func TestInterval(t *testing.T) {
-	// Interval is a type that represents time interval with a start
+	// IInterval is a type that represents time interval with a start
 	// and end time.  The start time is inclusive and the end time is
 	// exclusive.  The interval is represented as [start, end).
 	start, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")

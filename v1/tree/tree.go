@@ -25,7 +25,7 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
 // Node represents a node in an interval tree.
 type Node struct {
-	Interval interval.Interval
+	Interval interval.IInterval
 	parent   *Node // Pointer to this node's parent
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
@@ -79,7 +79,7 @@ func NewTree() *Node {
 }
 
 // newTreeFromInterval creates and returns a new Tree node containing the given interval.
-func newTreeFromInterval(interval interval.Interval) *Node {
+func newTreeFromInterval(interval interval.IInterval) *Node {
 	return &Node{
 		Interval:    interval,
 		minStart:    interval.Start(),
@@ -148,7 +148,7 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 // necessary.  Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
-func (t *Node) Insert(newInterval interval.Interval) bool {
+func (t *Node) Insert(newInterval interval.IInterval) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -245,7 +245,7 @@ func (t *Node) ckHeight() {
 }
 
 // BusyIntervals returns a slice of all busy intervals in all leaf nodes of the tree.
-func (t *Node) BusyIntervals() (intervals []interval.Interval) {
+func (t *Node) BusyIntervals() (intervals []interval.IInterval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	// XXX inefficient -- use MaxPriority
@@ -258,11 +258,11 @@ func (t *Node) BusyIntervals() (intervals []interval.Interval) {
 }
 
 // AllIntervals returns a slice of all intervals in all leaf nodes of the tree.
-func (t *Node) AllIntervals() []interval.Interval {
+func (t *Node) AllIntervals() []interval.IInterval {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	var intervals []interval.Interval
+	var intervals []interval.IInterval
 	if t.left != nil {
 		intervals = append(intervals, t.left.AllIntervals()...)
 	}
@@ -299,7 +299,7 @@ func (t *Node) End() time.Time {
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
 // If includeFree is true, then this function returns all intervals that conflict with the given
 // interval, otherwise it returns only busy intervals.
-func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Interval {
+func (t *Node) Conflicts(iv interval.IInterval, includeFree bool) []interval.IInterval {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -307,7 +307,7 @@ func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 		return nil
 	}
 
-	var conflicts []interval.Interval
+	var conflicts []interval.IInterval
 	if t.Interval.Conflicts(iv, includeFree) {
 		conflicts = append(conflicts, t.Interval)
 	}
@@ -328,7 +328,7 @@ func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 // This function works by walking the tree in a depth-first manner,
 // following the left child first if first is set, otherwise following
 // the right child first.
-func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.Interval) {
+func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Duration) (free interval.IInterval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -371,7 +371,7 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 // minStart and maxEnd times are inclusive. The duration is exclusive.
 // If the duration is longer than the time between minStart and maxEnd,
 // then this function returns nil.
-func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration) interval.Interval {
+func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration) interval.IInterval {
 	if maxEnd.Sub(minStart) < duration {
 		return nil
 	}
@@ -382,7 +382,7 @@ func subInterval(first bool, minStart, maxEnd time.Time, duration time.Duration)
 }
 
 // FreeIntervals returns a slice of all free intervals in all leaf nodes of the tree.
-func (t *Node) FreeIntervals() (intervals []interval.Interval) {
+func (t *Node) FreeIntervals() (intervals []interval.IInterval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	for _, i := range t.AllIntervals() {
@@ -718,14 +718,14 @@ func (t *Node) setMinMax() {
 }
 
 // GetInterval returns the node's interval.
-func (t *Node) GetInterval() interval.Interval {
+func (t *Node) GetInterval() interval.IInterval {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	return t.Interval
 }
 
 // SetInterval sets the node's interval.
-func (t *Node) SetInterval(iv interval.Interval) {
+func (t *Node) SetInterval(iv interval.IInterval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.Interval = iv
