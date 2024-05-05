@@ -80,9 +80,9 @@ func (t *Node) Verify(ckBalance bool) error {
 
 		// - each interval's minStart time should be equal to the minimum
 		//   of its start time and the start time of its left child
-		expectMinStart := node.minStart
+		expectMinStart := node.MinStart()
 		if node.left != nil {
-			gotMinStart := util.MinTime(start, node.left.minStart)
+			gotMinStart := util.MinTime(start, node.left.MinStart())
 			if !expectMinStart.Equal(gotMinStart) {
 				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", node)
 			}
