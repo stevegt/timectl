@@ -25,11 +25,11 @@ func Get(tree *Node, pathStr string) *Node {
 	}
 	switch path[0] {
 	case 'l':
-		Assert(tree.Left != nil, "No left node")
-		return Get(tree.Left, string(path[1:]))
+		Assert(tree.left != nil, "No left node")
+		return Get(tree.left, string(path[1:]))
 	case 'r':
-		Assert(tree.Right != nil, "No right node")
-		return Get(tree.Right, string(path[1:]))
+		Assert(tree.right != nil, "No right node")
+		return Get(tree.right, string(path[1:]))
 	default:
 		Assert(false, "Invalid path %v", pathStr)
 	}
@@ -143,12 +143,12 @@ func Verify(t *testing.T, tree *Node, ckBalance bool, show bool) {
 // stdout.
 func Dump(tree *Node, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	if tree.Left != nil {
-		Dump(tree.Left, path+"l")
+	if tree.left != nil {
+		Dump(tree.left, path+"l")
 	}
 	fmt.Printf("%-10v: %v\n", path, tree.Interval)
-	if tree.Right != nil {
-		Dump(tree.Right, path+"r")
+	if tree.right != nil {
+		Dump(tree.right, path+"r")
 	}
 }
 

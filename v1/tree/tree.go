@@ -26,9 +26,9 @@ var TreeEndStr = TreeEnd.Format(time.RFC3339)
 // Node represents a node in an interval tree.
 type Node struct {
 	Interval interval.Interval
-	Parent   *Node // Pointer to this node's parent
-	Left     *Node // Pointer to the Left child
-	Right    *Node // Pointer to the Right child
+	parent   *Node // Pointer to this node's parent
+	left     *Node // Pointer to the left child
+	right    *Node // Pointer to the right child
 
 	// minStart is the earliest start time of any Interval in the subtree
 	// rooted at this node
@@ -61,9 +61,9 @@ func (t *Node) String() string {
 	defer t.mu.Unlock()
 	out := Spf("Tree: %p\n", t)
 	out += Spf("  Interval: %v\n", t.Interval)
-	out += Spf("  Parent: %p\n", t.Parent)
-	out += Spf("  Left: %p\n", t.Left)
-	out += Spf("  Right: %p\n", t.Right)
+	out += Spf("  Parent: %p\n", t.parent)
+	out += Spf("  Left: %p\n", t.left)
+	out += Spf("  Right: %p\n", t.right)
 	out += Spf("  MinStart: %v\n", t.minStart)
 	out += Spf("  MaxEnd: %v\n", t.maxEnd)
 	out += Spf("  MaxPriority: %v\n", t.maxPriority)
@@ -88,56 +88,56 @@ func newTreeFromInterval(interval interval.Interval) *Node {
 	}
 }
 
-// SetLeft sets the Left child of this node.  It returns the old Left
-// child or nil if there was no old Left child.  If the given child node
-// is already a child of another node, the Right child of this node,
-// or the Parent of this node, then this function clears the old
+// SetLeft sets the left child of this node.  It returns the old left
+// child or nil if there was no old left child.  If the given child node
+// is already a child of another node, the right child of this node,
+// or the parent of this node, then this function clears the old
 // relationship before setting the new one.
 func (t *Node) SetLeft(left *Node) (old *Node) {
-	old = t.Left
-	if left != nil && left.Parent != nil {
-		if left.Parent.Left == left {
-			left.Parent.Left = nil
+	old = t.left
+	if left != nil && left.parent != nil {
+		if left.parent.left == left {
+			left.parent.left = nil
 		}
-		if left.Parent.Right == left {
-			left.Parent.Right = nil
+		if left.parent.right == left {
+			left.parent.right = nil
 		}
 	}
-	if t.Right == left {
-		t.Right = nil
+	if t.right == left {
+		t.right = nil
 	}
-	t.Left = left
-	if t.Left != nil {
-		t.Left.Parent = t
-		t.Left.setMinMax()
+	t.left = left
+	if t.left != nil {
+		t.left.parent = t
+		t.left.setMinMax()
 	} else {
 		t.setMinMax()
 	}
 	return
 }
 
-// SetRight sets the Right child of this node.  It returns the old Right
-// child or nil if there was no old Right child.  If the given child node
-// is already a child of another node, the Left child of this node,
-// or the Parent of this node, then this function clears the old
+// SetRight sets the right child of this node.  It returns the old right
+// child or nil if there was no old right child.  If the given child node
+// is already a child of another node, the left child of this node,
+// or the parent of this node, then this function clears the old
 // relationship before setting the new one.
 func (t *Node) SetRight(right *Node) (old *Node) {
-	old = t.Right
-	if right != nil && right.Parent != nil {
-		if right.Parent.Left == right {
-			right.Parent.Left = nil
+	old = t.right
+	if right != nil && right.parent != nil {
+		if right.parent.left == right {
+			right.parent.left = nil
 		}
-		if right.Parent.Right == right {
-			right.Parent.Right = nil
+		if right.parent.right == right {
+			right.parent.right = nil
 		}
 	}
-	if t.Left == right {
-		t.Left = nil
+	if t.left == right {
+		t.left = nil
 	}
-	t.Right = right
-	if t.Right != nil {
-		t.Right.Parent = t
-		t.Right.setMinMax()
+	t.right = right
+	if t.right != nil {
+		t.right.parent = t
+		t.right.setMinMax()
 	} else {
 		t.setMinMax()
 	}
@@ -197,7 +197,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		// the old right child the right child of it
 		newNode := newTreeFromInterval(newIntervals[1])
 		oldRight := f.SetRight(newNode)
-		f.Right.SetRight(oldRight)
+		f.right.SetRight(oldRight)
 		return true
 	case 3:
 		// newInterval fits in this node's interval with free intervals
@@ -207,7 +207,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		// left child to the left of the new left child
 		newLeftNode := newTreeFromInterval(newIntervals[0])
 		oldLeft := f.SetLeft(newLeftNode)
-		f.Left.SetLeft(oldLeft)
+		f.left.SetLeft(oldLeft)
 
 		// put the second interval in this node
 		f.Interval = newIntervals[1]
@@ -216,7 +216,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		// right child to the right of the new right child
 		newRightNode := newTreeFromInterval(newIntervals[2])
 		oldRight := f.SetRight(newRightNode)
-		f.Right.SetRight(oldRight)
+		f.right.SetRight(oldRight)
 		return true
 	default:
 		Assert(false, "unexpected number of intervals")
@@ -226,8 +226,8 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	// XXX either remove this or refactor all of the above to use
 	// Height in the first place and not need rebalancing
 	f.ckHeight()
-	f.Right.ckHeight()
-	f.Left.ckHeight()
+	f.right.ckHeight()
+	f.left.ckHeight()
 
 	Assert(false, "unexpected code path")
 	return false
@@ -263,12 +263,12 @@ func (t *Node) AllIntervals() []interval.Interval {
 	defer t.mu.Unlock()
 
 	var intervals []interval.Interval
-	if t.Left != nil {
-		intervals = append(intervals, t.Left.AllIntervals()...)
+	if t.left != nil {
+		intervals = append(intervals, t.left.AllIntervals()...)
 	}
 	intervals = append(intervals, t.Interval)
-	if t.Right != nil {
-		intervals = append(intervals, t.Right.AllIntervals()...)
+	if t.right != nil {
+		intervals = append(intervals, t.right.AllIntervals()...)
 	}
 	return intervals
 }
@@ -311,11 +311,11 @@ func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 	if t.Interval.Conflicts(iv, includeFree) {
 		conflicts = append(conflicts, t.Interval)
 	}
-	if t.Left != nil {
-		conflicts = append(conflicts, t.Left.Conflicts(iv, includeFree)...)
+	if t.left != nil {
+		conflicts = append(conflicts, t.left.Conflicts(iv, includeFree)...)
 	}
-	if t.Right != nil {
-		conflicts = append(conflicts, t.Right.Conflicts(iv, includeFree)...)
+	if t.right != nil {
+		conflicts = append(conflicts, t.right.Conflicts(iv, includeFree)...)
 	}
 	return conflicts
 }
@@ -344,9 +344,9 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	var children []*Node
 	var start, end time.Time
 	if first {
-		children = []*Node{t.Left, t.Right}
+		children = []*Node{t.left, t.right}
 	} else {
-		children = []*Node{t.Right, t.Left}
+		children = []*Node{t.right, t.left}
 	}
 
 	for _, child := range children {
@@ -417,7 +417,7 @@ func (p Path) String() string {
 	var parent *Node
 	for _, t := range p {
 		if parent != nil {
-			if t == parent.Left {
+			if t == parent.left {
 				s += "l"
 			} else {
 				s += "r"
@@ -431,7 +431,7 @@ func (p Path) String() string {
 }
 
 // allPaths returns a channel of all paths to all nodes in the tree.
-// The paths are sorted in depth-first order, Left child first.
+// The paths are sorted in depth-first order, left child first.
 func (t *Node) allPaths(path Path) (c chan Path) {
 	c = make(chan Path)
 	go func() {
@@ -443,24 +443,24 @@ func (t *Node) allPaths(path Path) (c chan Path) {
 
 // allPathsBlocking is a helper function for allPaths that returns a
 // channel of all paths to all nodes in the tree.  The paths are sorted
-// in depth-first order, Left child first.
+// in depth-first order, left child first.
 func (t *Node) allPathsBlocking(path Path, c chan Path) {
 	myPath := path.Append(t)
 	// Pf("path %p myPath %p\n", path, myPath)
 	// Pf("send: %-10s %v\n", myPath, t.leafInterval)
-	if t.Left != nil {
-		t.Left.allPathsBlocking(myPath, c)
+	if t.left != nil {
+		t.left.allPathsBlocking(myPath, c)
 	}
 	c <- myPath
-	if t.Right != nil {
-		t.Right.allPathsBlocking(myPath, c)
+	if t.right != nil {
+		t.right.allPathsBlocking(myPath, c)
 	}
 }
 
 // allNodes returns a channel of all nodes in the tree that are
 // between the start and end times.  The fwd parameter determines
-// whether the nodes are returned in depth-first order, Left child
-// first, or in reverse depth-first order, Right child first.
+// whether the nodes are returned in depth-first order, left child
+// first, or in reverse depth-first order, right child first.
 func (t *Node) allNodes(fwd bool, start, end time.Time) <-chan *Node {
 	c := make(chan *Node)
 	go func() {
@@ -472,8 +472,8 @@ func (t *Node) allNodes(fwd bool, start, end time.Time) <-chan *Node {
 
 // allNodesBlocking is a helper function for allNodes that returns a
 // channel of all nodes in the tree.  The fwd parameter determines
-// whether the nodes are returned in depth-first order, Left child
-// first, or in reverse depth-first order, Right child first.
+// whether the nodes are returned in depth-first order, left child
+// first, or in reverse depth-first order, right child first.
 func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 
 	if t == nil {
@@ -488,28 +488,28 @@ func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 	}
 
 	if fwd {
-		t.Left.allNodesBlocking(fwd, start, end, c)
+		t.left.allNodesBlocking(fwd, start, end, c)
 		c <- t
-		t.Right.allNodesBlocking(fwd, start, end, c)
+		t.right.allNodesBlocking(fwd, start, end, c)
 	} else {
-		t.Right.allNodesBlocking(fwd, start, end, c)
+		t.right.allNodesBlocking(fwd, start, end, c)
 		c <- t
-		t.Left.allNodesBlocking(fwd, start, end, c)
+		t.left.allNodesBlocking(fwd, start, end, c)
 	}
 }
 
 // FirstNode returns the first node in the tree.
 func (t *Node) FirstNode() *Node {
-	if t.Left != nil {
-		return t.Left.FirstNode()
+	if t.left != nil {
+		return t.left.FirstNode()
 	}
 	return t
 }
 
 // LastNode returns the last node in the tree.
 func (t *Node) LastNode() *Node {
-	if t.Right != nil {
-		return t.Right.LastNode()
+	if t.right != nil {
+		return t.right.LastNode()
 	}
 	return t
 }
@@ -528,8 +528,8 @@ func (t *Node) AsDot(path Path) string {
 		out += "digraph G {\n"
 	}
 	id := path.String()
-	label := Spf("parent %p\\nthis %p\\n", t.Parent, t)
-	label += Spf("left %p    right %p\\n", t.Left, t.Right)
+	label := Spf("parent %p\\nthis %p\\n", t.parent, t)
+	label += Spf("left %p    right %p\\n", t.left, t.right)
 	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.maxPriority)
 	if t.Interval != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval)
@@ -537,18 +537,18 @@ func (t *Node) AsDot(path Path) string {
 		label += "\\nnil"
 	}
 	out += fmt.Sprintf("  %s [label=\"%s\"];\n", id, label)
-	if t.Left != nil {
+	if t.left != nil {
 		// get left child's dot representation
-		out += t.Left.AsDot(path.Append(t.Left))
+		out += t.left.AsDot(path.Append(t.left))
 		// add edge from this node to left child
 		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
 	} else {
 		out += fmt.Sprintf("  %sl [label=\"nil\" style=dotted];\n", id)
 		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
 	}
-	if t.Right != nil {
+	if t.right != nil {
 		// get right child's dot representation
-		out += t.Right.AsDot(path.Append(t.Right))
+		out += t.right.AsDot(path.Append(t.right))
 		// add edge from this node to right child
 		out += fmt.Sprintf("  %s -> %sr [label=%s];\n", id, id, "r")
 	} else {
@@ -561,9 +561,9 @@ func (t *Node) AsDot(path Path) string {
 	return out
 }
 
-// rotateLeft performs a Left rotation on this node.
+// rotateLeft performs a left rotation on this node.
 func (t *Node) rotateLeft() (R *Node) {
-	if t == nil || t.Right == nil {
+	if t == nil || t.right == nil {
 		return
 	}
 	// we start like this:
@@ -574,8 +574,8 @@ func (t *Node) rotateLeft() (R *Node) {
 	//        / \
 	//       x   y
 	//
-	R = t.Right
-	x := R.Left
+	R = t.right
+	x := R.left
 
 	// pivot around R
 	//
@@ -585,22 +585,22 @@ func (t *Node) rotateLeft() (R *Node) {
 	//		  \
 	//		   x
 	//
-	R.Left = t
-	t.Right = x
-	R.Parent = t.Parent
-	t.Parent = R
-	if R.Parent != nil {
+	R.left = t
+	t.right = x
+	R.parent = t.parent
+	t.parent = R
+	if R.parent != nil {
 		switch {
-		case R.Parent.Left == t:
-			R.Parent.Left = R
-		case R.Parent.Right == t:
-			R.Parent.Right = R
+		case R.parent.left == t:
+			R.parent.left = R
+		case R.parent.right == t:
+			R.parent.right = R
 		default:
 			Assert(false, "can't find t in R.Parent")
 		}
 	}
 	if x != nil {
-		x.Parent = t
+		x.parent = t
 		x.setMinMax()
 	} else {
 		t.setMinMax()
@@ -608,9 +608,9 @@ func (t *Node) rotateLeft() (R *Node) {
 	return
 }
 
-// rotateRight performs a Right rotation on this node.
+// rotateRight performs a right rotation on this node.
 func (t *Node) rotateRight() (L *Node) {
-	if t == nil || t.Left == nil {
+	if t == nil || t.left == nil {
 		return
 	}
 	// we start like this:
@@ -621,8 +621,8 @@ func (t *Node) rotateRight() (L *Node) {
 	//    / \
 	//   x   y
 	//
-	L = t.Left
-	y := L.Right
+	L = t.left
+	y := L.right
 
 	// pivot around L
 	//
@@ -632,22 +632,22 @@ func (t *Node) rotateRight() (L *Node) {
 	//      /
 	//     y
 	//
-	L.Right = t
-	t.Left = y
-	L.Parent = t.Parent
-	t.Parent = L
-	if L.Parent != nil {
+	L.right = t
+	t.left = y
+	L.parent = t.parent
+	t.parent = L
+	if L.parent != nil {
 		switch {
-		case L.Parent.Left == t:
-			L.Parent.Left = L
-		case L.Parent.Right == t:
-			L.Parent.Right = L
+		case L.parent.left == t:
+			L.parent.left = L
+		case L.parent.right == t:
+			L.parent.right = L
 		default:
 			Assert(false, "can't find t in L.Parent")
 		}
 	}
 	if y != nil {
-		y.Parent = t
+		y.parent = t
 		y.setMinMax()
 	} else {
 		t.setMinMax()
@@ -679,30 +679,30 @@ func (t *Node) setMinMax() {
 
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
-	if t.Left == nil {
+	if t.left == nil {
 		t.minStart = t.Interval.Start()
 	} else {
-		t.minStart = t.Left.minStart
-		leftHeight = t.Left.height
-		leftSize = t.Left.size
+		t.minStart = t.left.minStart
+		leftHeight = t.left.height
+		leftSize = t.left.size
 	}
-	if t.Right == nil {
+	if t.right == nil {
 		t.maxEnd = t.Interval.End()
 	} else {
-		t.maxEnd = t.Right.maxEnd
-		rightHeight = t.Right.height
-		rightSize = t.Right.size
+		t.maxEnd = t.right.maxEnd
+		rightHeight = t.right.height
+		rightSize = t.right.size
 	}
 
 	t.maxPriority = t.Interval.Priority()
 	t.minPriority = t.Interval.Priority()
-	if t.Left != nil {
-		t.maxPriority = max(t.maxPriority, t.Left.maxPriority)
-		t.minPriority = min(t.minPriority, t.Left.minPriority)
+	if t.left != nil {
+		t.maxPriority = max(t.maxPriority, t.left.maxPriority)
+		t.minPriority = min(t.minPriority, t.left.minPriority)
 	}
-	if t.Right != nil {
-		t.maxPriority = max(t.maxPriority, t.Right.maxPriority)
-		t.minPriority = min(t.minPriority, t.Right.minPriority)
+	if t.right != nil {
+		t.maxPriority = max(t.maxPriority, t.right.maxPriority)
+		t.minPriority = min(t.minPriority, t.right.minPriority)
 	}
 
 	// the height of the node is the height of the tallest child plus 1
@@ -711,9 +711,9 @@ func (t *Node) setMinMax() {
 	// of the right child plus 1
 	t.size = 1 + leftSize + rightSize
 
-	if t.Parent != nil {
+	if t.parent != nil {
 		// Pf("setMinMax: %s\n", t.Interval)
-		t.Parent.setMinMax()
+		t.parent.setMinMax()
 	}
 }
 

@@ -20,7 +20,7 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 
 	// if the search range fits entirely within the left or right
 	// child, then recurse into that child.
-	for _, child := range []*Node{t.Left, t.Right} {
+	for _, child := range []*Node{t.left, t.right} {
 		if child == nil {
 			continue
 		}
@@ -105,13 +105,13 @@ func (t *Node) buildpath(fwd bool) []*Node {
 	node := t
 	path := []*Node{node}
 	if fwd {
-		for node.Left != nil {
-			node = node.Left
+		for node.left != nil {
+			node = node.left
 			path = append(path, node)
 		}
 	} else {
-		for node.Right != nil {
-			node = node.Right
+		for node.right != nil {
+			node = node.right
 			path = append(path, node)
 		}
 	}
@@ -128,8 +128,8 @@ func (it *Iterator) Next() *Node {
 	}
 	res := it.path[len(it.path)-1]
 	if it.Fwd {
-		if res.Right != nil {
-			it.path = append(it.path, res.Right.buildpath(it.Fwd)...)
+		if res.right != nil {
+			it.path = append(it.path, res.right.buildpath(it.Fwd)...)
 		} else {
 			// pop nodes off the tail of the path until we find a node
 			// that starts later than res
@@ -145,8 +145,8 @@ func (it *Iterator) Next() *Node {
 			}
 		}
 	} else {
-		if res.Left != nil {
-			it.path = append(it.path, res.Left.buildpath(it.Fwd)...)
+		if res.left != nil {
+			it.path = append(it.path, res.left.buildpath(it.Fwd)...)
 		} else {
 			// pop nodes off the tail of the path until we find a node
 			// that starts earlier than res

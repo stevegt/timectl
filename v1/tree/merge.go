@@ -18,17 +18,17 @@ func (t *Node) mergeFree() (vine *Node) {
 	// merge free intervals
 	node := vine
 	for {
-		if node.Right == nil {
+		if node.right == nil {
 			break
 		}
-		if !node.Busy() && !node.Right.Busy() {
-			node.Interval = interval.NewInterval(node.Interval.Start(), node.Right.Interval.End(), 0)
-			node.Right = node.Right.Right
+		if !node.Busy() && !node.right.Busy() {
+			node.Interval = interval.NewInterval(node.Interval.Start(), node.right.Interval.End(), 0)
+			node.right = node.right.right
 			// see if we can merge more intervals with this node
 			continue
 		}
 		// advance node
-		node = node.Right
+		node = node.right
 	}
 	node.setMinMax()
 

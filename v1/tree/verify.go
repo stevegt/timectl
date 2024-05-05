@@ -61,12 +61,12 @@ func (t *Node) Verify(ckBalance bool) error {
 		}
 
 		// the node's parent should not be nil unless it is the root
-		if node.Parent == nil && node != t {
+		if node.parent == nil && node != t {
 			return fmt.Errorf("node parent is nil")
 		}
 
 		// the node should be a child of its parent
-		if node.Parent != nil && node.Parent.Left != node && node.Parent.Right != node {
+		if node.parent != nil && node.parent.left != node && node.parent.right != node {
 			return fmt.Errorf("node is not a child of its parent")
 		}
 
@@ -81,8 +81,8 @@ func (t *Node) Verify(ckBalance bool) error {
 		// - each interval's minStart time should be equal to the minimum
 		//   of its start time and the start time of its left child
 		expectMinStart := node.minStart
-		if node.Left != nil {
-			gotMinStart := util.MinTime(start, node.Left.minStart)
+		if node.left != nil {
+			gotMinStart := util.MinTime(start, node.left.minStart)
 			if !expectMinStart.Equal(gotMinStart) {
 				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", node)
 			}
@@ -95,8 +95,8 @@ func (t *Node) Verify(ckBalance bool) error {
 		// - each interval's maxEnd time should be equal to the maximum
 		//   of its end time and the end time of its right child
 		expectMaxEnd := node.maxEnd
-		if node.Right != nil {
-			gotMaxEnd := util.MaxTime(end, node.Right.maxEnd)
+		if node.right != nil {
+			gotMaxEnd := util.MaxTime(end, node.right.maxEnd)
 			if !expectMaxEnd.Equal(gotMaxEnd) {
 				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", node)
 			}
@@ -141,19 +141,19 @@ func (t *Node) ckBalance(ancestors Path) error {
 	myPath := ancestors.Append(t)
 
 	// check this node's balance
-	leftHeight := t.Left.GetHeight()
-	rightHeight := t.Right.GetHeight()
+	leftHeight := t.left.GetHeight()
+	rightHeight := t.right.GetHeight()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
 		return fmt.Errorf("path: %v left height: %d, right height: %d", myPath, leftHeight, rightHeight)
 	}
 
 	if false {
 		//   check the balance of the left and right subtrees
-		leftBalance := t.Left.ckBalance(myPath)
+		leftBalance := t.left.ckBalance(myPath)
 		if leftBalance != nil {
 			return leftBalance
 		}
-		rightBalance := t.Right.ckBalance(myPath)
+		rightBalance := t.right.ckBalance(myPath)
 		if rightBalance != nil {
 			return rightBalance
 		}
@@ -167,5 +167,5 @@ func (t *Node) GetHeight() int {
 	if t == nil {
 		return 0
 	}
-	return 1 + max(t.Left.GetHeight(), t.Right.GetHeight())
+	return 1 + max(t.left.GetHeight(), t.right.GetHeight())
 }
