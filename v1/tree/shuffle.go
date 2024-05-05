@@ -1,8 +1,14 @@
 package tree
 
-// . "github.com/stevegt/goadapt"
+import (
+	"fmt"
+	"time"
 
-/*
+	. "github.com/stevegt/goadapt"
+	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/util"
+)
+
 // Shuffle inserts a new interval into the tree. It finds one or
 // more lower-priority intervals using FindFreePriority, removes
 // and returns them, adjusts the start and end times of the new
@@ -14,69 +20,46 @@ package tree
 // time range. Shuffle does not return intervals that are
 // marked as free (priority 0) -- it instead adjusts free intervals
 // to fill gaps in the tree.
-func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, interval Interval) (newInterval Interval, removed []Interval, err error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	// find free time to fit the new interval -- use the non-locking version
-	free := t.findFreePriority(first, minStart, maxEnd, interval.Duration(), interval.Priority())
-	if len(free) == 0 {
-		return nil, nil, fmt.Errorf("no free slots found between %s and %s below priority %f", minStart, maxEnd, interval.Priority())
-	}
-
-	// find and remove any intervals that overlap with the new interval
-	start := MaxTime(minStart, free[0].Start())
-	end := MinTime(maxEnd, free[len(free)-1].End())
-	removed = t.removeRange(start, end)
-
-	// adjust the start and end times of the new interval to fit within the found free time
-	newStart := start
-	newEnd := newStart.Add(interval.Duration())
-	newInterval = interval.Clone()
-	newInterval.SetStart(newStart)
-	newInterval.SetEnd(newEnd)
+func (t *Tree) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Interval) (newIv interval.Interval, removed []interval.Interval, err error) {
+	t.Mu.Lock()
+	defer t.Mu.Unlock()
 
 	// ensure the new interval is busy
-	if newInterval.Priority() == 0 {
+	if iv.Priority() == 0 {
 		return nil, nil, fmt.Errorf("new interval must have a priority greater than 0")
 	}
 
+	// find time to fit the new interval
+	lower := t.FindLowerPriority(first, minStart, maxEnd, iv.Duration(), iv.Priority())
+	if len(lower) == 0 {
+		return nil, nil, fmt.Errorf("no free slots found between %s and %s below priority %f", minStart, maxEnd, iv.Priority())
+	}
+
+	// remove and hold onto the found intervals
+	for _, node := range lower {
+		iv := t.free(node)
+		removed = append(removed, iv)
+	}
+
+	// adjust the start and end times of the new interval to fit within the found free time
+	var newStart, newEnd time.Time
+	if first {
+		newStart = util.MaxTime(minStart, lower[0].Start())
+		newEnd = newStart.Add(iv.Duration())
+	} else {
+		newEnd = util.MinTime(maxEnd, lower[len(lower)-1].End())
+		newStart = newEnd.Add(-iv.Duration())
+	}
+	iv.SetStart(newStart)
+	iv.SetEnd(newEnd)
+
 	// insert the new interval into the tree
-	if !t.insert(newInterval) {
-		// XXX re-insert removed intervals
+	if !t.Insert(iv) {
+		// XXX re-insert removed intervals or always return a new tree
+		// from functions that modify the tree
 		Pf("removed: %v\n", removed)
 		return nil, nil, fmt.Errorf("failed to insert new interval")
 	}
 
-	return newInterval, removed, nil
+	return newIv, removed, nil
 }
-*/
-
-/*
-// RemoveRange removes all intervals that overlap with the given time range.
-// It returns the removed intervals.  It only returns intervals that are
-// marked as busy (priority > 0).
-func (t *Tree) RemoveRange(start, end time.Time) (removed []Interval) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.removeRange(start, end)
-}
-
-// removeRange is the non-locking version of RemoveRange.
-func (t *Tree) removeRange(start, end time.Time) (removed []Interval) {
-
-	interval := NewInterval(start, end, 1)
-	conflicts := t.conflicts(interval, true)
-	Pf("conflicts: %v\n", conflicts)
-
-	for _, conflict := range conflicts {
-		if !conflict.Busy() {
-			continue
-		}
-		ok := t.delete(conflict)
-		Assert(ok, "failed to delete interval")
-		removed = append(removed, conflict)
-	}
-	return removed
-}
-*/

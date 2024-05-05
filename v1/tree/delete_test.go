@@ -323,9 +323,7 @@ func TestRemoveRange(t *testing.T) {
 
 }
 
-/*
-
-func XXXTestShuffle(t *testing.T) {
+func TestShuffle(t *testing.T) {
 
 	top := NewTree()
 
@@ -342,11 +340,11 @@ func XXXTestShuffle(t *testing.T) {
 	// to fill gaps in the tree.
 
 	// insert several intervals into the tree
-	i0900_0930 := insert(tree, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	i0900_0930 := Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 	Tassert(t, i0900_0930 != nil, "Failed to insert interval")
-	i1000_1100 := insert(tree, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	i1000_1100 := Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
 	Tassert(t, i1000_1100 != nil, "Failed to insert interval")
-	i1130_1200 := insert(tree, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
+	i1130_1200 := Insert(top, "2024-01-01T11:30:00Z", "2024-01-01T17:00:00Z", 2)
 	Tassert(t, i1130_1200 != nil, "Failed to insert interval")
 
 	searchStart, err := time.Parse(time.RFC3339, "2024-01-01T09:00:00Z")
@@ -354,7 +352,7 @@ func XXXTestShuffle(t *testing.T) {
 	searchEnd, err := time.Parse(time.RFC3339, "2024-01-01T17:30:00Z")
 	Ck(err)
 
-	Dump(tree, "")
+	Dump(top, "")
 
 	// Shuffle a 60 minute interval with priority 3 into the tree near
 	// the start time.  Because priority 3 is higher than the priority
@@ -366,14 +364,13 @@ func XXXTestShuffle(t *testing.T) {
 	end, err := time.Parse(time.RFC3339, "2024-01-01T09:30:00Z")
 	Ck(err)
 	newInterval := interval.NewInterval(start, end, 3)
-	newInterval, removed, err := tree.Shuffle(true, searchStart, searchEnd, newInterval)
+	newInterval, removed, err := top.Shuffle(true, searchStart, searchEnd, newInterval)
 	Tassert(t, err == nil, err)
 	Tassert(t, len(removed) == 1, "Expected 1 interval, got %d", len(removed))
-	err = match(removed[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	err = Match(removed[0], "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
+	Tassert(t, err == nil, err)
 
 	// XXX ensure that any removed intervals get-re-added before
 	// Shuffle exits in case of failure
 
 }
-
-*/
