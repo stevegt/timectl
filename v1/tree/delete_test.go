@@ -23,9 +23,9 @@ func TestMergeFree(t *testing.T) {
 	Ck(err)
 	top.left = &Node{interval: interval.NewInterval(TreeStart, splitAt1200, 0)}
 	top.SetInterval(interval.NewInterval(splitAt1200, splitAt1400, 0))
-	top.right = &Node{interval: interval.NewInterval(splitAt1400, TreeEnd, 0)}
+	top.SetRight(&Node{interval: interval.NewInterval(splitAt1400, TreeEnd, 0)})
 	top.left.setMinMax()
-	top.right.setMinMax()
+	top.Right().setMinMax()
 	top.setMinMax()
 
 	// Verify(t, top, false, true)
