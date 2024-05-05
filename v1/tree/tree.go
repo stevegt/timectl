@@ -60,7 +60,7 @@ func (t *Node) String() string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	out := Spf("Tree: %p\n", t)
-	out += Spf("  Interval: %v\n", t.Interval)
+	out += Spf("  Interval: %v\n", t.GetInterval())
 	out += Spf("  Parent: %p\n", t.parent)
 	out += Spf("  Left: %p\n", t.left)
 	out += Spf("  Right: %p\n", t.right)
@@ -178,7 +178,7 @@ func (t *Node) Insert(newInterval interval.IInterval) bool {
 		return false
 	}
 
-	newIntervals := f.Interval.Punch(newInterval)
+	newIntervals := f.GetInterval().Punch(newInterval)
 	switch len(newIntervals) {
 	case 0:
 		// newInterval doesn't fit in this node's interval
@@ -266,7 +266,7 @@ func (t *Node) AllIntervals() []interval.IInterval {
 	if t.left != nil {
 		intervals = append(intervals, t.left.AllIntervals()...)
 	}
-	intervals = append(intervals, t.Interval)
+	intervals = append(intervals, t.GetInterval())
 	if t.right != nil {
 		intervals = append(intervals, t.right.AllIntervals()...)
 	}
@@ -278,22 +278,22 @@ func (t *Node) Busy() bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	Assert(t.Interval != nil, "unexpected nil interval")
-	return t.Interval.Busy()
+	Assert(t.GetInterval() != nil, "unexpected nil interval")
+	return t.GetInterval().Busy()
 }
 
 // Start returns the start time of the interval in the node.
 func (t *Node) Start() time.Time {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.Interval.Start()
+	return t.GetInterval().Start()
 }
 
 // End returns the end time of the interval in the node.
 func (t *Node) End() time.Time {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.Interval.End()
+	return t.GetInterval().End()
 }
 
 // Conflicts returns a slice of intervals in leaf nodes that overlap with the given interval.
@@ -308,8 +308,8 @@ func (t *Node) Conflicts(iv interval.IInterval, includeFree bool) []interval.IIn
 	}
 
 	var conflicts []interval.IInterval
-	if t.Interval.Conflicts(iv, includeFree) {
-		conflicts = append(conflicts, t.Interval)
+	if t.GetInterval().Conflicts(iv, includeFree) {
+		conflicts = append(conflicts, t.GetInterval())
 	}
 	if t.left != nil {
 		conflicts = append(conflicts, t.left.Conflicts(iv, includeFree)...)
@@ -531,8 +531,8 @@ func (t *Node) AsDot(path Path) string {
 	label := Spf("parent %p\\nthis %p\\n", t.parent, t)
 	label += Spf("left %p    right %p\\n", t.left, t.right)
 	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.minStart, t.maxEnd, t.maxPriority)
-	if t.Interval != nil {
-		label += fmt.Sprintf("\\n%s", t.Interval)
+	if t.GetInterval() != nil {
+		label += fmt.Sprintf("\\n%s", t.GetInterval())
 	} else {
 		label += "\\nnil"
 	}
@@ -680,22 +680,22 @@ func (t *Node) setMinMax() {
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.left == nil {
-		t.minStart = t.Interval.Start()
+		t.minStart = t.GetInterval().Start()
 	} else {
 		t.minStart = t.left.minStart
 		leftHeight = t.left.height
 		leftSize = t.left.size
 	}
 	if t.right == nil {
-		t.maxEnd = t.Interval.End()
+		t.maxEnd = t.GetInterval().End()
 	} else {
 		t.maxEnd = t.right.maxEnd
 		rightHeight = t.right.height
 		rightSize = t.right.size
 	}
 
-	t.maxPriority = t.Interval.Priority()
-	t.minPriority = t.Interval.Priority()
+	t.maxPriority = t.GetInterval().Priority()
+	t.minPriority = t.GetInterval().Priority()
 	if t.left != nil {
 		t.maxPriority = max(t.maxPriority, t.left.maxPriority)
 		t.minPriority = min(t.minPriority, t.left.minPriority)
@@ -712,7 +712,7 @@ func (t *Node) setMinMax() {
 	t.size = 1 + leftSize + rightSize
 
 	if t.parent != nil {
-		// Pf("setMinMax: %s\n", t.Interval)
+		// Pf("setMinMax: %s\n", t.GetInterval())
 		t.parent.setMinMax()
 	}
 }

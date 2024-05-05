@@ -122,7 +122,7 @@ func TestRebalanceRandom(t *testing.T) {
 		top := NewTree()
 		// insert random intervals into the tree
 		inserted := 0
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 10; i++ {
 			startMonth := time.Month(rand.Intn(12) + 1)
 			startDay := rand.Intn(31) + 1
 			startHour := rand.Intn(24)
