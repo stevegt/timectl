@@ -143,10 +143,10 @@ func Verify(t *testing.T, tree *Tree, ckBalance bool, show bool) {
 // stdout.
 func Dump(tree *Tree, path string) {
 	// fmt.Printf("maxGap: %v interval: %v\n", tree.maxGap, tree.interval)
-	fmt.Printf("%-10v: %v\n", path, tree.Interval)
 	if tree.Left != nil {
 		Dump(tree.Left, path+"l")
 	}
+	fmt.Printf("%-10v: %v\n", path, tree.Interval)
 	if tree.Right != nil {
 		Dump(tree.Right, path+"r")
 	}

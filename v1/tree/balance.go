@@ -175,10 +175,6 @@ func (t *Tree) compress(targetHeight int) (out *Tree, done bool) {
 
 	// new root is the current root's right child
 	out = t.Right
-	// old root's parent is now the new root
-	t.Parent = out
-	// new root's parent is nil
-	out.Parent = nil
 
 	// we're going to rotate the odd nodes to the left, so we need to
 	// keep track of the previous even node so we can attach the next

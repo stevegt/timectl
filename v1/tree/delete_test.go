@@ -182,7 +182,7 @@ func TestDelete(t *testing.T) {
 	// delete the node. The Delete() function replaces the interval in the
 	// node with a free interval that spans the same range, and then merges
 	// free nodes.
-	err := top.Delete(found.Interval)
+	top, err := top.Delete(found.Interval)
 	Tassert(t, err == nil, err)
 
 	// check that the interval is no longer in the tree
@@ -233,7 +233,7 @@ func TestDeleteComplex(t *testing.T) {
 		Tassert(t, len(busyIntervals) == i, "Expected %d intervals, got %d", i, len(busyIntervals))
 		// delete a random interval
 		interval := busyIntervals[rand.Intn(len(busyIntervals))]
-		err := top.Delete(interval)
+		top, err := top.Delete(interval)
 		Tassert(t, err == nil, err)
 		// check that the interval is no longer in the tree
 		for _, busyInterval := range top.BusyIntervals() {
@@ -293,13 +293,13 @@ func TestRemoveRange(t *testing.T) {
 	Tassert(t, len(nodes) == 3, "Expected 3 nodes, got %v", nodes)
 
 	// remove the intervals
-	removed := top.RemoveRange(start, end)
+	top, removed := top.RemoveRange(start, end)
 	Tassert(t, len(removed) > 0, "Expected at least 1 interval, got %d", len(removed))
 	Tassert(t, removed[0].Equal(i0900_0930), fmt.Sprintf("Expected %v, got %v", i0900_0930, removed[0]))
 	Tassert(t, len(removed) == 2, "Expected 2 intervals, got %d", len(removed))
 	Tassert(t, removed[1].Equal(i1000_1100), fmt.Sprintf("Expected %v, got %v", i1000_1100, removed[1]))
 
-	ShowDot(top, false)
+	// ShowDot(top, false)
 
 	// check that the 11:30 interval is still in the tree
 	intervals := top.BusyIntervals()

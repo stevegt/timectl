@@ -561,9 +561,7 @@ func (t *Tree) AsDot(path Path) string {
 	return out
 }
 
-// rotateLeft performs a Left rotation on this node. The new root is
-// the current node's Right child.  The current node becomes the new
-// root's Left child.
+// rotateLeft performs a Left rotation on this node.
 func (t *Tree) rotateLeft() (R *Tree) {
 	if t == nil || t.Right == nil {
 		return
@@ -576,30 +574,10 @@ func (t *Tree) rotateLeft() (R *Tree) {
 	//        / \
 	//       x   y
 	//
-	// the new root is the current node's right child
 	R = t.Right
-	t.Right = nil
-
-	// the current node becomes the new root's left child
-	//
-	//         R
-	//        / \
-	//   x   t   y
-	//
-	// have t's parent adopt R
-	R.Parent = t.Parent
-	t.Parent = nil
 	x := R.Left
-	R.Left = nil
 
-	if R.Parent != nil {
-		R.Parent.SetRight(R)
-	}
-	// set t as R's left child and save a pointer to x
-	R.SetLeft(t)
-
-	// set the current node's right child to the new
-	// root's old left child
+	// pivot around R
 	//
 	//         R
 	//        / \
@@ -607,10 +585,26 @@ func (t *Tree) rotateLeft() (R *Tree) {
 	//		  \
 	//		   x
 	//
-	R.Left.SetRight(x)
-
-	// XXX is this needed?
-	R.Right.setMinMax()
+	R.Left = t
+	t.Right = x
+	R.Parent = t.Parent
+	t.Parent = R
+	if R.Parent != nil {
+		switch {
+		case R.Parent.Left == t:
+			R.Parent.Left = R
+		case R.Parent.Right == t:
+			R.Parent.Right = R
+		default:
+			Assert(false, "can't find t in R.Parent")
+		}
+	}
+	if x != nil {
+		x.Parent = t
+		x.setMinMax()
+	} else {
+		t.setMinMax()
+	}
 	return
 }
 
@@ -627,27 +621,10 @@ func (t *Tree) rotateRight() (L *Tree) {
 	//    / \
 	//   x   y
 	//
-	// the new root is the current node's left child
 	L = t.Left
-	t.Left = nil
+	y := L.Right
 
-	// the current node becomes the new root's right child
-	//
-	//     L
-	//    / \
-	//   x   t   y
-	//
-	// detach t from L and have t's parent adopt L
-	L.Parent = t.Parent
-	t.Parent = nil
-	if L.Parent != nil {
-		L.Parent.SetLeft(L)
-	}
-	// set t as L's right child and save a pointer to y
-	y := L.SetRight(t)
-
-	// finally, we set the current node's left child to the new root's
-	// old right child
+	// pivot around L
 	//
 	//     L
 	//    / \
@@ -655,10 +632,26 @@ func (t *Tree) rotateRight() (L *Tree) {
 	//      /
 	//     y
 	//
-	L.Right.SetLeft(y)
-
-	// XXX is this needed?
-	L.Left.setMinMax()
+	L.Right = t
+	t.Left = y
+	L.Parent = t.Parent
+	t.Parent = L
+	if L.Parent != nil {
+		switch {
+		case L.Parent.Left == t:
+			L.Parent.Left = L
+		case L.Parent.Right == t:
+			L.Parent.Right = L
+		default:
+			Assert(false, "can't find t in L.Parent")
+		}
+	}
+	if y != nil {
+		y.Parent = t
+		y.setMinMax()
+	} else {
+		t.setMinMax()
+	}
 	return
 }
 
@@ -669,18 +662,20 @@ func (t *Tree) setMinMax() {
 		return
 	}
 
-	for _, s := range seen {
-		if s == t {
-			Pf("seen:\n")
-			for _, s := range seen {
-				Pf("%s\n", s)
+	/*
+		for _, s := range seen {
+			if s == t {
+				Pf("seen:\n")
+				for _, s := range seen {
+					Pf("%s\n", s)
+				}
+				Pf("t: %s\n", t)
+				Assert(false, "cycle detected")
 			}
-			Pf("t: %s\n", t)
-			Assert(false, "cycle detected")
 		}
-	}
 
-	seen = append(seen, t)
+		seen = append(seen, t)
+	*/
 
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
@@ -720,8 +715,6 @@ func (t *Tree) setMinMax() {
 		// Pf("setMinMax: %s\n", t.Interval)
 		t.Parent.setMinMax()
 	}
-
-	seen = seen[:len(seen)-1]
 }
 
 var seen []*Tree

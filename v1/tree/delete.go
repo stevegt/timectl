@@ -8,28 +8,22 @@ import (
 	"github.com/stevegt/timectl/interval"
 )
 
-// Delete removes an interval from the tree and returns true if the interval was successfully removed.
-func (t *Tree) Delete(interval interval.Interval) (err error) {
+// Delete removes an interval from the tree
+func (t *Tree) Delete(interval interval.Interval) (out *Tree, err error) {
 	defer Return(&err)
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
-	path, found := t.findExact(interval, nil)
+	_, found := t.findExact(interval, nil)
 	Assert(found != nil, "Interval not found: %v", interval)
 
 	// Free the node, discarding the old interval.
 	_ = t.free(found)
 
-	// merge with free siblings
-	var parent *Tree
-	if len(path) > 0 {
-		parent = path[len(path)-1]
-	} else {
-		parent = t
-	}
-	parent = parent.mergeFree()
+	// merge free siblings
+	out = t.mergeFree()
 
-	return nil
+	return
 }
 
 // free sets the interval of the node to a free interval and updates
@@ -48,7 +42,7 @@ func (t *Tree) free(node *Tree) (old interval.Interval) {
 // given time range.  It returns the removed intervals.  It does not
 // return intervals that are marked as free (priority 0) -- it
 // instead adjusts free intervals to fill gaps in the tree.
-func (t *Tree) RemoveRange(start, end time.Time) (removed []interval.Interval) {
+func (t *Tree) RemoveRange(start, end time.Time) (out *Tree, removed []interval.Interval) {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 
@@ -72,7 +66,7 @@ func (t *Tree) RemoveRange(start, end time.Time) (removed []interval.Interval) {
 	}
 
 	// merge free siblings
-	t = t.mergeFree()
+	out = t.mergeFree()
 
-	return removed
+	return
 }
