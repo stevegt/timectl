@@ -565,9 +565,9 @@ func (t *Node) setMinMax() {
 		leftSize = t.left.Size()
 	}
 	if t.right == nil {
-		t.maxEnd = t.Interval().End()
+		t.SetMaxEnd(t.Interval().End())
 	} else {
-		t.maxEnd = t.right.maxEnd
+		t.SetMaxEnd(t.right.maxEnd)
 		rightHeight = t.right.Height()
 		rightSize = t.right.Size()
 	}
