@@ -37,6 +37,10 @@ type Node struct {
 	// size is the number of nodes in the node's subtree, including the node
 	size int
 
+	// dirty is true if the node has been modified and Update() has not
+	// been called
+	dirty bool
+
 	mu async.ReentrantLock
 }
 
@@ -193,9 +197,9 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 	t.left = left
 	if t.left != nil {
 		t.left.parent = t
-		t.left.SetMinMax()
+		t.left.Update()
 	} else {
-		t.SetMinMax()
+		t.Update()
 	}
 	return
 }
@@ -221,9 +225,9 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	t.right = right
 	if t.right != nil {
 		t.right.parent = t
-		t.right.SetMinMax()
+		t.right.Update()
 	} else {
-		t.SetMinMax()
+		t.Update()
 	}
 	return
 }
@@ -268,9 +272,9 @@ func (t *Node) RotateLeft() (R *Node) {
 	}
 	if x != nil {
 		x.parent = t
-		x.SetMinMax()
+		x.Update()
 	} else {
-		t.SetMinMax()
+		t.Update()
 	}
 	return
 }
@@ -315,16 +319,16 @@ func (t *Node) RotateRight() (L *Node) {
 	}
 	if y != nil {
 		y.parent = t
-		y.SetMinMax()
+		y.Update()
 	} else {
-		t.SetMinMax()
+		t.Update()
 	}
 	return
 }
 
-// SetMinMax updates the minimum and maximum values of this node and
+// Update updates the minimum and maximum values of this node and
 // its ancestors.
-func (t *Node) SetMinMax() {
+func (t *Node) Update() {
 	if t == nil {
 		return
 	}
@@ -365,6 +369,6 @@ func (t *Node) SetMinMax() {
 
 	if t.parent != nil {
 		// Pf("setMinMax: %s\n", t.Interval())
-		t.parent.SetMinMax()
+		t.parent.Update()
 	}
 }

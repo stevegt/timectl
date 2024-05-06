@@ -30,7 +30,7 @@ func (t *Node) mergeFree() (vine *Node) {
 		// advance node
 		node = node.Right()
 	}
-	node.SetMinMax()
+	node.Update()
 
 	return
 }
