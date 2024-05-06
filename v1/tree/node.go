@@ -23,10 +23,6 @@ type Node struct {
 	// rooted at this node
 	maxEnd time.Time
 
-	// maxPriority is the highest priority of any interval in the subtree
-	// rooted at this node, including this node
-	maxPriority float64
-
 	// minPriority is the lowest priority of any interval in the subtree
 	// rooted at this node, including this node
 	minPriority float64
@@ -42,27 +38,22 @@ type Node struct {
 	dirty bool
 
 	mu async.ReentrantLock
+
+	nodeCache
 }
 
-// clone returns a copy of the node.
-func (t *Node) clone() *Node {
-	if t == nil {
-		return nil
+// nodeCache is a cache of selected node fields
+type nodeCache struct {
+	// maxPriority is the highest priority of any interval in the subtree
+	// rooted at this node, including this node
+	maxPriority float64
+}
+
+// clearCache clears the node's cache.
+func (t *Node) clearCache() {
+	t.nodeCache = nodeCache{
+		maxPriority: -1,
 	}
-	clone := &Node{
-		interval:    t.interval,
-		parent:      t.parent,
-		left:        t.left,
-		right:       t.right,
-		minStart:    t.minStart,
-		maxEnd:      t.maxEnd,
-		minPriority: t.minPriority,
-		maxPriority: t.maxPriority,
-		height:      t.height,
-		size:        t.size,
-		dirty:       t.dirty,
-	}
-	return clone
 }
 
 func (t *Node) MinPriority() float64 {
@@ -71,6 +62,10 @@ func (t *Node) MinPriority() float64 {
 }
 
 func (t *Node) MaxPriority() float64 {
+	// check the cache first
+	if t.maxPriority >= 0 {
+		return t.maxPriority
+	}
 	out := t.interval.Priority()
 	if t.left != nil {
 		out = max(out, t.left.MaxPriority())
@@ -78,6 +73,7 @@ func (t *Node) MaxPriority() float64 {
 	if t.right != nil {
 		out = max(out, t.right.MaxPriority())
 	}
+	t.maxPriority = out
 	return out
 }
 
@@ -171,15 +167,16 @@ func (t *Node) SetInterval(iv interval.Interval) {
 
 // newNodeFromInterval creates and returns a new Tree node containing the given interval.
 func newNodeFromInterval(interval interval.Interval) *Node {
-	return &Node{
+	node := &Node{
 		interval:    interval,
 		minStart:    interval.Start(),
 		maxEnd:      interval.End(),
 		minPriority: interval.Priority(),
-		maxPriority: interval.Priority(),
 		height:      1,
 		size:        1,
 	}
+	node.clearCache()
+	return node
 }
 
 // SetLeft sets the left child of this node.  It returns the old left
@@ -387,6 +384,7 @@ func (t *Node) update() {
 // SetDirty sets the dirty flag on the node and all its ancestors.
 func (t *Node) SetDirty() {
 	t.dirty = true
+	t.clearCache()
 	if t.parent != nil {
 		t.parent.SetDirty()
 	}
