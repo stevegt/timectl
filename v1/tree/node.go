@@ -157,8 +157,8 @@ func (t *Node) Interval() interval.Interval {
 
 // SetInterval sets the node's interval.
 func (t *Node) SetInterval(iv interval.Interval) {
-	// t.mu.Lock()
-	// defer t.mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.interval = iv
 	t.SetDirty()
 }
