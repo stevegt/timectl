@@ -71,38 +71,54 @@ func (t *Node) MinPriority() float64 {
 }
 
 func (t *Node) MaxPriority() float64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.update()
 	return t.maxPriority
 }
 
 func (t *Node) MaxEnd() time.Time {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.update()
 	return t.maxEnd
 }
 
 func (t *Node) MinStart() time.Time {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.update()
 	return t.minStart
 }
 
 func (t *Node) Right() *Node {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.right
 }
 
 func (t *Node) Left() *Node {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.left
 }
 
 func (t *Node) Parent() *Node {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.parent
 }
 
 func (t *Node) Height() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.update()
 	return t.height
 }
 
 func (t *Node) Size() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.update()
 	return t.size
 }
@@ -150,8 +166,8 @@ func (t *Node) End() time.Time {
 
 // Interval returns the node's interval.
 func (t *Node) Interval() interval.Interval {
-	// t.mu.Lock()
-	// defer t.mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	return t.interval
 }
 
