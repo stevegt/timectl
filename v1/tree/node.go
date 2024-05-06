@@ -71,8 +71,14 @@ func (t *Node) MinPriority() float64 {
 }
 
 func (t *Node) MaxPriority() float64 {
-	t.update()
-	return t.maxPriority
+	out := t.Interval().Priority()
+	if t.left != nil {
+		out = max(out, t.left.MaxPriority())
+	}
+	if t.right != nil {
+		out = max(out, t.right.MaxPriority())
+	}
+	return out
 }
 
 func (t *Node) MaxEnd() time.Time {
