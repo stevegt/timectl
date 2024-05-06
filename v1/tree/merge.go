@@ -30,7 +30,7 @@ func (t *Node) mergeFree() (vine *Node) {
 		// advance node
 		node = node.Right()
 	}
-	node.SetDirty()
+	node.ClearCache()
 
 	return
 }

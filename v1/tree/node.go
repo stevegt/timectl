@@ -203,7 +203,7 @@ func (t *Node) SetInterval(iv interval.Interval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.interval = iv
-	t.SetDirty()
+	t.ClearCache()
 }
 
 // newNodeFromInterval creates and returns a new Tree node containing the given interval.
@@ -236,9 +236,9 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 	t.left = left
 	if t.left != nil {
 		t.left.parent = t
-		t.left.SetDirty()
+		t.left.ClearCache()
 	} else {
-		t.SetDirty()
+		t.ClearCache()
 	}
 	return
 }
@@ -264,9 +264,9 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	t.right = right
 	if t.right != nil {
 		t.right.parent = t
-		t.right.SetDirty()
+		t.right.ClearCache()
 	} else {
-		t.SetDirty()
+		t.ClearCache()
 	}
 	return
 }
@@ -311,9 +311,9 @@ func (t *Node) RotateLeft() (R *Node) {
 	}
 	if x != nil {
 		x.parent = t
-		x.SetDirty()
+		x.ClearCache()
 	} else {
-		t.SetDirty()
+		t.ClearCache()
 	}
 	return
 }
@@ -358,17 +358,17 @@ func (t *Node) RotateRight() (L *Node) {
 	}
 	if y != nil {
 		y.parent = t
-		y.SetDirty()
+		y.ClearCache()
 	} else {
-		t.SetDirty()
+		t.ClearCache()
 	}
 	return
 }
 
-// SetDirty sets the dirty flag on the node and all its ancestors.
-func (t *Node) SetDirty() {
+// ClearCache clears the cache of this node and all its ancestors.
+func (t *Node) ClearCache() {
 	t.clearCache()
 	if t.parent != nil {
-		t.parent.SetDirty()
+		t.parent.ClearCache()
 	}
 }
