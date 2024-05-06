@@ -76,11 +76,6 @@ func (t *Node) Parent() *Node {
 	return t.parent
 }
 
-func (t *Node) SetParent(parent *Node) {
-	t.SetDirty()
-	t.parent = parent
-}
-
 func (t *Node) Height() int {
 	t.update()
 	return t.height
