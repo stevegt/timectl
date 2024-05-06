@@ -6,6 +6,7 @@ import (
 	"github.com/reugn/async"
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/util"
 )
 
 // Node represents a node in an interval tree.
@@ -14,10 +15,6 @@ type Node struct {
 	parent   *Node // Pointer to this node's parent
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
-
-	// minStart is the earliest start time of any interval in the subtree
-	// rooted at this node
-	minStart time.Time
 
 	// maxEnd is the latest end time of any interval in the subtree
 	// rooted at this node
@@ -47,6 +44,10 @@ type nodeCache struct {
 	// maxPriority is the highest priority of any interval in the subtree
 	// rooted at this node, including this node
 	maxPriority *float64
+
+	// minStart is the earliest start time of any interval in the subtree
+	// rooted at this node
+	minStart *time.Time
 }
 
 // clearCache clears the node's cache.
@@ -91,8 +92,18 @@ func (t *Node) MaxEnd() time.Time {
 }
 
 func (t *Node) MinStart() time.Time {
-	t.update()
-	return t.minStart
+	if t.minStart != nil {
+		return *t.minStart
+	}
+	out := t.Interval().Start()
+	if t.left != nil {
+		out = util.MinTime(out, t.left.MinStart())
+	}
+	if t.right != nil {
+		out = util.MinTime(out, t.right.MinStart())
+	}
+	t.minStart = &out
+	return out
 }
 
 func (t *Node) Right() *Node {
@@ -177,7 +188,6 @@ func (t *Node) SetInterval(iv interval.Interval) {
 func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
-		minStart: interval.Start(),
 		maxEnd:   interval.End(),
 		height:   1,
 		size:     1,
@@ -351,9 +361,7 @@ func (t *Node) update() {
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.left == nil {
-		t.minStart = t.Interval().Start()
 	} else {
-		t.minStart = t.left.MinStart()
 		leftHeight = t.left.Height()
 		leftSize = t.left.Size()
 	}
