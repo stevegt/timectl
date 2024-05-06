@@ -29,8 +29,8 @@ func (t *Node) findExact(interval interval.Interval, pathIn []*Node) (pathOut []
 	path := append(pathIn, t)
 
 	// try left
-	if t.left != nil {
-		return t.left.findExact(interval, path)
+	if t.Left() != nil {
+		return t.Left().findExact(interval, path)
 	}
 	// try right
 	if found == nil && t.right != nil {

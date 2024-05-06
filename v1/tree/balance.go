@@ -16,10 +16,10 @@ func (t *Node) rebalance() (out *Node) {
 	for i := 0; i < 200; i++ {
 		var leftSize, rightSize int
 		var leftHeight, rightHeight int
-		if out.left != nil {
-			out.SetLeft(out.left.rebalance())
-			leftSize = out.left.Size()
-			leftHeight = out.left.Height()
+		if out.Left() != nil {
+			out.SetLeft(out.Left().rebalance())
+			leftSize = out.Left().Size()
+			leftHeight = out.Left().Height()
 		}
 		if out.right != nil {
 			out.SetRight(out.right.rebalance())
@@ -74,7 +74,7 @@ func (t *Node) treeToVine() (out *Node, size int) {
 	}
 	out = t
 	// rotate the left children to the right
-	for out.left != nil {
+	for out.Left() != nil {
 		out = out.rotateRight()
 	}
 	// continue down the right side of the tree
@@ -120,8 +120,8 @@ func (t *Node) vineToTree(size int) (out *Node) {
 	}
 
 	// One last check to make sure the tree is balanced.
-	if out.right != nil && out.left != nil {
-		for out.right.CalcHeight() > out.left.CalcHeight() {
+	if out.right != nil && out.Left() != nil {
+		for out.right.CalcHeight() > out.Left().CalcHeight() {
 			out = out.rotateLeft()
 		}
 	}
