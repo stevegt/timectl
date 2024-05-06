@@ -79,7 +79,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		// the old right child the right child of it
 		newNode := newNodeFromInterval(newIntervals[1])
 		oldRight := f.SetRight(newNode)
-		f.right.SetRight(oldRight)
+		f.Right().SetRight(oldRight)
 		return true
 	case 3:
 		// newInterval fits in this node's interval with free intervals
@@ -98,7 +98,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		// right child to the right of the new right child
 		newRightNode := newNodeFromInterval(newIntervals[2])
 		oldRight := f.SetRight(newRightNode)
-		f.right.SetRight(oldRight)
+		f.Right().SetRight(oldRight)
 		return true
 	default:
 		Assert(false, "unexpected number of intervals")
@@ -108,7 +108,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	// XXX either remove this or refactor all of the above to use
 	// Height in the first place and not need rebalancing
 	f.ckHeight()
-	f.right.ckHeight()
+	f.Right().ckHeight()
 	f.Left().ckHeight()
 
 	Assert(false, "unexpected code path")
@@ -149,8 +149,8 @@ func (t *Node) AllIntervals() []interval.Interval {
 		intervals = append(intervals, t.Left().AllIntervals()...)
 	}
 	intervals = append(intervals, t.Interval())
-	if t.right != nil {
-		intervals = append(intervals, t.right.AllIntervals()...)
+	if t.Right() != nil {
+		intervals = append(intervals, t.Right().AllIntervals()...)
 	}
 	return intervals
 }
@@ -173,8 +173,8 @@ func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 	if t.Left() != nil {
 		conflicts = append(conflicts, t.Left().Conflicts(iv, includeFree)...)
 	}
-	if t.right != nil {
-		conflicts = append(conflicts, t.right.Conflicts(iv, includeFree)...)
+	if t.Right() != nil {
+		conflicts = append(conflicts, t.Right().Conflicts(iv, includeFree)...)
 	}
 	return conflicts
 }
@@ -203,9 +203,9 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	var children []*Node
 	var start, end time.Time
 	if first {
-		children = []*Node{t.Left(), t.right}
+		children = []*Node{t.Left(), t.Right()}
 	} else {
-		children = []*Node{t.right, t.Left()}
+		children = []*Node{t.Right(), t.Left()}
 	}
 
 	for _, child := range children {
@@ -274,8 +274,8 @@ func (t *Node) allPathsBlocking(path Path, c chan Path) {
 		t.Left().allPathsBlocking(myPath, c)
 	}
 	c <- myPath
-	if t.right != nil {
-		t.right.allPathsBlocking(myPath, c)
+	if t.Right() != nil {
+		t.Right().allPathsBlocking(myPath, c)
 	}
 }
 
@@ -312,9 +312,9 @@ func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 	if fwd {
 		t.Left().allNodesBlocking(fwd, start, end, c)
 		c <- t
-		t.right.allNodesBlocking(fwd, start, end, c)
+		t.Right().allNodesBlocking(fwd, start, end, c)
 	} else {
-		t.right.allNodesBlocking(fwd, start, end, c)
+		t.Right().allNodesBlocking(fwd, start, end, c)
 		c <- t
 		t.Left().allNodesBlocking(fwd, start, end, c)
 	}
@@ -330,8 +330,8 @@ func (t *Node) FirstNode() *Node {
 
 // LastNode returns the last node in the tree.
 func (t *Node) LastNode() *Node {
-	if t.right != nil {
-		return t.right.LastNode()
+	if t.Right() != nil {
+		return t.Right().LastNode()
 	}
 	return t
 }
@@ -351,7 +351,7 @@ func (t *Node) AsDot(path Path) string {
 	}
 	id := path.String()
 	label := Spf("parent %p\\nthis %p\\n", t.Parent(), t)
-	label += Spf("left %p    right %p\\n", t.Left(), t.right)
+	label += Spf("left %p    right %p\\n", t.Left(), t.Right())
 	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart(), t.MaxEnd(), t.MaxPriority())
 	if t.Interval() != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval())
@@ -368,9 +368,9 @@ func (t *Node) AsDot(path Path) string {
 		out += fmt.Sprintf("  %sl [label=\"nil\" style=dotted];\n", id)
 		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
 	}
-	if t.right != nil {
+	if t.Right() != nil {
 		// get right child's dot representation
-		out += t.right.AsDot(path.Append(t.right))
+		out += t.Right().AsDot(path.Append(t.Right()))
 		// add edge from this node to right child
 		out += fmt.Sprintf("  %s -> %sr [label=%s];\n", id, id, "r")
 	} else {

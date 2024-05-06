@@ -33,8 +33,8 @@ func (t *Node) findExact(interval interval.Interval, pathIn []*Node) (pathOut []
 		return t.Left().findExact(interval, path)
 	}
 	// try right
-	if found == nil && t.right != nil {
-		return t.right.findExact(interval, path)
+	if found == nil && t.Right() != nil {
+		return t.Right().findExact(interval, path)
 	}
 
 	return nil, nil

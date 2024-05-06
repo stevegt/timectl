@@ -28,8 +28,8 @@ func Get(tree *Node, pathStr string) *Node {
 		Assert(tree.Left() != nil, "No left node")
 		return Get(tree.Left(), string(path[1:]))
 	case 'r':
-		Assert(tree.right != nil, "No right node")
-		return Get(tree.right, string(path[1:]))
+		Assert(tree.Right() != nil, "No right node")
+		return Get(tree.Right(), string(path[1:]))
 	default:
 		Assert(false, "Invalid path %v", pathStr)
 	}
@@ -147,8 +147,8 @@ func Dump(tree *Node, path string) {
 		Dump(tree.Left(), path+"l")
 	}
 	fmt.Printf("%-10v: %v\n", path, tree.Interval())
-	if tree.right != nil {
-		Dump(tree.right, path+"r")
+	if tree.Right() != nil {
+		Dump(tree.Right(), path+"r")
 	}
 }
 

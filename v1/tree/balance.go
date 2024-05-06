@@ -21,10 +21,10 @@ func (t *Node) rebalance() (out *Node) {
 			leftSize = out.Left().Size()
 			leftHeight = out.Left().Height()
 		}
-		if out.right != nil {
-			out.SetRight(out.right.rebalance())
-			rightSize = out.right.Size()
-			rightHeight = out.right.Height()
+		if out.Right() != nil {
+			out.SetRight(out.Right().rebalance())
+			rightSize = out.Right().Size()
+			rightHeight = out.Right().Height()
 		}
 		// Pf("rebalance: %d - %d\n", leftHeight, rightHeight)
 		if leftHeight-rightHeight > 1 {
@@ -78,9 +78,9 @@ func (t *Node) treeToVine() (out *Node, size int) {
 		out = out.rotateRight()
 	}
 	// continue down the right side of the tree
-	if out.right != nil {
+	if out.Right() != nil {
 		var right *Node
-		right, size = out.right.treeToVine()
+		right, size = out.Right().treeToVine()
 		out.SetRight(right)
 	}
 	size++
@@ -120,8 +120,8 @@ func (t *Node) vineToTree(size int) (out *Node) {
 	}
 
 	// One last check to make sure the tree is balanced.
-	if out.right != nil && out.Left() != nil {
-		for out.right.CalcHeight() > out.Left().CalcHeight() {
+	if out.Right() != nil && out.Left() != nil {
+		for out.Right().CalcHeight() > out.Left().CalcHeight() {
 			out = out.rotateLeft()
 		}
 	}
@@ -169,12 +169,12 @@ func (t *Node) vineToTree(size int) (out *Node) {
 
 func (t *Node) compress(targetHeight int) (out *Node, done bool) {
 
-	if t == nil || t.right == nil {
+	if t == nil || t.Right() == nil {
 		return t, true
 	}
 
 	// new root is the current root's right child
-	out = t.right
+	out = t.Right()
 
 	// we're going to rotate the odd nodes to the left, so we need to
 	// keep track of the previous even node so we can attach the next
@@ -196,11 +196,11 @@ func (t *Node) compress(targetHeight int) (out *Node, done bool) {
 		//              \
 		//               D
 		//
-		if A == nil || A.right == nil {
+		if A == nil || A.Right() == nil {
 			break
 		}
 		B := A.rotateLeft()
-		C := B.right
+		C := B.Right()
 
 		// attach B to the previous even node (if there is one)
 		if prevEven != nil {

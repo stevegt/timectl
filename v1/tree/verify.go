@@ -66,7 +66,7 @@ func (t *Node) Verify(ckBalance bool) error {
 		}
 
 		// the node should be a child of its parent
-		if node.Parent() != nil && node.Parent().Left() != node && node.Parent().right != node {
+		if node.Parent() != nil && node.Parent().Left() != node && node.Parent().Right() != node {
 			return fmt.Errorf("node is not a child of its parent")
 		}
 
@@ -95,8 +95,8 @@ func (t *Node) Verify(ckBalance bool) error {
 		// - each interval's maxEnd time should be equal to the maximum
 		//   of its end time and the end time of its right child
 		expectMaxEnd := node.MaxEnd()
-		if node.right != nil {
-			gotMaxEnd := util.MaxTime(end, node.right.MaxEnd())
+		if node.Right() != nil {
+			gotMaxEnd := util.MaxTime(end, node.Right().MaxEnd())
 			if !expectMaxEnd.Equal(gotMaxEnd) {
 				return fmt.Errorf("%s maxEnd time does not match maximum of end time and right child maxEnd time", node)
 			}
@@ -142,7 +142,7 @@ func (t *Node) ckBalance(ancestors Path) error {
 
 	// check this node's balance
 	leftHeight := t.Left().CalcHeight()
-	rightHeight := t.right.CalcHeight()
+	rightHeight := t.Right().CalcHeight()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
 		return fmt.Errorf("path: %v left height: %d, right height: %d", myPath, leftHeight, rightHeight)
 	}
@@ -153,7 +153,7 @@ func (t *Node) ckBalance(ancestors Path) error {
 		if leftBalance != nil {
 			return leftBalance
 		}
-		rightBalance := t.right.ckBalance(myPath)
+		rightBalance := t.Right().ckBalance(myPath)
 		if rightBalance != nil {
 			return rightBalance
 		}
@@ -167,5 +167,5 @@ func (t *Node) CalcHeight() int {
 	if t == nil {
 		return 0
 	}
-	return 1 + max(t.Left().CalcHeight(), t.right.CalcHeight())
+	return 1 + max(t.Left().CalcHeight(), t.Right().CalcHeight())
 }
