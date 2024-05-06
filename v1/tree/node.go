@@ -46,9 +46,12 @@ type nodeCache struct {
 	size *int
 }
 
-// clearCache clears the node's cache.
-func (t *Node) clearCache() {
+// ClearCache clears the cache of this node and all its ancestors.
+func (t *Node) ClearCache() {
 	t.nodeCache = nodeCache{}
+	if t.parent != nil {
+		t.parent.ClearCache()
+	}
 }
 
 func (t *Node) MinPriority() float64 {
@@ -211,7 +214,7 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
 	}
-	node.clearCache()
+	node.ClearCache()
 	return node
 }
 
@@ -363,12 +366,4 @@ func (t *Node) RotateRight() (L *Node) {
 		t.ClearCache()
 	}
 	return
-}
-
-// ClearCache clears the cache of this node and all its ancestors.
-func (t *Node) ClearCache() {
-	t.clearCache()
-	if t.parent != nil {
-		t.parent.ClearCache()
-	}
 }
