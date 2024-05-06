@@ -21,6 +21,21 @@ type Node struct {
 	nodeCache
 }
 
+// clone returns a copy of the node.  We always clone nodes before
+// modifying them, so that we don't modify the tree in place.
+func (t *Node) clone() *Node {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	out := &Node{
+		interval: t.interval,
+		parent:   t.parent,
+		left:     t.left,
+		right:    t.right,
+	}
+	out.ClearCache()
+	return out
+}
+
 // nodeCache is a cache of selected node fields
 type nodeCache struct {
 	// minPriority is the lowest priority of any interval in the subtree
