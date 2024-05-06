@@ -155,7 +155,7 @@ func (t *Node) Interval() interval.Interval {
 	return t.interval
 }
 
-// SetInterval returns a cloned node with the given interval.
+// SetInterval sets the node's interval.
 func (t *Node) SetInterval(iv interval.Interval) {
 	// t.mu.Lock()
 	// defer t.mu.Unlock()
