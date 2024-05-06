@@ -16,10 +16,6 @@ type Node struct {
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
 
-	// dirty is true if the node has been modified and Update() has not
-	// been called
-	dirty bool
-
 	mu async.ReentrantLock
 
 	nodeCache
@@ -371,7 +367,6 @@ func (t *Node) RotateRight() (L *Node) {
 
 // SetDirty sets the dirty flag on the node and all its ancestors.
 func (t *Node) SetDirty() {
-	t.dirty = true
 	t.clearCache()
 	if t.parent != nil {
 		t.parent.SetDirty()
