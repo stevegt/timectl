@@ -24,7 +24,7 @@ func (p Path) String() string {
 	var parent *Node
 	for _, t := range p {
 		if parent != nil {
-			if t == parent.left {
+			if t == parent.Left() {
 				s += "l"
 			} else {
 				s += "r"
