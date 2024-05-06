@@ -16,9 +16,6 @@ type Node struct {
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
 
-	// height is the height of the node's subtree, including the node
-	height int
-
 	// size is the number of nodes in the node's subtree, including the node
 	size int
 
@@ -48,6 +45,9 @@ type nodeCache struct {
 	// maxEnd is the latest end time of any interval in the subtree
 	// rooted at this node
 	maxEnd *time.Time
+
+	// height is the height of the node's subtree, including the node
+	height *int
 }
 
 // clearCache clears the node's cache.
@@ -123,8 +123,19 @@ func (t *Node) Parent() *Node {
 }
 
 func (t *Node) Height() int {
-	t.update()
-	return t.height
+	if t.height != nil {
+		return *t.height
+	}
+	var leftHeight, rightHeight int
+	if t.left != nil {
+		leftHeight = t.left.Height()
+	}
+	if t.right != nil {
+		rightHeight = t.right.Height()
+	}
+	out := 1 + max(leftHeight, rightHeight)
+	t.height = &out
+	return out
 }
 
 func (t *Node) Size() int {
@@ -192,7 +203,6 @@ func (t *Node) SetInterval(iv interval.Interval) {
 func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
-		height:   1,
 		size:     1,
 	}
 	node.clearCache()
@@ -361,21 +371,16 @@ func (t *Node) update() {
 	}
 	t.dirty = false
 
-	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.left == nil {
 	} else {
-		leftHeight = t.left.Height()
 		leftSize = t.left.Size()
 	}
 	if t.right == nil {
 	} else {
-		rightHeight = t.right.Height()
 		rightSize = t.right.Size()
 	}
 
-	// the height of the node is the height of the tallest child plus 1
-	t.height = 1 + max(leftHeight, rightHeight)
 	// the size of the node is the size of the left child plus the size
 	// of the right child plus 1
 	t.size = 1 + leftSize + rightSize
