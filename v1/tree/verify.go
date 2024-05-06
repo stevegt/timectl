@@ -61,12 +61,12 @@ func (t *Node) Verify(ckBalance bool) error {
 		}
 
 		// the node's parent should not be nil unless it is the root
-		if node.parent == nil && node != t {
+		if node.Parent() == nil && node != t {
 			return fmt.Errorf("node parent is nil")
 		}
 
 		// the node should be a child of its parent
-		if node.parent != nil && node.parent.left != node && node.parent.right != node {
+		if node.Parent() != nil && node.Parent().left != node && node.Parent().right != node {
 			return fmt.Errorf("node is not a child of its parent")
 		}
 
