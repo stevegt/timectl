@@ -357,7 +357,6 @@ func (t *Node) update() {
 	t.size = 1 + leftSize + rightSize
 
 	if t.parent != nil {
-		// Pf("setMinMax: %s\n", t.Interval())
 		t.parent.update()
 	}
 
