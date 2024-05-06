@@ -162,7 +162,7 @@ func (t *Node) ckBalance(ancestors Path) error {
 	return nil
 }
 
-// height returns the height of the tree.
+// CalcHeight returns the height of the tree.
 func (t *Node) CalcHeight() int {
 	if t == nil {
 		return 0
