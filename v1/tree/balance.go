@@ -29,22 +29,22 @@ func (t *Node) rebalance() (out *Node) {
 		// Pf("rebalance: %d - %d\n", leftHeight, rightHeight)
 		if leftHeight-rightHeight > 1 {
 			// Pf("rotateRight leftHeight: %d - rightHeight: %d\n", leftHeight, rightHeight)
-			out = out.rotateRight()
+			out = out.RotateRight()
 			continue
 		}
 		if rightHeight-leftHeight > 1 {
 			// Pf("rotateLeft rightHeight: %d - leftHeight: %d\n", rightHeight, leftHeight)
-			out = out.rotateLeft()
+			out = out.RotateLeft()
 			continue
 		}
 		if false && leftSize-rightSize > 1 {
 			// Pf("rotateRight leftSize: %d - rightSize: %d\n", leftSize, rightSize)
-			out = out.rotateRight()
+			out = out.RotateRight()
 			continue
 		}
 		if false && rightSize-leftSize > 1 {
 			// Pf("rotateLeft rightSize: %d - leftSize: %d\n", rightSize, leftSize)
-			out = out.rotateLeft()
+			out = out.RotateLeft()
 			continue
 		}
 		break
@@ -75,7 +75,7 @@ func (t *Node) treeToVine() (out *Node, size int) {
 	out = t
 	// rotate the left children to the right
 	for out.Left() != nil {
-		out = out.rotateRight()
+		out = out.RotateRight()
 	}
 	// continue down the right side of the tree
 	if out.Right() != nil {
@@ -122,7 +122,7 @@ func (t *Node) vineToTree(size int) (out *Node) {
 	// One last check to make sure the tree is balanced.
 	if out.Right() != nil && out.Left() != nil {
 		for out.Right().CalcHeight() > out.Left().CalcHeight() {
-			out = out.rotateLeft()
+			out = out.RotateLeft()
 		}
 	}
 	return
@@ -199,7 +199,7 @@ func (t *Node) compress(targetHeight int) (out *Node, done bool) {
 		if A == nil || A.Right() == nil {
 			break
 		}
-		B := A.rotateLeft()
+		B := A.RotateLeft()
 		C := B.Right()
 
 		// attach B to the previous even node (if there is one)

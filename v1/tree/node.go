@@ -228,8 +228,8 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	return
 }
 
-// rotateLeft performs a left rotation on this node.
-func (t *Node) rotateLeft() (R *Node) {
+// RotateLeft performs a left rotation on this node.
+func (t *Node) RotateLeft() (R *Node) {
 	if t == nil || t.right == nil {
 		return
 	}
@@ -275,8 +275,8 @@ func (t *Node) rotateLeft() (R *Node) {
 	return
 }
 
-// rotateRight performs a right rotation on this node.
-func (t *Node) rotateRight() (L *Node) {
+// RotateRight performs a right rotation on this node.
+func (t *Node) RotateRight() (L *Node) {
 	if t == nil || t.left == nil {
 		return
 	}
