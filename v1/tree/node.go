@@ -16,10 +16,6 @@ type Node struct {
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
 
-	// maxEnd is the latest end time of any interval in the subtree
-	// rooted at this node
-	maxEnd time.Time
-
 	// height is the height of the node's subtree, including the node
 	height int
 
@@ -48,6 +44,10 @@ type nodeCache struct {
 	// minStart is the earliest start time of any interval in the subtree
 	// rooted at this node
 	minStart *time.Time
+
+	// maxEnd is the latest end time of any interval in the subtree
+	// rooted at this node
+	maxEnd *time.Time
 }
 
 // clearCache clears the node's cache.
@@ -87,8 +87,15 @@ func (t *Node) MaxPriority() float64 {
 }
 
 func (t *Node) MaxEnd() time.Time {
-	t.update()
-	return t.maxEnd
+	if t.maxEnd != nil {
+		return *t.maxEnd
+	}
+	out := t.Interval().End()
+	if t.right != nil {
+		out = util.MaxTime(out, t.right.MaxEnd())
+	}
+	t.maxEnd = &out
+	return out
 }
 
 func (t *Node) MinStart() time.Time {
@@ -98,9 +105,6 @@ func (t *Node) MinStart() time.Time {
 	out := t.Interval().Start()
 	if t.left != nil {
 		out = util.MinTime(out, t.left.MinStart())
-	}
-	if t.right != nil {
-		out = util.MinTime(out, t.right.MinStart())
 	}
 	t.minStart = &out
 	return out
@@ -188,7 +192,6 @@ func (t *Node) SetInterval(iv interval.Interval) {
 func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
-		maxEnd:   interval.End(),
 		height:   1,
 		size:     1,
 	}
@@ -366,9 +369,7 @@ func (t *Node) update() {
 		leftSize = t.left.Size()
 	}
 	if t.right == nil {
-		t.maxEnd = t.Interval().End()
 	} else {
-		t.maxEnd = t.right.MaxEnd()
 		rightHeight = t.right.Height()
 		rightSize = t.right.Size()
 	}
