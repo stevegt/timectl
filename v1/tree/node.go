@@ -45,35 +45,23 @@ type Node struct {
 }
 
 func (t *Node) MinPriority() float64 {
+	t.update()
 	return t.minPriority
 }
 
-func (t *Node) SetMinPriority(minPriority float64) {
-	t.minPriority = minPriority
-}
-
 func (t *Node) MaxPriority() float64 {
+	t.update()
 	return t.maxPriority
 }
 
-func (t *Node) SetMaxPriority(maxPriority float64) {
-	t.maxPriority = maxPriority
-}
-
 func (t *Node) MaxEnd() time.Time {
+	t.update()
 	return t.maxEnd
 }
 
-func (t *Node) SetMaxEnd(maxEnd time.Time) {
-	t.maxEnd = maxEnd
-}
-
 func (t *Node) MinStart() time.Time {
+	t.update()
 	return t.minStart
-}
-
-func (t *Node) SetMinStart(minStart time.Time) {
-	t.minStart = minStart
 }
 
 func (t *Node) Right() *Node {
@@ -89,23 +77,18 @@ func (t *Node) Parent() *Node {
 }
 
 func (t *Node) SetParent(parent *Node) {
+	t.SetDirty()
 	t.parent = parent
 }
 
 func (t *Node) Height() int {
+	t.update()
 	return t.height
 }
 
-func (t *Node) SetHeight(height int) {
-	t.height = height
-}
-
 func (t *Node) Size() int {
+	t.update()
 	return t.size
-}
-
-func (t *Node) SetSize(size int) {
-	t.size = size
 }
 
 // String returns a string representation of the node.
@@ -161,6 +144,7 @@ func (t *Node) SetInterval(iv interval.Interval) {
 	// t.mu.Lock()
 	// defer t.mu.Unlock()
 	t.interval = iv
+	t.SetDirty()
 }
 
 // newNodeFromInterval creates and returns a new Tree node containing the given interval.
@@ -197,9 +181,9 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 	t.left = left
 	if t.left != nil {
 		t.left.parent = t
-		t.left.Update()
+		t.left.SetDirty()
 	} else {
-		t.Update()
+		t.SetDirty()
 	}
 	return
 }
@@ -225,9 +209,9 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	t.right = right
 	if t.right != nil {
 		t.right.parent = t
-		t.right.Update()
+		t.right.SetDirty()
 	} else {
-		t.Update()
+		t.SetDirty()
 	}
 	return
 }
@@ -272,9 +256,9 @@ func (t *Node) RotateLeft() (R *Node) {
 	}
 	if x != nil {
 		x.parent = t
-		x.Update()
+		x.SetDirty()
 	} else {
-		t.Update()
+		t.SetDirty()
 	}
 	return
 }
@@ -319,56 +303,70 @@ func (t *Node) RotateRight() (L *Node) {
 	}
 	if y != nil {
 		y.parent = t
-		y.Update()
+		y.SetDirty()
 	} else {
-		t.Update()
+		t.SetDirty()
 	}
 	return
 }
 
-// Update updates the minimum and maximum values of this node and
+// update updates the minimum and maximum values of this node and
 // its ancestors.
-func (t *Node) Update() {
+func (t *Node) update() {
 	if t == nil {
 		return
 	}
 
+	if !t.dirty {
+		return
+	}
+	t.dirty = false
+
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.left == nil {
-		t.SetMinStart(t.Interval().Start())
+		t.minStart = t.Interval().Start()
 	} else {
-		t.SetMinStart(t.left.MinStart())
+		t.minStart = t.left.MinStart()
 		leftHeight = t.left.Height()
 		leftSize = t.left.Size()
 	}
 	if t.right == nil {
-		t.SetMaxEnd(t.Interval().End())
+		t.maxEnd = t.Interval().End()
 	} else {
-		t.SetMaxEnd(t.right.MaxEnd())
+		t.maxEnd = t.right.MaxEnd()
 		rightHeight = t.right.Height()
 		rightSize = t.right.Size()
 	}
 
-	t.SetMaxPriority(t.Interval().Priority())
-	t.SetMinPriority(t.Interval().Priority())
+	t.maxPriority = t.Interval().Priority()
+	t.minPriority = t.Interval().Priority()
 	if t.left != nil {
-		t.SetMaxPriority(max(t.MaxPriority(), t.left.MaxPriority()))
-		t.SetMinPriority(min(t.MinPriority(), t.left.MinPriority()))
+		t.maxPriority = max(t.MaxPriority(), t.left.MaxPriority())
+		t.minPriority = min(t.MinPriority(), t.left.MinPriority())
 	}
 	if t.right != nil {
-		t.SetMaxPriority(max(t.MaxPriority(), t.right.MaxPriority()))
-		t.SetMinPriority(min(t.MinPriority(), t.right.MinPriority()))
+		t.maxPriority = max(t.MaxPriority(), t.right.MaxPriority())
+		t.minPriority = min(t.MinPriority(), t.right.MinPriority())
 	}
 
 	// the height of the node is the height of the tallest child plus 1
-	t.SetHeight(1 + max(leftHeight, rightHeight))
+	t.height = 1 + max(leftHeight, rightHeight)
 	// the size of the node is the size of the left child plus the size
 	// of the right child plus 1
-	t.SetSize(1 + leftSize + rightSize)
+	t.size = 1 + leftSize + rightSize
 
 	if t.parent != nil {
 		// Pf("setMinMax: %s\n", t.Interval())
-		t.parent.Update()
+		t.parent.update()
+	}
+
+}
+
+// SetDirty sets the dirty flag on the node and all its ancestors.
+func (t *Node) SetDirty() {
+	t.dirty = true
+	if t.parent != nil {
+		t.parent.SetDirty()
 	}
 }

@@ -24,9 +24,9 @@ func TestMergeFree(t *testing.T) {
 	top.SetLeft(&Node{interval: interval.NewInterval(TreeStart, splitAt1200, 0)})
 	top.SetInterval(interval.NewInterval(splitAt1200, splitAt1400, 0))
 	top.SetRight(&Node{interval: interval.NewInterval(splitAt1400, TreeEnd, 0)})
-	top.Left().Update()
-	top.Right().Update()
-	top.Update()
+	top.Left().SetDirty()
+	top.Right().SetDirty()
+	top.SetDirty()
 
 	// Verify(t, top, false, true)
 

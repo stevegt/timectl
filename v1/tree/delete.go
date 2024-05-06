@@ -34,7 +34,6 @@ func (t *Node) free(node *Node) (old interval.Interval) {
 	old = node.Interval()
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
 	node.SetInterval(freeInterval)
-	node.Update()
 	return
 }
 
