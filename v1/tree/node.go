@@ -16,9 +16,6 @@ type Node struct {
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
 
-	// size is the number of nodes in the node's subtree, including the node
-	size int
-
 	// dirty is true if the node has been modified and Update() has not
 	// been called
 	dirty bool
@@ -48,6 +45,9 @@ type nodeCache struct {
 
 	// height is the height of the node's subtree, including the node
 	height *int
+
+	// size is the number of nodes in the node's subtree, including the node
+	size *int
 }
 
 // clearCache clears the node's cache.
@@ -139,8 +139,19 @@ func (t *Node) Height() int {
 }
 
 func (t *Node) Size() int {
-	t.update()
-	return t.size
+	if t.size != nil {
+		return *t.size
+	}
+	var leftSize, rightSize int
+	if t.left != nil {
+		leftSize = t.left.Size()
+	}
+	if t.right != nil {
+		rightSize = t.right.Size()
+	}
+	out := 1 + leftSize + rightSize
+	t.size = &out
+	return out
 }
 
 // String returns a string representation of the node.
@@ -203,7 +214,6 @@ func (t *Node) SetInterval(iv interval.Interval) {
 func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
-		size:     1,
 	}
 	node.clearCache()
 	return node
@@ -357,38 +367,6 @@ func (t *Node) RotateRight() (L *Node) {
 		t.SetDirty()
 	}
 	return
-}
-
-// update updates the minimum and maximum values of this node and
-// its ancestors.
-func (t *Node) update() {
-	if t == nil {
-		return
-	}
-
-	if !t.dirty {
-		return
-	}
-	t.dirty = false
-
-	var leftSize, rightSize int
-	if t.left == nil {
-	} else {
-		leftSize = t.left.Size()
-	}
-	if t.right == nil {
-	} else {
-		rightSize = t.right.Size()
-	}
-
-	// the size of the node is the size of the left child plus the size
-	// of the right child plus 1
-	t.size = 1 + leftSize + rightSize
-
-	if t.parent != nil {
-		t.parent.update()
-	}
-
 }
 
 // SetDirty sets the dirty flag on the node and all its ancestors.
