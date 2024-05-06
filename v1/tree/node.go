@@ -329,21 +329,6 @@ func (t *Node) SetMinMax() {
 		return
 	}
 
-	/*
-		for _, s := range seen {
-			if s == t {
-				Pf("seen:\n")
-				for _, s := range seen {
-					Pf("%s\n", s)
-				}
-				Pf("t: %s\n", t)
-				Assert(false, "cycle detected")
-			}
-		}
-
-		seen = append(seen, t)
-	*/
-
 	var leftHeight, rightHeight int
 	var leftSize, rightSize int
 	if t.left == nil {
