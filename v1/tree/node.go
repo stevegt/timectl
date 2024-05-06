@@ -23,10 +23,6 @@ type Node struct {
 	// rooted at this node
 	maxEnd time.Time
 
-	// minPriority is the lowest priority of any interval in the subtree
-	// rooted at this node, including this node
-	minPriority float64
-
 	// height is the height of the node's subtree, including the node
 	height int
 
@@ -44,27 +40,39 @@ type Node struct {
 
 // nodeCache is a cache of selected node fields
 type nodeCache struct {
+	// minPriority is the lowest priority of any interval in the subtree
+	// rooted at this node, including this node
+	minPriority *float64
+
 	// maxPriority is the highest priority of any interval in the subtree
 	// rooted at this node, including this node
-	maxPriority float64
+	maxPriority *float64
 }
 
 // clearCache clears the node's cache.
 func (t *Node) clearCache() {
-	t.nodeCache = nodeCache{
-		maxPriority: -1,
-	}
+	t.nodeCache = nodeCache{}
 }
 
 func (t *Node) MinPriority() float64 {
-	t.update()
-	return t.minPriority
+	if t.minPriority != nil {
+		return *t.minPriority
+	}
+	out := t.interval.Priority()
+	if t.left != nil {
+		out = min(out, t.left.MinPriority())
+	}
+	if t.right != nil {
+		out = min(out, t.right.MinPriority())
+	}
+	t.minPriority = &out
+	return out
 }
 
 func (t *Node) MaxPriority() float64 {
 	// check the cache first
-	if t.maxPriority >= 0 {
-		return t.maxPriority
+	if t.maxPriority != nil {
+		return *t.maxPriority
 	}
 	out := t.interval.Priority()
 	if t.left != nil {
@@ -73,7 +81,7 @@ func (t *Node) MaxPriority() float64 {
 	if t.right != nil {
 		out = max(out, t.right.MaxPriority())
 	}
-	t.maxPriority = out
+	t.maxPriority = &out
 	return out
 }
 
@@ -168,12 +176,11 @@ func (t *Node) SetInterval(iv interval.Interval) {
 // newNodeFromInterval creates and returns a new Tree node containing the given interval.
 func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
-		interval:    interval,
-		minStart:    interval.Start(),
-		maxEnd:      interval.End(),
-		minPriority: interval.Priority(),
-		height:      1,
-		size:        1,
+		interval: interval,
+		minStart: interval.Start(),
+		maxEnd:   interval.End(),
+		height:   1,
+		size:     1,
 	}
 	node.clearCache()
 	return node
@@ -356,17 +363,6 @@ func (t *Node) update() {
 		t.maxEnd = t.right.MaxEnd()
 		rightHeight = t.right.Height()
 		rightSize = t.right.Size()
-	}
-
-	t.maxPriority = t.Interval().Priority()
-	t.minPriority = t.Interval().Priority()
-	if t.left != nil {
-		t.maxPriority = max(t.MaxPriority(), t.left.MaxPriority())
-		t.minPriority = min(t.MinPriority(), t.left.MinPriority())
-	}
-	if t.right != nil {
-		t.maxPriority = max(t.MaxPriority(), t.right.MaxPriority())
-		t.minPriority = min(t.MinPriority(), t.right.MinPriority())
 	}
 
 	// the height of the node is the height of the tallest child plus 1
