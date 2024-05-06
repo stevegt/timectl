@@ -193,9 +193,9 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 	t.left = left
 	if t.left != nil {
 		t.left.parent = t
-		t.left.setMinMax()
+		t.left.SetMinMax()
 	} else {
-		t.setMinMax()
+		t.SetMinMax()
 	}
 	return
 }
@@ -221,9 +221,9 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	t.right = right
 	if t.right != nil {
 		t.right.parent = t
-		t.right.setMinMax()
+		t.right.SetMinMax()
 	} else {
-		t.setMinMax()
+		t.SetMinMax()
 	}
 	return
 }
@@ -268,9 +268,9 @@ func (t *Node) rotateLeft() (R *Node) {
 	}
 	if x != nil {
 		x.parent = t
-		x.setMinMax()
+		x.SetMinMax()
 	} else {
-		t.setMinMax()
+		t.SetMinMax()
 	}
 	return
 }
@@ -315,16 +315,16 @@ func (t *Node) rotateRight() (L *Node) {
 	}
 	if y != nil {
 		y.parent = t
-		y.setMinMax()
+		y.SetMinMax()
 	} else {
-		t.setMinMax()
+		t.SetMinMax()
 	}
 	return
 }
 
-// setMinMax updates the minimum and maximum values of this node and
+// SetMinMax updates the minimum and maximum values of this node and
 // its ancestors.
-func (t *Node) setMinMax() {
+func (t *Node) SetMinMax() {
 	if t == nil {
 		return
 	}
@@ -380,6 +380,6 @@ func (t *Node) setMinMax() {
 
 	if t.parent != nil {
 		// Pf("setMinMax: %s\n", t.Interval())
-		t.parent.setMinMax()
+		t.parent.SetMinMax()
 	}
 }

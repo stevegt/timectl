@@ -68,7 +68,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	case 1:
 		// newInterval fits exactly in this node's interval
 		f.SetInterval(newInterval)
-		f.setMinMax()
+		f.SetMinMax()
 		return true
 	case 2:
 		// newInterval fits in this node's interval with a free interval
