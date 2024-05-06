@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/reugn/async"
-	"github.com/stevegt/goadapt"
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
 )
@@ -109,17 +108,17 @@ func (t *Node) SetSize(size int) {
 func (t *Node) String() string {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	out := goadapt.Spf("Tree: %p\n", t)
-	out += goadapt.Spf("  Interval: %v\n", t.Interval())
-	out += goadapt.Spf("  Parent: %p\n", t.parent)
-	out += goadapt.Spf("  Left: %p\n", t.left)
-	out += goadapt.Spf("  Right: %p\n", t.right)
-	out += goadapt.Spf("  MinStart: %v\n", t.minStart)
-	out += goadapt.Spf("  MaxEnd: %v\n", t.maxEnd)
-	out += goadapt.Spf("  MaxPriority: %v\n", t.maxPriority)
-	out += goadapt.Spf("  MinPriority: %v\n", t.minPriority)
-	out += goadapt.Spf("  Height: %v\n", t.height)
-	out += goadapt.Spf("  Size: %v\n", t.size)
+	out := Spf("Tree: %p\n", t)
+	out += Spf("  Interval: %v\n", t.Interval())
+	out += Spf("  Parent: %p\n", t.parent)
+	out += Spf("  Left: %p\n", t.left)
+	out += Spf("  Right: %p\n", t.right)
+	out += Spf("  MinStart: %v\n", t.minStart)
+	out += Spf("  MaxEnd: %v\n", t.maxEnd)
+	out += Spf("  MaxPriority: %v\n", t.maxPriority)
+	out += Spf("  MinPriority: %v\n", t.minPriority)
+	out += Spf("  Height: %v\n", t.height)
+	out += Spf("  Size: %v\n", t.size)
 	return out
 }
 
@@ -128,7 +127,7 @@ func (t *Node) Busy() bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	goadapt.Assert(t.Interval() != nil, "unexpected nil interval")
+	Assert(t.Interval() != nil, "unexpected nil interval")
 	return t.Interval().Busy()
 }
 
