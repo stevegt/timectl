@@ -26,62 +26,6 @@ func NewTree() *Node {
 	return newNodeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
 }
 
-// SetLeft sets the left child of this node.  It returns the old left
-// child or nil if there was no old left child.  If the given child node
-// is already a child of another node, the right child of this node,
-// or the parent of this node, then this function clears the old
-// relationship before setting the new one.
-func (t *Node) SetLeft(left *Node) (old *Node) {
-	old = t.left
-	if left != nil && left.parent != nil {
-		if left.parent.left == left {
-			left.parent.left = nil
-		}
-		if left.parent.right == left {
-			left.parent.right = nil
-		}
-	}
-	if t.right == left {
-		t.right = nil
-	}
-	t.left = left
-	if t.left != nil {
-		t.left.parent = t
-		t.left.setMinMax()
-	} else {
-		t.setMinMax()
-	}
-	return
-}
-
-// SetRight sets the right child of this node.  It returns the old right
-// child or nil if there was no old right child.  If the given child node
-// is already a child of another node, the left child of this node,
-// or the parent of this node, then this function clears the old
-// relationship before setting the new one.
-func (t *Node) SetRight(right *Node) (old *Node) {
-	old = t.right
-	if right != nil && right.parent != nil {
-		if right.parent.left == right {
-			right.parent.left = nil
-		}
-		if right.parent.right == right {
-			right.parent.right = nil
-		}
-	}
-	if t.left == right {
-		t.left = nil
-	}
-	t.right = right
-	if t.right != nil {
-		t.right.parent = t
-		t.right.setMinMax()
-	} else {
-		t.setMinMax()
-	}
-	return
-}
-
 // Insert adds a new interval to the tree, adjusting the structure as
 // necessary.  Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
