@@ -44,6 +44,27 @@ type Node struct {
 	mu async.ReentrantLock
 }
 
+// clone returns a copy of the node.
+func (t *Node) clone() *Node {
+	if t == nil {
+		return nil
+	}
+	clone := &Node{
+		interval:    t.interval,
+		parent:      t.parent,
+		left:        t.left,
+		right:       t.right,
+		minStart:    t.minStart,
+		maxEnd:      t.maxEnd,
+		minPriority: t.minPriority,
+		maxPriority: t.maxPriority,
+		height:      t.height,
+		size:        t.size,
+		dirty:       t.dirty,
+	}
+	return clone
+}
+
 func (t *Node) MinPriority() float64 {
 	t.update()
 	return t.minPriority
@@ -134,7 +155,7 @@ func (t *Node) Interval() interval.Interval {
 	return t.interval
 }
 
-// SetInterval sets the node's interval.
+// SetInterval returns a cloned node with the given interval.
 func (t *Node) SetInterval(iv interval.Interval) {
 	// t.mu.Lock()
 	// defer t.mu.Unlock()
