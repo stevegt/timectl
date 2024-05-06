@@ -66,7 +66,7 @@ func (t *Node) Verify(ckBalance bool) error {
 		}
 
 		// the node should be a child of its parent
-		if node.Parent() != nil && node.Parent().left != node && node.Parent().right != node {
+		if node.Parent() != nil && node.Parent().Left() != node && node.Parent().right != node {
 			return fmt.Errorf("node is not a child of its parent")
 		}
 
@@ -81,8 +81,8 @@ func (t *Node) Verify(ckBalance bool) error {
 		// - each interval's minStart time should be equal to the minimum
 		//   of its start time and the start time of its left child
 		expectMinStart := node.MinStart()
-		if node.left != nil {
-			gotMinStart := util.MinTime(start, node.left.MinStart())
+		if node.Left() != nil {
+			gotMinStart := util.MinTime(start, node.Left().MinStart())
 			if !expectMinStart.Equal(gotMinStart) {
 				return fmt.Errorf("%s minStart time does not match minimum of start time and left child minStart time", node)
 			}
@@ -141,7 +141,7 @@ func (t *Node) ckBalance(ancestors Path) error {
 	myPath := ancestors.Append(t)
 
 	// check this node's balance
-	leftHeight := t.left.CalcHeight()
+	leftHeight := t.Left().CalcHeight()
 	rightHeight := t.right.CalcHeight()
 	if leftHeight < rightHeight-1 || rightHeight < leftHeight-1 {
 		return fmt.Errorf("path: %v left height: %d, right height: %d", myPath, leftHeight, rightHeight)
@@ -149,7 +149,7 @@ func (t *Node) ckBalance(ancestors Path) error {
 
 	if false {
 		//   check the balance of the left and right subtrees
-		leftBalance := t.left.ckBalance(myPath)
+		leftBalance := t.Left().ckBalance(myPath)
 		if leftBalance != nil {
 			return leftBalance
 		}
@@ -167,5 +167,5 @@ func (t *Node) CalcHeight() int {
 	if t == nil {
 		return 0
 	}
-	return 1 + max(t.left.CalcHeight(), t.right.CalcHeight())
+	return 1 + max(t.Left().CalcHeight(), t.right.CalcHeight())
 }

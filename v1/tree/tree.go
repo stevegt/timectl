@@ -89,7 +89,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		// left child to the left of the new left child
 		newLeftNode := newNodeFromInterval(newIntervals[0])
 		oldLeft := f.SetLeft(newLeftNode)
-		f.left.SetLeft(oldLeft)
+		f.Left().SetLeft(oldLeft)
 
 		// put the second interval in this node
 		f.SetInterval(newIntervals[1])
@@ -109,7 +109,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	// Height in the first place and not need rebalancing
 	f.ckHeight()
 	f.right.ckHeight()
-	f.left.ckHeight()
+	f.Left().ckHeight()
 
 	Assert(false, "unexpected code path")
 	return false
@@ -145,8 +145,8 @@ func (t *Node) AllIntervals() []interval.Interval {
 	defer t.mu.Unlock()
 
 	var intervals []interval.Interval
-	if t.left != nil {
-		intervals = append(intervals, t.left.AllIntervals()...)
+	if t.Left() != nil {
+		intervals = append(intervals, t.Left().AllIntervals()...)
 	}
 	intervals = append(intervals, t.Interval())
 	if t.right != nil {
@@ -170,8 +170,8 @@ func (t *Node) Conflicts(iv interval.Interval, includeFree bool) []interval.Inte
 	if t.Interval().Conflicts(iv, includeFree) {
 		conflicts = append(conflicts, t.Interval())
 	}
-	if t.left != nil {
-		conflicts = append(conflicts, t.left.Conflicts(iv, includeFree)...)
+	if t.Left() != nil {
+		conflicts = append(conflicts, t.Left().Conflicts(iv, includeFree)...)
 	}
 	if t.right != nil {
 		conflicts = append(conflicts, t.right.Conflicts(iv, includeFree)...)
@@ -203,9 +203,9 @@ func (t *Node) FindFree(first bool, minStart, maxEnd time.Time, duration time.Du
 	var children []*Node
 	var start, end time.Time
 	if first {
-		children = []*Node{t.left, t.right}
+		children = []*Node{t.Left(), t.right}
 	} else {
-		children = []*Node{t.right, t.left}
+		children = []*Node{t.right, t.Left()}
 	}
 
 	for _, child := range children {
@@ -270,8 +270,8 @@ func (t *Node) allPathsBlocking(path Path, c chan Path) {
 	myPath := path.Append(t)
 	// Pf("path %p myPath %p\n", path, myPath)
 	// Pf("send: %-10s %v\n", myPath, t.leafInterval)
-	if t.left != nil {
-		t.left.allPathsBlocking(myPath, c)
+	if t.Left() != nil {
+		t.Left().allPathsBlocking(myPath, c)
 	}
 	c <- myPath
 	if t.right != nil {
@@ -310,20 +310,20 @@ func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 	}
 
 	if fwd {
-		t.left.allNodesBlocking(fwd, start, end, c)
+		t.Left().allNodesBlocking(fwd, start, end, c)
 		c <- t
 		t.right.allNodesBlocking(fwd, start, end, c)
 	} else {
 		t.right.allNodesBlocking(fwd, start, end, c)
 		c <- t
-		t.left.allNodesBlocking(fwd, start, end, c)
+		t.Left().allNodesBlocking(fwd, start, end, c)
 	}
 }
 
 // FirstNode returns the first node in the tree.
 func (t *Node) FirstNode() *Node {
-	if t.left != nil {
-		return t.left.FirstNode()
+	if t.Left() != nil {
+		return t.Left().FirstNode()
 	}
 	return t
 }
@@ -351,7 +351,7 @@ func (t *Node) AsDot(path Path) string {
 	}
 	id := path.String()
 	label := Spf("parent %p\\nthis %p\\n", t.Parent(), t)
-	label += Spf("left %p    right %p\\n", t.left, t.right)
+	label += Spf("left %p    right %p\\n", t.Left(), t.right)
 	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart(), t.MaxEnd(), t.MaxPriority())
 	if t.Interval() != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval())
@@ -359,9 +359,9 @@ func (t *Node) AsDot(path Path) string {
 		label += "\\nnil"
 	}
 	out += fmt.Sprintf("  %s [label=\"%s\"];\n", id, label)
-	if t.left != nil {
+	if t.Left() != nil {
 		// get left child's dot representation
-		out += t.left.AsDot(path.Append(t.left))
+		out += t.Left().AsDot(path.Append(t.Left()))
 		// add edge from this node to left child
 		out += fmt.Sprintf("  %s -> %sl [label=%s];\n", id, id, "l")
 	} else {
