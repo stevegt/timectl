@@ -12,6 +12,7 @@ import (
 // Node represents a node in an interval tree.
 type Node struct {
 	interval interval.Interval
+	path     *Path // Pointer to the path from the root of the tree
 	parent   *Node // Pointer to this node's parent
 	left     *Node // Pointer to the left child
 	right    *Node // Pointer to the right child
