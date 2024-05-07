@@ -21,6 +21,26 @@ var TreeStartStr = TreeStart.Format(time.RFC3339)
 // TreeEndStr is the string representation of TreeEnd.
 var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
+// Tree is a binary tree of nodes.  Each node in the tree contains an
+// interval.  Trees are copy-on-write, so any modification to a tree
+// returns a new tree.
+type Tree struct {
+	root *Node
+}
+
+// clone returns a copy of the tree.
+func (t *Tree) clone() *Tree {
+	return &Tree{root: t.root}
+}
+
+// NewNewTree creates and returns a new Tree node containing a free interval spanning all time.
+func NewNewTree() *Tree {
+	out := &Tree{
+		root: newNodeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0)),
+	}
+	return out
+}
+
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Node {
 	return newNodeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
