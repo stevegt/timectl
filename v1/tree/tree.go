@@ -361,6 +361,8 @@ func (t *Node) AsDot(path Path) string {
 	// t.Mu.Lock()
 	// defer t.Mu.Unlock()
 
+	parent := path.Last()
+
 	var out string
 	var top bool
 	if path == nil {
@@ -369,7 +371,7 @@ func (t *Node) AsDot(path Path) string {
 		out += "digraph G {\n"
 	}
 	id := path.String()
-	label := Spf("parent %p\\nthis %p\\n", t.Parent(), t)
+	label := Spf("parent %p\\nthis %p\\n", parent, t)
 	label += Spf("left %p    right %p\\n", t.Left(), t.Right())
 	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart(), t.MaxEnd(), t.MaxPriority())
 	if t.Interval() != nil {
