@@ -12,8 +12,6 @@ import (
 // Node represents a node in an interval tree.
 type Node struct {
 	interval interval.Interval
-	// tree is the tree that contains this node
-	tree *Tree
 	// path from the root of the tree. The first element
 	// of the path is the root node of the tree, and the
 	// last element is the node parent
@@ -34,7 +32,6 @@ func (t *Node) clone() *Node {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	out := &Node{
-		tree:     t.tree,
 		interval: t.interval,
 		path:     t.path,
 		left:     t.left,
@@ -42,14 +39,6 @@ func (t *Node) clone() *Node {
 	}
 	out.clearCache()
 	return out
-}
-
-// cloneTree returns a copy of the node's root tree.
-// XXX remove this after moving tree ops to tree.go
-func (t *Node) cloneTree() *Tree {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.tree.clone()
 }
 
 // nodeCache is a cache of selected node fields
