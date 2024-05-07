@@ -251,6 +251,7 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 // is already a child of another node, the right child of this node,
 // or the parent of this node, then this function clears the old
 // relationship before setting the new one.
+// XXX move to Tree
 func (t *Node) SetLeft(left *Node) (old *Node) {
 	old = t.left
 	if left != nil && left.Parent() != nil {
@@ -279,6 +280,7 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 // is already a child of another node, the left child of this node,
 // or the parent of this node, then this function clears the old
 // relationship before setting the new one.
+// XXX move to Tree
 func (t *Node) SetRight(right *Node) (old *Node) {
 	old = t.right
 	if right != nil && right.Parent() != nil {
@@ -303,6 +305,7 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 }
 
 // RotateLeft performs a left rotation on this node.
+// XXX move to Tree
 func (t *Node) RotateLeft() (R *Node) {
 	if t == nil || t.right == nil {
 		return
@@ -350,6 +353,7 @@ func (t *Node) RotateLeft() (R *Node) {
 }
 
 // RotateRight performs a right rotation on this node.
+// XXX move to Tree
 func (t *Node) RotateRight() (L *Node) {
 	if t == nil || t.left == nil {
 		return
