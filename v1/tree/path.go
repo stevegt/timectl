@@ -20,6 +20,14 @@ func (p Path) Append(t *Node) Path {
 	return newPath
 }
 
+// First returns the first node in the path.
+func (p Path) First() *Node {
+	if len(p) == 0 {
+		return nil
+	}
+	return p[0]
+}
+
 // Last returns the last node in the path.
 func (p Path) Last() *Node {
 	if len(p) == 0 {
