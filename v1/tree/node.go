@@ -12,10 +12,14 @@ import (
 // Node represents a node in an interval tree.
 type Node struct {
 	interval interval.Interval
-	path     *Path // Pointer to the path from the root of the tree
-	parent   *Node // Pointer to this node's parent
-	left     *Node // Pointer to the left child
-	right    *Node // Pointer to the right child
+	// path from the root of the tree. The first element
+	// of the path is the root of the tree, and the last element is the
+	// node parent.
+	path Path
+	// Pointer to the left child
+	left *Node
+	// Pointer to the right child
+	right *Node
 
 	mu async.ReentrantLock
 
@@ -29,7 +33,7 @@ func (t *Node) clone() *Node {
 	defer t.mu.Unlock()
 	out := &Node{
 		interval: t.interval,
-		parent:   t.parent,
+		path:     t.path,
 		left:     t.left,
 		right:    t.right,
 	}
@@ -65,8 +69,8 @@ type nodeCache struct {
 // ClearCache clears the cache of this node and all its ancestors.
 func (t *Node) ClearCache() {
 	t.nodeCache = nodeCache{}
-	if t.parent != nil {
-		t.parent.ClearCache()
+	if t.Parent() != nil {
+		t.Parent().ClearCache()
 	}
 }
 
@@ -134,7 +138,15 @@ func (t *Node) Left() *Node {
 }
 
 func (t *Node) Parent() *Node {
-	return t.parent
+	return t.path.Last()
+}
+
+func (t *Node) SetParent(parent *Node) {
+	if len(t.path) == 0 {
+		t.path = append(t.path, parent)
+	} else {
+		t.path[len(t.path)-1] = parent
+	}
 }
 
 func (t *Node) Height() int {
@@ -175,7 +187,7 @@ func (t *Node) String() string {
 	defer t.mu.Unlock()
 	out := Spf("Tree: %p\n", t)
 	out += Spf("  Interval: %v\n", t.Interval())
-	out += Spf("  Parent: %p\n", t.parent)
+	out += Spf("  Parent: %p\n", t.Parent())
 	out += Spf("  Left: %p\n", t.left)
 	out += Spf("  Right: %p\n", t.right)
 	out += Spf("  MinStart: %v\n", t.minStart)
@@ -241,12 +253,12 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 // relationship before setting the new one.
 func (t *Node) SetLeft(left *Node) (old *Node) {
 	old = t.left
-	if left != nil && left.parent != nil {
-		if left.parent.left == left {
-			left.parent.left = nil
+	if left != nil && left.Parent() != nil {
+		if left.Parent().left == left {
+			left.Parent().left = nil
 		}
-		if left.parent.right == left {
-			left.parent.right = nil
+		if left.Parent().right == left {
+			left.Parent().right = nil
 		}
 	}
 	if t.right == left {
@@ -254,7 +266,7 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 	}
 	t.left = left
 	if t.left != nil {
-		t.left.parent = t
+		t.left.SetParent(t)
 		t.left.ClearCache()
 	} else {
 		t.ClearCache()
@@ -269,12 +281,12 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 // relationship before setting the new one.
 func (t *Node) SetRight(right *Node) (old *Node) {
 	old = t.right
-	if right != nil && right.parent != nil {
-		if right.parent.left == right {
-			right.parent.left = nil
+	if right != nil && right.Parent() != nil {
+		if right.Parent().left == right {
+			right.Parent().left = nil
 		}
-		if right.parent.right == right {
-			right.parent.right = nil
+		if right.Parent().right == right {
+			right.Parent().right = nil
 		}
 	}
 	if t.left == right {
@@ -282,7 +294,7 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	}
 	t.right = right
 	if t.right != nil {
-		t.right.parent = t
+		t.right.SetParent(t)
 		t.right.ClearCache()
 	} else {
 		t.ClearCache()
@@ -316,20 +328,20 @@ func (t *Node) RotateLeft() (R *Node) {
 	//
 	R.left = t
 	t.right = x
-	R.parent = t.parent
-	t.parent = R
-	if R.parent != nil {
+	R.SetParent(t.Parent())
+	t.SetParent(R)
+	if R.Parent() != nil {
 		switch {
-		case R.parent.left == t:
-			R.parent.left = R
-		case R.parent.right == t:
-			R.parent.right = R
+		case R.Parent().left == t:
+			R.Parent().left = R
+		case R.Parent().right == t:
+			R.Parent().right = R
 		default:
 			Assert(false, "can't find t in R.Parent")
 		}
 	}
 	if x != nil {
-		x.parent = t
+		x.SetParent(t)
 		x.ClearCache()
 	} else {
 		t.ClearCache()
@@ -363,20 +375,20 @@ func (t *Node) RotateRight() (L *Node) {
 	//
 	L.right = t
 	t.left = y
-	L.parent = t.parent
-	t.parent = L
-	if L.parent != nil {
+	L.SetParent(t.Parent())
+	t.SetParent(L)
+	if L.Parent() != nil {
 		switch {
-		case L.parent.left == t:
-			L.parent.left = L
-		case L.parent.right == t:
-			L.parent.right = L
+		case L.Parent().left == t:
+			L.Parent().left = L
+		case L.Parent().right == t:
+			L.Parent().right = L
 		default:
 			Assert(false, "can't find t in L.Parent")
 		}
 	}
 	if y != nil {
-		y.parent = t
+		y.SetParent(t)
 		y.ClearCache()
 	} else {
 		t.ClearCache()

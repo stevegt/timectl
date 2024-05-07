@@ -3,6 +3,13 @@ package tree
 // Path is a slice of Tree nodes.
 type Path []*Node
 
+// Clone returns a copy of the path.
+func (p Path) Clone() Path {
+	newPath := make(Path, len(p))
+	copy(newPath, p)
+	return newPath
+}
+
 // Append returns a new Path with the given node appended to the end.
 func (p Path) Append(t *Node) Path {
 	// because append may reallocate the underlying array, we need to
@@ -15,6 +22,9 @@ func (p Path) Append(t *Node) Path {
 
 // Last returns the last node in the path.
 func (p Path) Last() *Node {
+	if len(p) == 0 {
+		return nil
+	}
 	return p[len(p)-1]
 }
 
