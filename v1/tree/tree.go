@@ -355,13 +355,10 @@ func (t *Node) LastNode() *Node {
 	return t
 }
 
-// AsDot returns a string representation of the tree in Graphviz DOT
-// format without relying on any other Tree methods.
+// AsDot returns a string representation of the tree in Graphviz DOT format
 func (t *Node) AsDot(path Path) string {
 	// t.Mu.Lock()
 	// defer t.Mu.Unlock()
-
-	parent := path.Last()
 
 	var out string
 	var top bool
@@ -371,8 +368,7 @@ func (t *Node) AsDot(path Path) string {
 		out += "digraph G {\n"
 	}
 	id := path.String()
-	label := Spf("parent %p\\nthis %p\\n", parent, t)
-	label += Spf("left %p    right %p\\n", t.Left(), t.Right())
+	label := Spf("left %p    right %p\\n", t.Left(), t.Right())
 	label += Spf("%v\\nminStart %v\\nmaxEnd %v\\nmaxPriority %v", id, t.MinStart(), t.MaxEnd(), t.MaxPriority())
 	if t.Interval() != nil {
 		label += fmt.Sprintf("\\n%s", t.Interval())
