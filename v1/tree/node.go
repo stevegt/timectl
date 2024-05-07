@@ -14,11 +14,11 @@ type Node struct {
 	interval interval.Interval
 	// path from the root of the tree. The first element
 	// of the path is the root of the tree, and the last element is the
-	// node parent.
+	// node parent
 	path Path
-	// Pointer to the left child
+	// left child
 	left *Node
-	// Pointer to the right child
+	// right child
 	right *Node
 
 	mu async.ReentrantLock
