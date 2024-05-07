@@ -237,7 +237,7 @@ func (t *Node) SetInterval(iv interval.Interval) {
 	t.clearCache()
 }
 
-// newNodeFromInterval creates and returns a new Tree node containing the given interval.
+// newNodeFromInterval creates and returns a new node containing the given interval.
 func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
