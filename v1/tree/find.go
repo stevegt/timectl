@@ -7,34 +7,48 @@ import (
 // . "github.com/stevegt/goadapt"
 
 // FindExact returns the tree node containing the exact interval that
-// matches the given interval, along with the path of ancestor nodes.
-// If the exact interval is not found, then the path and found node
-// are both nil.  If the exact interval is in the root node, then the
-// path is nil.
-func (t *Node) FindExact(interval interval.Interval) (path []*Node, found *Node) {
+// matches the given interval, along with the path to the node,
+// including the found node.  If the exact interval is not found, then
+// the path and found node are both nil.  If the exact interval is in
+// the root node, then the path is nil.
+func (t *Node) FindExact(interval interval.Interval) (path Path, found *Node) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.findExact(interval, nil)
+	return t.findExact(interval, Path{})
 }
 
 // findExact is a recursive version of FindExact for internal
 // use.  The path parameter is used to track the path to the
 // current node during recursion.
-func (t *Node) findExact(interval interval.Interval, pathIn []*Node) (pathOut []*Node, found *Node) {
+func (t *Node) findExact(interval interval.Interval, pathIn Path) (pathOut Path, found *Node) {
+
+	pathOut = pathIn.Clone()
 
 	if t.Interval().Equal(interval) {
-		return pathIn, t
+		pathOut.Append(t)
+		found = t
+		return
 	}
 
-	path := append(pathIn, t)
+	pathOut.Append(t)
 
 	// try left
 	if t.Left() != nil {
-		return t.Left().findExact(interval, path)
+		p, n := t.Left().findExact(interval, pathOut)
+		if n != nil {
+			pathOut.Append(p...)
+			found = n
+			return
+		}
 	}
 	// try right
 	if found == nil && t.Right() != nil {
-		return t.Right().findExact(interval, path)
+		p, n := t.Right().findExact(interval, pathOut)
+		if n != nil {
+			pathOut.Append(p...)
+			found = n
+			return
+		}
 	}
 
 	return nil, nil

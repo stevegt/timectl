@@ -21,6 +21,30 @@ import (
 // node interval end time is less than or equal to the right node
 // interval end time.
 
+// test path
+func TestPath(t *testing.T) {
+	// create a tree
+	top := NewTree()
+
+	// insert some intervals
+	i0900_0930 := Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
+	i1000_1100 := Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
+	i1100_1200 := Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
+	i1200_1500 := Insert(top, "2024-01-01T12:00:00Z", "2024-01-01T15:00:00Z", 1)
+
+	// find the path to the node that contains i0900_0930
+	path, node := top.FindExact(i0900_0930)
+
+	Pf("path: %s\n", path)
+	Pf("node: %v\n", node)
+
+	_ = i1000_1100
+	_ = i1100_1200
+	_ = i1200_1500
+
+	t.FailNow()
+}
+
 // test contiguous as a standalone function without a tree
 func TestContiguous(t *testing.T) {
 	// create some intervals

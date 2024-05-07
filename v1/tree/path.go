@@ -1,6 +1,10 @@
 package tree
 
-// Path is a slice of Tree nodes.
+import (
+	. "github.com/stevegt/goadapt"
+)
+
+// Path is a slice of Nodes originating from the root of a Tree.
 type Path []*Node
 
 // Clone returns a copy of the path.
@@ -10,13 +14,15 @@ func (p Path) Clone() Path {
 	return newPath
 }
 
-// Append returns a new Path with the given node appended to the end.
-func (p Path) Append(t *Node) Path {
+// Append returns a new Path with the given nodes appended to the end.
+func (p Path) Append(nodes ...*Node) Path {
 	// because append may reallocate the underlying array, we need to
 	// use copy instead of append to avoid modifying the original path
-	newPath := make(Path, len(p)+1)
+	newPath := make(Path, len(p)+len(nodes))
 	copy(newPath, p)
-	newPath[len(p)] = t
+	for i, n := range nodes {
+		newPath[len(p)+i] = n
+	}
 	return newPath
 }
 
@@ -53,4 +59,26 @@ func (p Path) String() string {
 		parent = t
 	}
 	return s
+}
+
+// Nav returns the navigation directions to get to a node from the
+// root.  If the path is empty, it returns an empty slice.  If the
+// tree has only a root node, the path is {'t'}.  If the tree has a
+// root node and a left child, the path is {'t', 'l'}, etc.
+func (p Path) Nav() (nav []rune) {
+	nav = make([]rune, len(p))
+	var parent *Node
+	for i, node := range p {
+		switch {
+		case parent == nil:
+			nav[i] = 't'
+		case node == parent.Left():
+			nav[i] = 'l'
+		case node == parent.Right():
+			nav[i] = 'r'
+		default:
+			Assert(false, "Node %v is not a child of %v", node, parent)
+		}
+	}
+	return nav
 }
