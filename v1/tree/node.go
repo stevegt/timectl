@@ -37,7 +37,7 @@ func (t *Node) clone() *Node {
 		left:     t.left,
 		right:    t.right,
 	}
-	out.ClearCache()
+	out.clearCache()
 	return out
 }
 
@@ -66,11 +66,11 @@ type nodeCache struct {
 	size *int
 }
 
-// ClearCache clears the cache of this node and all its ancestors.
-func (t *Node) ClearCache() {
+// clearCache clears the cache of this node and all its ancestors.
+func (t *Node) clearCache() {
 	t.nodeCache = nodeCache{}
 	if t.Parent() != nil {
-		t.Parent().ClearCache()
+		t.Parent().clearCache()
 	}
 }
 
@@ -234,7 +234,7 @@ func (t *Node) SetInterval(iv interval.Interval) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.interval = iv
-	t.ClearCache()
+	t.clearCache()
 }
 
 // newNodeFromInterval creates and returns a new Tree node containing the given interval.
@@ -242,7 +242,7 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 	node := &Node{
 		interval: interval,
 	}
-	node.ClearCache()
+	node.clearCache()
 	return node
 }
 
@@ -267,9 +267,9 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 	t.left = left
 	if t.left != nil {
 		t.left.SetParent(t)
-		t.left.ClearCache()
+		t.left.clearCache()
 	} else {
-		t.ClearCache()
+		t.clearCache()
 	}
 	return
 }
@@ -295,9 +295,9 @@ func (t *Node) SetRight(right *Node) (old *Node) {
 	t.right = right
 	if t.right != nil {
 		t.right.SetParent(t)
-		t.right.ClearCache()
+		t.right.clearCache()
 	} else {
-		t.ClearCache()
+		t.clearCache()
 	}
 	return
 }
@@ -342,9 +342,9 @@ func (t *Node) RotateLeft() (R *Node) {
 	}
 	if x != nil {
 		x.SetParent(t)
-		x.ClearCache()
+		x.clearCache()
 	} else {
-		t.ClearCache()
+		t.clearCache()
 	}
 	return
 }
@@ -389,9 +389,9 @@ func (t *Node) RotateRight() (L *Node) {
 	}
 	if y != nil {
 		y.SetParent(t)
-		y.ClearCache()
+		y.clearCache()
 	} else {
-		t.ClearCache()
+		t.clearCache()
 	}
 	return
 }
