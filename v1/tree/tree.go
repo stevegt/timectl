@@ -61,7 +61,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 
 	// use FindLowerPriority to find a free interval where we can
 	// insert the new interval
-	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
+	nodes, _ := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1, nil)
 	if len(nodes) == 0 {
 		// XXX return a meaningful error
 		return false
@@ -398,4 +398,13 @@ func (t *Node) AsDot(path Path) string {
 		out += "}\n"
 	}
 	return out
+}
+
+// GetNode returns the node at the given path.
+func (t *Node) GetNode(path Path) *Node {
+	if len(path) == 0 {
+		return t
+	}
+	path := path.Clone()
+	return t.GetNode(path[1:])
 }

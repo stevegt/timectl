@@ -14,7 +14,7 @@ import (
 // XXX this should be refactored to find and return a tree instead of
 // a slice; the common parent of the set will always be a member of
 // the set.
-func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
+func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64, parent *Node) (out, outParent *Node) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -33,23 +33,22 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 			continue
 		}
 		// search range fits entirely within child
-		return child.FindLowerPriority(first, searchStart, searchEnd, duration, priority)
+		return child.FindLowerPriority(first, searchStart, searchEnd, duration, priority, t)
 	}
 
-	// manage a sliding window of a candidate node set
-	var window []*Node
-	var sum time.Duration
 	// iterate over the nodes in the tree; either in order or reverse
 	// order depending on the value of first.
+	var window []*Node
+	var sum time.Duration
 	iter := NewIterator(t, first)
 	for {
 		node := iter.Next()
 		if node == nil {
 			break
 		}
-		// if the node priority is too high, then reset the window
+		// if the node priority is too high, then reset
 		if node.Interval().Priority() >= priority {
-			window = nil
+			out = nil
 			sum = 0
 			continue
 		}
@@ -76,10 +75,10 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 				}
 				window = newWindow
 			}
-			return window
+			return window, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 // Iterator allows iterating over the nodes in the tree in either
@@ -88,7 +87,7 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 // order.
 type Iterator struct {
 	Tree *Node
-	path []*Node
+	path Path
 	Fwd  bool
 }
 
@@ -122,7 +121,8 @@ func (t *Node) buildpath(fwd bool) []*Node {
 // forward mode, then the nodes are returned in order of start time.
 // If the iterator is in reverse mode, then the nodes are returned in
 // reverse order of start time.
-func (it *Iterator) Next() *Node {
+// XXX refactor to return a Path instead of a Node
+func (it *Iterator) Next() Path {
 	if len(it.path) == 0 {
 		return nil
 	}

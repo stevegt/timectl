@@ -199,6 +199,13 @@ func (t *Node) String() string {
 	return out
 }
 
+// Priority returns the priority of the interval in the node.
+func (t *Node) Priority() float64 {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.Interval().Priority()
+}
+
 // Busy returns true if the interval is busy.
 func (t *Node) Busy() bool {
 	t.mu.Lock()
@@ -229,12 +236,13 @@ func (t *Node) Interval() interval.Interval {
 	return t.interval
 }
 
-// SetInterval sets the node's interval.
-func (t *Node) SetInterval(iv interval.Interval) {
+// SetInterval sets the node's interval and returns the new node.
+func (t *Node) SetInterval2(iv interval.Interval) (out *Node) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.interval = iv
-	t.clearCache()
+	out = t.clone()
+	out.interval = iv
+	out.clearCache()
 }
 
 // newNodeFromInterval creates and returns a new node containing the given interval.

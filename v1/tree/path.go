@@ -54,3 +54,25 @@ func (p Path) String() string {
 	}
 	return s
 }
+
+// Nav returns the navigation directions to get to a node from the
+// root.  If the path is empty, it returns an empty slice.  If the
+// tree has only a root node, the path is {'t'}.  If the tree has a
+// root node and a left child, the path is {'t', 'l'}, etc.
+func (p Path) Nav() (nav []rune) {
+	nav = make([]rune, len(p))
+	var parent *Node
+	for i, node := range p {
+		switch {
+		case parent == nil:
+			nav[i] = 't'
+		case node == parent.Left():
+			nav[i] = 'l'
+		case node == parent.Right():
+			nav[i] = 'r'
+		default:
+			Assert(false, "Node %v is not a child of %v", node, parent)
+		}
+	}
+	return nav
+}
