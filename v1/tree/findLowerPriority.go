@@ -101,9 +101,9 @@ func NewIterator(t *Node, fwd bool) *Iterator {
 }
 
 // buildpath builds a path to the first or last node in the tree.
-func (t *Node) buildpath(fwd bool) []*Node {
+func (t *Node) buildpath(fwd bool) Path {
 	node := t
-	path := []*Node{node}
+	path := Path{node}
 	if fwd {
 		for node.Left() != nil {
 			node = node.Left()
