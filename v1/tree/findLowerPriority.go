@@ -133,6 +133,7 @@ func (it *Iterator) Next() (node *Node, path Path) {
 
 	// return the last node in the path
 	node = it.path.Last()
+	path = it.path.Clone()
 
 	// configure the path for the next iteration
 	if it.Fwd {
@@ -175,7 +176,7 @@ func (it *Iterator) Next() (node *Node, path Path) {
 			}
 		}
 	}
-	return node, path
+	return
 }
 
 func (t *Node) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {

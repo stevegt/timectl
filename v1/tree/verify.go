@@ -49,7 +49,8 @@ func (t *Node) Verify(ckBalance bool) error {
 	var prevNode *Node
 	iter := NewIterator(t, true)
 	for {
-		node, _ := iter.Next()
+		_, path := iter.Next()
+		node := path.Last()
 		if node == nil {
 			break
 		}
