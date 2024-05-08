@@ -132,19 +132,22 @@ func (it *Iterator) Next() *Node {
 	}
 
 	// return the last node in the path
-	res := it.path.Last()
+	node := it.path.Last()
 
 	// configure the path for the next iteration
 	if it.Fwd {
-		if res.Right() != nil {
-			it.path = it.path.Append(res.Right().buildpath(it.Fwd)...)
-			// it.path = append(it.path, res.Right().buildpath(it.Fwd)...)
+		if node.Right() != nil {
+			// node has a right child; get the path to the right
+			// child's leftmost node and append it to the path for
+			// next time
+			leftPath := node.Right().buildpath(it.Fwd)
+			it.path = it.path.Append(leftPath...)
 		} else {
 			// pop nodes off the tail of the path until we find a node
 			// that starts later than res
 			for {
 				try := it.path[len(it.path)-1]
-				if try.Interval().Start().After(res.Interval().Start()) {
+				if try.Interval().Start().After(node.Interval().Start()) {
 					break
 				}
 				it.path = it.path[:len(it.path)-1]
@@ -154,14 +157,14 @@ func (it *Iterator) Next() *Node {
 			}
 		}
 	} else {
-		if res.Left() != nil {
-			it.path = append(it.path, res.Left().buildpath(it.Fwd)...)
+		if node.Left() != nil {
+			it.path = append(it.path, node.Left().buildpath(it.Fwd)...)
 		} else {
 			// pop nodes off the tail of the path until we find a node
 			// that starts earlier than res
 			for {
 				try := it.path[len(it.path)-1]
-				if try.Interval().Start().Before(res.Interval().Start()) {
+				if try.Interval().Start().Before(node.Interval().Start()) {
 					break
 				}
 				it.path = it.path[:len(it.path)-1]
@@ -171,7 +174,7 @@ func (it *Iterator) Next() *Node {
 			}
 		}
 	}
-	return res
+	return node
 }
 
 func (t *Node) XXXFindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
