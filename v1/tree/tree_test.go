@@ -47,6 +47,13 @@ func TestPath(t *testing.T) {
 	Tassert(t, node != nil, "Expected a node, got nil")
 	Tassert(t, node.Interval().Equal(i1100_1200), "Expected node to be i1100_1200, got %v", node.Interval())
 
+	// pop the last node off of the path
+	path = path.Pop()
+	node = path.Last()
+	Tassert(t, len(path) == 3, "Expected a path of length 3, got %d", len(path))
+	Tassert(t, node != nil, "Expected a node, got nil")
+	Tassert(t, node.Interval().Equal(i1200_1500), "Expected node to be i1200_1500, got %v", node.Interval())
+
 	_ = i0900_0930
 	_ = i1000_1100
 	_ = i1200_1500
