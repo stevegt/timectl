@@ -30,7 +30,7 @@ func (t *Node) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Inter
 	}
 
 	// find time to fit the new interval
-	lower := t.FindLowerPriority(first, minStart, maxEnd, iv.Duration(), iv.Priority())
+	lower, _ := t.FindLowerPriority(first, minStart, maxEnd, iv.Duration(), iv.Priority())
 	if len(lower) == 0 {
 		return nil, nil, fmt.Errorf("no free slots found between %s and %s below priority %f", minStart, maxEnd, iv.Priority())
 	}

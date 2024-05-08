@@ -288,7 +288,7 @@ func TestRemoveRange(t *testing.T) {
 	Tassert(t, len(conflicts) == 3, "Expected 3 conflicts, got %v", conflicts)
 	// check FindLowerPriority function
 	duration := end.Sub(start)
-	nodes := top.FindLowerPriority(true, start, end, duration, math.MaxFloat64)
+	nodes, _ := top.FindLowerPriority(true, start, end, duration, math.MaxFloat64)
 	Tassert(t, len(nodes) == 3, "Expected 3 nodes, got %v", nodes)
 
 	// remove the intervals

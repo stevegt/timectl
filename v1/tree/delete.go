@@ -48,7 +48,7 @@ func (t *Node) RemoveRange(start, end time.Time) (out *Node, removed []interval.
 
 	// Find all nodes that start or end within the given range.
 	duration := end.Sub(start)
-	nodes := t.FindLowerPriority(true, start, end, duration, math.MaxFloat64)
+	nodes, _ := t.FindLowerPriority(true, start, end, duration, math.MaxFloat64)
 
 	// free the nodes' intervals
 	// XXX refactor FindLowerPriority to return a tree instead of a slice

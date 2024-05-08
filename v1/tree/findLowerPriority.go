@@ -14,7 +14,7 @@ import (
 // XXX this should be refactored to find and return a tree instead of
 // a slice; the common parent of the set will always be a member of
 // the set.
-func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) []*Node {
+func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) (window []*Node, out *Node) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -37,7 +37,6 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	}
 
 	// manage a sliding window of a candidate node set
-	var window []*Node
 	var sum time.Duration
 	// iterate over the nodes in the tree; either in order or reverse
 	// order depending on the value of first.
@@ -77,10 +76,10 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 				}
 				window = newWindow
 			}
-			return window
+			return window, out
 		}
 	}
-	return nil
+	return nil, out
 }
 
 // Iterator allows iterating over the nodes in the tree in either

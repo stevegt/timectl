@@ -66,7 +66,7 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 
 	// use FindLowerPriority to find a free interval where we can
 	// insert the new interval
-	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
+	nodes, _ := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
 	if len(nodes) == 0 {
 		err = fmt.Errorf("no free interval found")
 		return
