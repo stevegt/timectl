@@ -126,7 +126,6 @@ func (t *Node) buildpath(left bool) Path {
 // iterator is in forward mode, then the nodes are returned in order
 // of start time. If the iterator is in reverse mode, then the nodes
 // are returned in reverse order of start time.
-// XXX return Path only
 func (it *Iterator) Next() (path Path) {
 	if len(it.path) == 0 {
 		return nil
