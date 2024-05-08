@@ -59,16 +59,16 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 	out = t.clone()
 
 	if !newInterval.Busy() {
-		// XXX return a meaningful error
-		return false, nil, nil
+		err = fmt.Errorf("new interval is not busy")
+		return
 	}
 
 	// use FindLowerPriority to find a free interval where we can
 	// insert the new interval
 	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
 	if len(nodes) == 0 {
-		// XXX return a meaningful error
-		return false, nil, nil
+		err = fmt.Errorf("no free interval found")
+		return
 	}
 
 	// nodes should be a slice of length 1
@@ -80,8 +80,8 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 	// f should start on or before newInterval and end on or after
 	// newInterval
 	if f.Start().After(newInterval.Start()) || f.End().Before(newInterval.End()) {
-		// XXX return a meaningful error
-		return false, nil, nil
+		err = fmt.Errorf("free interval doesn't wrap new interval")
+		return
 	}
 
 	newIntervals := f.Interval().Punch(newInterval)
@@ -134,8 +134,8 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 	f.Right().ckHeight()
 	f.Left().ckHeight()
 
-	Assert(false, "unexpected code path")
-	return false, nil, nil
+	err = fmt.Errorf("unexpected code path")
+	return
 }
 
 // ckHeight checks the calculated height of the node against the actual
