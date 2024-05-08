@@ -107,12 +107,12 @@ func (t *Node) buildpath(fwd bool) Path {
 	if fwd {
 		for node.Left() != nil {
 			node = node.Left()
-			path = append(path, node)
+			path = path.Append(node)
 		}
 	} else {
 		for node.Right() != nil {
 			node = node.Right()
-			path = append(path, node)
+			path = path.Append(node)
 		}
 	}
 	return path
