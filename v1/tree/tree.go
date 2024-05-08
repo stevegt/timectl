@@ -56,6 +56,8 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	out = t.clone()
+
 	if !newInterval.Busy() {
 		// XXX return a meaningful error
 		return false, nil, nil

@@ -33,7 +33,7 @@ func (t *Node) clone() *Node {
 	defer t.mu.Unlock()
 	out := &Node{
 		interval: t.interval,
-		path:     t.path,
+		path:     t.path, // XXX get rid of this
 		left:     t.left,
 		right:    t.right,
 	}
