@@ -51,7 +51,7 @@ func TestTreeToVine(t *testing.T) {
 	Insert(top, "2024-01-01T14:00:00Z", "2024-01-01T15:00:00Z", 1)
 	Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T10:00:00Z", 1)
 
-	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals")
+	Tassert(t, len(top.BusyIntervals()) == 8, "should be 8 intervals, got #%v", top.BusyIntervals())
 
 	// convert the tree into a vine
 	var size int

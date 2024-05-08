@@ -18,11 +18,23 @@ func (t *Node) Delete(interval interval.Interval) (out *Node, err error) {
 	found := path.Last()
 	Assert(found != nil, "Interval not found: %v", interval)
 
+	return t.deleteNode(found)
+}
+
+// deleteNode removes a node from the tree
+func (t *Node) deleteNode(node *Node) (out *Node, err error) {
+	// XXX should be:
+	// out = t.clone()
+
 	// Free the node, discarding the old interval.
-	_ = t.free(found)
+	_ = t.free(node)
+	// XXX return modified tree instead of old interval
+	// _ = out.free(node)
 
 	// merge free siblings
 	out = t.mergeFree()
+	// XXX should be:
+	// out = out.mergeFree()
 
 	return
 }
@@ -31,6 +43,8 @@ func (t *Node) Delete(interval interval.Interval) (out *Node, err error) {
 // the min/max values.  The node's old interval is still intact, but
 // no longer part of the tree.  We return the old interval so that the
 // caller can decide what to do with it.
+// accept Path instead of Node
+// XXX return modified tree instead of old interval
 func (t *Node) free(node *Node) (old interval.Interval) {
 	old = node.Interval()
 	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)

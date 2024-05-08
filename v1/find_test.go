@@ -193,7 +193,11 @@ func TestFindLowerPriority(t *testing.T) {
 	// higher than the priority of the busy interval at 9:00,
 	// FindLowerPriority should return the priority 2 interval from
 	// 9:00 to 9:30 followed by the free interval from 9:30 to 10:00.
-	nodes, _ := top.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 3)
+	nodes, subtree := top.FindLowerPriority(true, searchStart, searchEnd, 60*time.Minute, 3)
+	_ = subtree
+	// Tassert(t, subtree != nil, "Expected non-nil subtree")
+	// Tassert(t, len(nodes) == subtree.Size(), "Expected nodes to be the same size as subtree")
+	// tree.ShowDot(subtree, false)
 	Tassert(t, len(nodes) > 0, "Expected at least 1 interval, got %d", len(nodes))
 	err = tree.Match(nodes[0].Interval(), "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 2)
 	Tassert(t, err == nil, err)

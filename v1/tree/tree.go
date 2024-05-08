@@ -66,7 +66,10 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 
 	// use FindLowerPriority to find a free interval where we can
 	// insert the new interval
+	// XXX use subtree instead of nodes
 	nodes, _ := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
+	// XXX should be something like:
+	// nodes, _ := out.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
 	if len(nodes) == 0 {
 		err = fmt.Errorf("no free interval found")
 		return
@@ -93,6 +96,7 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 	case 1:
 		// newInterval fits exactly in this node's interval
 		f.SetInterval(newInterval)
+		// XXX return tree
 		return nil, nil
 	case 2:
 		// newInterval fits in this node's interval with a free interval
@@ -104,6 +108,7 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 		newNode := newNodeFromInterval(newIntervals[1])
 		oldRight := f.SetRight(newNode)
 		f.Right().SetRight(oldRight)
+		// XXX return tree
 		return nil, nil
 	case 3:
 		// newInterval fits in this node's interval with free intervals
@@ -123,6 +128,7 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 		newRightNode := newNodeFromInterval(newIntervals[2])
 		oldRight := f.SetRight(newRightNode)
 		f.Right().SetRight(oldRight)
+		// XXX return tree
 		return nil, nil
 	default:
 		Assert(false, "unexpected number of intervals")
@@ -346,6 +352,9 @@ func (t *Node) allNodesBlocking(fwd bool, start, end time.Time, c chan *Node) {
 
 // FirstNode returns the first node in the tree.
 func (t *Node) FirstNode() *Node {
+	if t == nil {
+		return nil
+	}
 	if t.Left() != nil {
 		return t.Left().FirstNode()
 	}
@@ -354,6 +363,9 @@ func (t *Node) FirstNode() *Node {
 
 // LastNode returns the last node in the tree.
 func (t *Node) LastNode() *Node {
+	if t == nil {
+		return nil
+	}
 	if t.Right() != nil {
 		return t.Right().LastNode()
 	}
@@ -364,6 +376,10 @@ func (t *Node) LastNode() *Node {
 func (t *Node) AsDot(path Path) string {
 	// t.Mu.Lock()
 	// defer t.Mu.Unlock()
+
+	if t == nil {
+		return ""
+	}
 
 	var out string
 	var top bool

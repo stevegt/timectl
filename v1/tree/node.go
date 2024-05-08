@@ -130,14 +130,26 @@ func (t *Node) MinStart() time.Time {
 }
 
 func (t *Node) Right() *Node {
+	if t == nil {
+		return nil
+	}
 	return t.right
 }
 
 func (t *Node) Left() *Node {
+	if t == nil {
+		return nil
+	}
 	return t.left
 }
 
 func (t *Node) Parent() *Node {
+	if t == nil {
+		return nil
+	}
+	if len(t.path) == 0 {
+		return nil
+	}
 	return t.path.Last()
 }
 
@@ -150,6 +162,9 @@ func (t *Node) SetParent(parent *Node) {
 }
 
 func (t *Node) Height() int {
+	if t == nil {
+		return 0
+	}
 	if t.height != nil {
 		return *t.height
 	}
@@ -166,6 +181,9 @@ func (t *Node) Height() int {
 }
 
 func (t *Node) Size() int {
+	if t == nil {
+		return 0
+	}
 	if t.size != nil {
 		return *t.size
 	}
@@ -188,14 +206,14 @@ func (t *Node) String() string {
 	out := Spf("Tree: %p\n", t)
 	out += Spf("  Interval: %v\n", t.Interval())
 	out += Spf("  Parent: %p\n", t.Parent())
-	out += Spf("  Left: %p\n", t.left)
-	out += Spf("  Right: %p\n", t.right)
-	out += Spf("  MinStart: %v\n", t.minStart)
-	out += Spf("  MaxEnd: %v\n", t.maxEnd)
-	out += Spf("  MaxPriority: %v\n", t.maxPriority)
-	out += Spf("  MinPriority: %v\n", t.minPriority)
-	out += Spf("  Height: %v\n", t.height)
-	out += Spf("  Size: %v\n", t.size)
+	out += Spf("  Left: %p\n", t.Left())
+	out += Spf("  Right: %p\n", t.Right())
+	out += Spf("  MinStart: %v\n", t.MinStart())
+	out += Spf("  MaxEnd: %v\n", t.MaxEnd())
+	out += Spf("  MaxPriority: %v\n", t.MaxPriority())
+	out += Spf("  MinPriority: %v\n", t.MinPriority())
+	out += Spf("  Height: %v\n", t.Height())
+	out += Spf("  Size: %v\n", t.Size())
 	return out
 }
 
@@ -252,6 +270,7 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 // or the parent of this node, then this function clears the old
 // relationship before setting the new one.
 // XXX move to Tree
+// XXX return new Tree
 func (t *Node) SetLeft(left *Node) (old *Node) {
 	old = t.left
 	if left != nil && left.Parent() != nil {
@@ -281,6 +300,7 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 // or the parent of this node, then this function clears the old
 // relationship before setting the new one.
 // XXX move to Tree
+// XXX return new Tree
 func (t *Node) SetRight(right *Node) (old *Node) {
 	old = t.right
 	if right != nil && right.Parent() != nil {

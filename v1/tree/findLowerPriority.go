@@ -2,6 +2,7 @@ package tree
 
 import (
 	"time"
+	// . "github.com/stevegt/goadapt"
 )
 
 // FindLowerPriority returns a contiguous set of nodes that have a
@@ -14,7 +15,7 @@ import (
 // XXX this should be refactored to find and return a tree instead of
 // a slice; the common parent of the set will always be a member of
 // the set.
-func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) (window []*Node, out *Node) {
+func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) (window []*Node, out Path) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -80,6 +81,87 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 		}
 	}
 	return nil, out
+
+	/*
+		// If we get here, then we've found the node whose subtree
+		// best fits the search range.  Now we need to trim the subtree,
+		// removing nodes that don't fit in the search range.
+		out = t.clone()
+		// trim first
+		for {
+			firstNode := out.FirstNode()
+			if firstNode == nil {
+				return nil, nil
+			}
+			if searchStart.Before(firstNode.End()) {
+				break
+			}
+			var err error
+			out, err = out.deleteNode(firstNode)
+			Assert(err == nil, err)
+		}
+		// trim last
+		for {
+			lastNode := out.LastNode()
+			if lastNode == nil {
+				return nil, nil
+			}
+			if searchEnd.After(lastNode.Start()) {
+				break
+			}
+			var err error
+			out, err = out.deleteNode(lastNode)
+			Assert(err == nil, err)
+		}
+
+		// Now we need to find the node in the subtree with a maxPriority
+		// less than the given priority and maxEnd - minStart >= duration.
+
+		subtreeDuration := out.MaxEnd().Sub(out.MinStart())
+		if subtreeDuration < duration {
+			// subtree duration is too short; no need to try children
+			// because they will be shorter
+			return nil, nil
+		}
+
+		// get a list of children sorted according to the value of first
+		children := []*Node{out.Left(), out.Right()}
+		if !first {
+			children = []*Node{out.Right(), out.Left()}
+		}
+
+		if out.MaxPriority() >= priority {
+			// priority is too high; try children
+			for _, child := range children {
+				if child == nil {
+					continue
+				}
+				if child.MaxPriority() < priority {
+					// child has a lower priority; recurse into it
+					// return child.FindLowerPriority(first, searchStart, searchEnd, duration, priority)
+					// XXX temporary:  build a slice of nodes from the subtree
+					_, out = child.FindLowerPriority(first, searchStart, searchEnd, duration, priority)
+				}
+			}
+			return nil, nil
+		}
+
+		// got it!
+
+		// XXX temporary:  build a slice of nodes from the subtree
+		iter := NewIterator(out, first)
+		for {
+			path := iter.Next()
+			node := path.Last()
+			if node == nil {
+				break
+			}
+			// add the node to the window
+			window = append(window, node)
+		}
+
+		return
+	*/
 }
 
 // Iterator allows iterating over the nodes in the tree in either
