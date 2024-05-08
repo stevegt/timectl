@@ -32,8 +32,10 @@ func TestPath(t *testing.T) {
 	i1100_1200 := Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
 	i1200_1500 := Insert(top, "2024-01-01T12:00:00Z", "2024-01-01T15:00:00Z", 1)
 
-	// find the path to the node that contains i0900_0930
-	path, node := top.FindExact(i0900_0930)
+	ShowDot(top, false)
+
+	// find the path to the node that contains i0930_1000
+	path, node := top.FindExact(i0930_1000)
 	Tassert(t, path != nil, "Expected a path, got nil")
 	Tassert(t, node != nil, "Expected a node, got nil")
 
