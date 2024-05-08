@@ -100,11 +100,14 @@ func NewIterator(t *Node, fwd bool) *Iterator {
 	return it
 }
 
-// buildpath builds a path to the first or last node in the tree.
-func (t *Node) buildpath(fwd bool) Path {
+// buildpath builds a path to the first or last node in the subtree
+// rooted at the given node.  If left is true, then the path is built
+// to the leftmost node in the subtree, otherwise the path is built to
+// the rightmost node in the subtree.
+func (t *Node) buildpath(left bool) Path {
 	node := t
 	path := Path{node}
-	if fwd {
+	if left {
 		for node.Left() != nil {
 			node = node.Left()
 			path = path.Append(node)
@@ -134,7 +137,8 @@ func (it *Iterator) Next() *Node {
 	// configure the path for the next iteration
 	if it.Fwd {
 		if res.Right() != nil {
-			it.path = append(it.path, res.Right().buildpath(it.Fwd)...)
+			it.path = it.path.Append(res.Right().buildpath(it.Fwd)...)
+			// it.path = append(it.path, res.Right().buildpath(it.Fwd)...)
 		} else {
 			// pop nodes off the tail of the path until we find a node
 			// that starts later than res
