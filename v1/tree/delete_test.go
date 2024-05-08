@@ -214,8 +214,8 @@ func TestDeleteComplex(t *testing.T) {
 			startTime := time.Date(2024, startMonth, startDay, startHour, startMinute, 0, 0, time.UTC)
 			endTime := startTime.Add(time.Minute * time.Duration(duration))
 			iv := interval.NewInterval(startTime, endTime, 1)
-			ok, _, _ := top.Insert(iv)
-			if ok {
+			_, _, err := top.Insert(iv)
+			if err == nil {
 				inserted++
 			}
 		}
