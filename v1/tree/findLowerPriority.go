@@ -127,7 +127,11 @@ func (it *Iterator) Next() *Node {
 	if len(it.path) == 0 {
 		return nil
 	}
-	res := it.path[len(it.path)-1]
+
+	// return the last node in the path
+	res := it.path.Last()
+
+	// configure the path for the next iteration
 	if it.Fwd {
 		if res.Right() != nil {
 			it.path = append(it.path, res.Right().buildpath(it.Fwd)...)
