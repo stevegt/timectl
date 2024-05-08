@@ -150,7 +150,7 @@ func (it *Iterator) Next() *Node {
 				if try.Interval().Start().After(node.Interval().Start()) {
 					break
 				}
-				it.path = it.path[:len(it.path)-1]
+				it.path = it.path.Pop()
 				if len(it.path) == 0 {
 					break
 				}
