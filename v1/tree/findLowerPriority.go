@@ -43,7 +43,8 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	// order depending on the value of first.
 	iter := NewIterator(t, first)
 	for {
-		node, _ := iter.Next()
+		_, path := iter.Next()
+		node := path.Last()
 		if node == nil {
 			break
 		}
@@ -125,7 +126,7 @@ func (t *Node) buildpath(left bool) Path {
 // iterator is in forward mode, then the nodes are returned in order
 // of start time. If the iterator is in reverse mode, then the nodes
 // are returned in reverse order of start time.
-// XXX return Path
+// XXX return Path only
 func (it *Iterator) Next() (node *Node, path Path) {
 	if len(it.path) == 0 {
 		return nil, path
