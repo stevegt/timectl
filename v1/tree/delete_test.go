@@ -131,8 +131,8 @@ func TestFree(t *testing.T) {
 
 	// insert an interval into the tree
 	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	ok, _, _ := top.Insert(iv)
-	Tassert(t, ok, "Failed to insert interval")
+	_, _, err := top.Insert(iv)
+	Tassert(t, err == nil, err)
 
 	// find the node containing the interval
 	path := top.FindExact(iv)
@@ -169,8 +169,8 @@ func TestDelete(t *testing.T) {
 
 	// insert an interval into the tree
 	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	ok, _, _ := top.Insert(iv)
-	Tassert(t, ok, "Failed to insert interval")
+	_, _, err := top.Insert(iv)
+	Tassert(t, err == nil, err)
 
 	// find the node containing the interval
 	path := top.FindExact(iv)
@@ -179,7 +179,7 @@ func TestDelete(t *testing.T) {
 	// delete the node. The Delete() function replaces the interval in the
 	// node with a free interval that spans the same range, and then merges
 	// free nodes.
-	top, err := top.Delete(found.Interval())
+	top, err = top.Delete(found.Interval())
 	Tassert(t, err == nil, err)
 
 	// check that the interval is no longer in the tree
