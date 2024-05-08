@@ -84,8 +84,9 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	}
 	if windowFound {
 		return window, out
+	} else {
+		return nil, out
 	}
-	return nil, out
 
 	/*
 		// If we get here, then we've found the node whose subtree
