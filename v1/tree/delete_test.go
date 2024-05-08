@@ -231,15 +231,15 @@ func TestDeleteComplex(t *testing.T) {
 		busyIntervals := top.BusyIntervals()
 		Tassert(t, len(busyIntervals) == i, "Expected %d intervals, got %d", i, len(busyIntervals))
 		// delete a random interval
-		interval := busyIntervals[rand.Intn(len(busyIntervals))]
-		top, err := top.Delete(interval)
+		iv := busyIntervals[rand.Intn(len(busyIntervals))]
+		top, err := top.Delete(iv)
 		Tassert(t, err == nil, err)
 		// check that the interval is no longer in the tree
 		for _, busyInterval := range top.BusyIntervals() {
-			Tassert(t, !busyInterval.Equal(interval), fmt.Sprintf("Expected interval to be deleted, got %v", interval))
+			Tassert(t, !busyInterval.Equal(iv), fmt.Sprintf("Expected interval to be deleted, got %v", iv))
 		}
 		// check that the interval has no conflicts
-		conflicts := top.Conflicts(interval, false)
+		conflicts := top.Conflicts(iv, false)
 		Tassert(t, len(conflicts) == 0, "Expected 0 conflicts, got %d", len(conflicts))
 
 		// verify the tree
