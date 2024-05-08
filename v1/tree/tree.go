@@ -52,13 +52,13 @@ func NewTree() *Node {
 // tree. Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
-func (t *Node) Insert(newInterval interval.Interval) bool {
+func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	if !newInterval.Busy() {
 		// XXX return a meaningful error
-		return false
+		return false, nil, nil
 	}
 
 	// use FindLowerPriority to find a free interval where we can
@@ -66,7 +66,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	nodes := t.FindLowerPriority(true, newInterval.Start(), newInterval.End(), newInterval.Duration(), 1)
 	if len(nodes) == 0 {
 		// XXX return a meaningful error
-		return false
+		return false, nil, nil
 	}
 
 	// nodes should be a slice of length 1
@@ -79,7 +79,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	// newInterval
 	if f.Start().After(newInterval.Start()) || f.End().Before(newInterval.End()) {
 		// XXX return a meaningful error
-		return false
+		return false, nil, nil
 	}
 
 	newIntervals := f.Interval().Punch(newInterval)
@@ -90,7 +90,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	case 1:
 		// newInterval fits exactly in this node's interval
 		f.SetInterval(newInterval)
-		return true
+		return true, nil, nil
 	case 2:
 		// newInterval fits in this node's interval with a free interval
 		// left over
@@ -101,7 +101,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		newNode := newNodeFromInterval(newIntervals[1])
 		oldRight := f.SetRight(newNode)
 		f.Right().SetRight(oldRight)
-		return true
+		return true, nil, nil
 	case 3:
 		// newInterval fits in this node's interval with free intervals
 		// remaining to the left and right, so...
@@ -120,7 +120,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 		newRightNode := newNodeFromInterval(newIntervals[2])
 		oldRight := f.SetRight(newRightNode)
 		f.Right().SetRight(oldRight)
-		return true
+		return true, nil, nil
 	default:
 		Assert(false, "unexpected number of intervals")
 	}
@@ -133,7 +133,7 @@ func (t *Node) Insert(newInterval interval.Interval) bool {
 	f.Left().ckHeight()
 
 	Assert(false, "unexpected code path")
-	return false
+	return false, nil, nil
 }
 
 // ckHeight checks the calculated height of the node against the actual

@@ -133,7 +133,7 @@ func TestFindExact(t *testing.T) {
 
 	// insert an interval into the tree
 	iv := tree.NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	ok := top.Insert(iv)
+	ok, _, _ := top.Insert(iv)
 	Tassert(t, ok, "Failed to insert interval")
 
 	// showDot(tree, false)

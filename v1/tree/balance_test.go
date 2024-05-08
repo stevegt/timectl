@@ -133,7 +133,7 @@ func TestRebalanceRandom(t *testing.T) {
 			startTime := time.Date(2024, startMonth, startDay, startHour, startMinute, 0, 0, time.UTC)
 			endTime := startTime.Add(time.Minute * time.Duration(duration))
 			iv := interval.NewInterval(startTime, endTime, 1)
-			ok := top.Insert(iv)
+			ok, _, _ := top.Insert(iv)
 			if ok {
 				inserted++
 			}

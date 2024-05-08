@@ -54,7 +54,8 @@ func (t *Node) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Inter
 	iv.SetEnd(newEnd)
 
 	// insert the new interval into the tree
-	if !t.Insert(iv) {
+	ok, _, _ := t.Insert(iv)
+	if !ok {
 		// XXX re-insert removed intervals or always return a new tree
 		// from functions that modify the tree
 		Pf("removed: %v\n", removed)
