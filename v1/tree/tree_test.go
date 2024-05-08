@@ -34,6 +34,8 @@ func TestPath(t *testing.T) {
 
 	// find the path to the node that contains i0900_0930
 	path, node := top.FindExact(i0900_0930)
+	Tassert(t, path != nil, "Expected a path, got nil")
+	Tassert(t, node != nil, "Expected a node, got nil")
 
 	Pf("path: %s\n", path)
 	Pf("node: %v\n", node)
@@ -42,7 +44,6 @@ func TestPath(t *testing.T) {
 	_ = i1100_1200
 	_ = i1200_1500
 
-	t.FailNow()
 }
 
 // test contiguous as a standalone function without a tree
