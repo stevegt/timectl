@@ -88,7 +88,7 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 // order.
 type Iterator struct {
 	Tree *Node
-	path []*Node
+	path Path
 	Fwd  bool
 }
 
@@ -118,10 +118,11 @@ func (t *Node) buildpath(fwd bool) []*Node {
 	return path
 }
 
-// Next returns the next node in the tree.  If the iterator is in
-// forward mode, then the nodes are returned in order of start time.
-// If the iterator is in reverse mode, then the nodes are returned in
-// reverse order of start time.
+// Next returns the path to the next node in the tree.  If the
+// iterator is in forward mode, then the nodes are returned in order
+// of start time. If the iterator is in reverse mode, then the nodes
+// are returned in reverse order of start time.
+// XXX return Path
 func (it *Iterator) Next() *Node {
 	if len(it.path) == 0 {
 		return nil

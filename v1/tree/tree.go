@@ -52,6 +52,7 @@ func NewTree() *Node {
 // tree. Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
+// XXX return tree
 func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
