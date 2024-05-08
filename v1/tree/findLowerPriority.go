@@ -42,6 +42,7 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	// iterate over the nodes in the tree; either in order or reverse
 	// order depending on the value of first.
 	iter := NewIterator(t, first)
+	windowFound := false
 	for {
 		path := iter.Next()
 		node := path.Last()
@@ -77,8 +78,12 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 				}
 				window = newWindow
 			}
-			return window, out
+			windowFound = true
+			break
 		}
+	}
+	if windowFound {
+		return window, out
 	}
 	return nil, out
 
