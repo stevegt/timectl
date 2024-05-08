@@ -83,16 +83,16 @@ func NewInterval(startStr, endStr string, priority float64) interval.Interval {
 // Insert is a test helper function that inserts an interval into the
 // tree and returns the interval that was inserted.
 func Insert(tree *Node, startStr, endStr string, priority float64) interval.Interval {
-	interval := NewInterval(startStr, endStr, priority)
+	iv := NewInterval(startStr, endStr, priority)
 	// Insert adds a new interval to the tree, adjusting the structure as
 	// necessary.  Insertion fails if the new interval conflicts with any
 	// existing interval in the tree.
 	// Pf("Inserting interval: %v\n", interval)
-	_, err := tree.Insert(interval)
+	_, err := tree.Insert(iv)
 	if err != nil {
 		return nil
 	}
-	return interval
+	return iv
 }
 
 // Match is a test helper function that checks if the given interval
