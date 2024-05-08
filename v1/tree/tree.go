@@ -21,6 +21,7 @@ var TreeStartStr = TreeStart.Format(time.RFC3339)
 // TreeEndStr is the string representation of TreeEnd.
 var TreeEndStr = TreeEnd.Format(time.RFC3339)
 
+/*
 // Tree is a binary tree of nodes.  Each node in the tree contains an
 // interval.  Trees are copy-on-write, so any modification to a tree
 // returns a new tree.
@@ -40,14 +41,15 @@ func NewNewTree() *Tree {
 	}
 	return out
 }
+*/
 
 // NewTree creates and returns a new Tree node containing a free interval spanning all time.
 func NewTree() *Node {
 	return newNodeFromInterval(interval.NewInterval(TreeStart, TreeEnd, 0))
 }
 
-// Insert adds a new interval to the tree, adjusting the structure as
-// necessary.  Insertion fails if the new interval conflicts with any
+// Insert clones the tree, adds the interval, and returns the new
+// tree. Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
 func (t *Node) Insert(newInterval interval.Interval) bool {
