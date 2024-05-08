@@ -158,7 +158,8 @@ func (it *Iterator) Next() *Node {
 		}
 	} else {
 		if node.Left() != nil {
-			it.path = append(it.path, node.Left().buildpath(it.Fwd)...)
+			rightPath := node.Left().buildpath(it.Fwd)
+			it.path = it.path.Append(rightPath...)
 		} else {
 			// pop nodes off the tail of the path until we find a node
 			// that starts earlier than res
