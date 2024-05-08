@@ -164,11 +164,11 @@ func (it *Iterator) Next() *Node {
 			// pop nodes off the tail of the path until we find a node
 			// that starts earlier than res
 			for {
-				try := it.path[len(it.path)-1]
+				try := it.path.Last()
 				if try.Interval().Start().Before(node.Interval().Start()) {
 					break
 				}
-				it.path = it.path[:len(it.path)-1]
+				it.path = it.path.Pop()
 				if len(it.path) == 0 {
 					break
 				}
