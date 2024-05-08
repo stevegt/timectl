@@ -145,7 +145,8 @@ func TestFindExact(t *testing.T) {
 	// inserted.  If the exact interval is in the root node, then the path
 	// is "t".  If the tree is empty, then both are nil.
 
-	path, found := top.FindExact(iv)
+	path := top.FindExact(iv)
+	found := path.Last()
 	Tassert(t, found != nil, "Expected non-nil interval")
 	Tassert(t, found.Interval().Equal(iv), fmt.Sprintf("Expected %v, got %v", iv, found.Interval()))
 	Tassert(t, len(path) == 1, "Expected path of length 1, got %d", len(path))
@@ -153,7 +154,8 @@ func TestFindExact(t *testing.T) {
 
 	// try finding an interval that is not in the tree
 	iv = tree.NewInterval("2024-01-01T11:30:00Z", "2024-01-01T12:30:00Z", 1)
-	path, found = top.FindExact(iv)
+	path = top.FindExact(iv)
+	found = path.Last()
 	Tassert(t, found == nil, "Expected nil interval")
 	Tassert(t, len(path) == 0, "Expected empty path")
 

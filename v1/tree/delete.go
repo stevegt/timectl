@@ -14,7 +14,8 @@ func (t *Node) Delete(interval interval.Interval) (out *Node, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	_, found := t.findExact(interval, nil)
+	path := t.findExact(interval, nil)
+	found := path.Last()
 	Assert(found != nil, "Interval not found: %v", interval)
 
 	// Free the node, discarding the old interval.

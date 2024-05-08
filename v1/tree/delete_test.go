@@ -135,8 +135,8 @@ func TestFree(t *testing.T) {
 	Tassert(t, ok, "Failed to insert interval")
 
 	// find the node containing the interval
-	path, found := top.FindExact(iv)
-	_ = path
+	path := top.FindExact(iv)
+	found := path.Last()
 
 	// free the node. The free() function replaces the interval in the
 	// node with a free interval that spans the same range.  The
@@ -173,8 +173,8 @@ func TestDelete(t *testing.T) {
 	Tassert(t, ok, "Failed to insert interval")
 
 	// find the node containing the interval
-	path, found := top.FindExact(iv)
-	_ = path
+	path := top.FindExact(iv)
+	found := path.Last()
 
 	// delete the node. The Delete() function replaces the interval in the
 	// node with a free interval that spans the same range, and then merges

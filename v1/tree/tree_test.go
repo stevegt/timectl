@@ -36,14 +36,16 @@ func TestPath(t *testing.T) {
 	// ShowDot(top, false)
 
 	// find the path to a node
-	path, node := top.FindExact(i1100_1200)
+	path := top.FindExact(i1100_1200)
+	node := path.Last()
 	// Pf("path String: %s\n", path)
 	// Pf("path Nav: %#v\n", path.Nav())
 	// Pf("node: %v\n", node)
 	Tassert(t, path != nil, "Expected a path, got nil")
 	Tassert(t, len(path) == 4, "Expected a path of length 4, got %d", len(path))
-	Tassert(t, node != nil, "Expected a node, got nil")
 	Tassert(t, slices.Equal(path.Nav(), []string{"t", "r", "r", "l"}), "Expected path to be t r r l, got %v", path.Nav())
+	Tassert(t, node != nil, "Expected a node, got nil")
+	Tassert(t, node.Interval().Equal(i1100_1200), "Expected node to be i1100_1200, got %v", node.Interval())
 
 	_ = i0900_0930
 	_ = i1000_1100
