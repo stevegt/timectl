@@ -22,21 +22,18 @@ func (t *Node) FindExact(interval interval.Interval) (path Path, found *Node) {
 // current node during recursion.
 func (t *Node) findExact(interval interval.Interval, pathIn Path) (pathOut Path, found *Node) {
 
-	pathOut = pathIn.Clone()
+	pathOut = pathIn.Append(t)
 
 	if t.Interval().Equal(interval) {
-		pathOut.Append(t)
 		found = t
 		return
 	}
-
-	pathOut.Append(t)
 
 	// try left
 	if t.Left() != nil {
 		p, n := t.Left().findExact(interval, pathOut)
 		if n != nil {
-			pathOut.Append(p...)
+			pathOut = p
 			found = n
 			return
 		}
@@ -45,7 +42,7 @@ func (t *Node) findExact(interval interval.Interval, pathIn Path) (pathOut Path,
 	if found == nil && t.Right() != nil {
 		p, n := t.Right().findExact(interval, pathOut)
 		if n != nil {
-			pathOut.Append(p...)
+			pathOut = p
 			found = n
 			return
 		}

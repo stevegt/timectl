@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -29,21 +30,23 @@ func TestPath(t *testing.T) {
 	// insert some intervals
 	i0900_0930 := Insert(top, "2024-01-01T09:00:00Z", "2024-01-01T09:30:00Z", 1)
 	i1000_1100 := Insert(top, "2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	i1100_1200 := Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
 	i1200_1500 := Insert(top, "2024-01-01T12:00:00Z", "2024-01-01T15:00:00Z", 1)
+	i1100_1200 := Insert(top, "2024-01-01T11:00:00Z", "2024-01-01T12:00:00Z", 1)
 
-	ShowDot(top, false)
+	// ShowDot(top, false)
 
-	// find the path to the node that contains i0930_1000
-	path, node := top.FindExact(i0930_1000)
+	// find the path to a node
+	path, node := top.FindExact(i1100_1200)
+	// Pf("path String: %s\n", path)
+	// Pf("path Nav: %#v\n", path.Nav())
+	// Pf("node: %v\n", node)
 	Tassert(t, path != nil, "Expected a path, got nil")
+	Tassert(t, len(path) == 4, "Expected a path of length 4, got %d", len(path))
 	Tassert(t, node != nil, "Expected a node, got nil")
+	Tassert(t, slices.Equal(path.Nav(), []string{"t", "r", "r", "l"}), "Expected path to be t r r l, got %v", path.Nav())
 
-	Pf("path: %s\n", path)
-	Pf("node: %v\n", node)
-
+	_ = i0900_0930
 	_ = i1000_1100
-	_ = i1100_1200
 	_ = i1200_1500
 
 }
