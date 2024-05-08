@@ -63,8 +63,8 @@ func Expect(tree *Node, pathStr, startStr, endStr string, priority float64) erro
 // InsertExpect is a test helper function that inserts an interval
 // into the tree and checks if the tree has the expected structure.
 func InsertExpect(tree *Node, pathStr, startStr, endStr string, priority float64) error {
-	interval := Insert(tree, startStr, endStr, priority)
-	if interval == nil {
+	iv := Insert(tree, startStr, endStr, priority)
+	if iv == nil {
 		return fmt.Errorf("Failed to insert interval")
 	}
 	return Expect(tree, pathStr, startStr, endStr, priority)
