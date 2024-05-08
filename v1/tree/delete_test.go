@@ -89,7 +89,7 @@ func TestMergeFreeComplex(t *testing.T) {
 			startTime := time.Date(2024, startMonth, startDay, startHour, startMinute, 0, 0, time.UTC)
 			endTime := startTime.Add(time.Minute * time.Duration(duration))
 			iv := interval.NewInterval(startTime, endTime, 1)
-			_, _, err := top.Insert(iv)
+			_, err := top.Insert(iv)
 			if err == nil {
 				inserted = append(inserted, iv)
 			}
@@ -131,7 +131,7 @@ func TestFree(t *testing.T) {
 
 	// insert an interval into the tree
 	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	_, _, err := top.Insert(iv)
+	_, err := top.Insert(iv)
 	Tassert(t, err == nil, err)
 
 	// find the node containing the interval
@@ -169,7 +169,7 @@ func TestDelete(t *testing.T) {
 
 	// insert an interval into the tree
 	iv := NewInterval("2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z", 1)
-	_, _, err := top.Insert(iv)
+	_, err := top.Insert(iv)
 	Tassert(t, err == nil, err)
 
 	// find the node containing the interval
@@ -214,7 +214,7 @@ func TestDeleteComplex(t *testing.T) {
 			startTime := time.Date(2024, startMonth, startDay, startHour, startMinute, 0, 0, time.UTC)
 			endTime := startTime.Add(time.Minute * time.Duration(duration))
 			iv := interval.NewInterval(startTime, endTime, 1)
-			_, _, err := top.Insert(iv)
+			_, err := top.Insert(iv)
 			if err == nil {
 				inserted++
 			}

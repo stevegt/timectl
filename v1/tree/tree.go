@@ -52,7 +52,7 @@ func NewTree() *Node {
 // tree. Insertion fails if the new interval conflicts with any
 // existing interval in the tree with a priority greater than 0.
 // Insertion fails if the new interval is not busy.
-func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err error) {
+func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -92,7 +92,7 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 	case 1:
 		// newInterval fits exactly in this node's interval
 		f.SetInterval(newInterval)
-		return true, nil, nil
+		return nil, nil
 	case 2:
 		// newInterval fits in this node's interval with a free interval
 		// left over
@@ -103,7 +103,7 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 		newNode := newNodeFromInterval(newIntervals[1])
 		oldRight := f.SetRight(newNode)
 		f.Right().SetRight(oldRight)
-		return true, nil, nil
+		return nil, nil
 	case 3:
 		// newInterval fits in this node's interval with free intervals
 		// remaining to the left and right, so...
@@ -122,7 +122,7 @@ func (t *Node) Insert(newInterval interval.Interval) (ok bool, out *Node, err er
 		newRightNode := newNodeFromInterval(newIntervals[2])
 		oldRight := f.SetRight(newRightNode)
 		f.Right().SetRight(oldRight)
-		return true, nil, nil
+		return nil, nil
 	default:
 		Assert(false, "unexpected number of intervals")
 	}

@@ -37,7 +37,7 @@ func TestInterface(t *testing.T) {
 	Tassert(t, iv.Priority() == 1, fmt.Sprintf("Expected %v, got %v", 1, iv.Priority()))
 
 	// insert the interval into the tree
-	_, _, err = top.Insert(iv)
+	_, err = top.Insert(iv)
 	Tassert(t, err == nil, fmt.Sprintf("Expected nil, got %v", err))
 
 	// Dump(tree, "")
