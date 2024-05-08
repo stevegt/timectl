@@ -88,8 +88,8 @@ func Insert(tree *Node, startStr, endStr string, priority float64) interval.Inte
 	// necessary.  Insertion fails if the new interval conflicts with any
 	// existing interval in the tree.
 	// Pf("Inserting interval: %v\n", interval)
-	ok, _, _ := tree.Insert(interval)
-	if !ok {
+	_, _, err := tree.Insert(interval)
+	if err != nil {
 		return nil
 	}
 	return interval
