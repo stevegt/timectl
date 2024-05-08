@@ -42,6 +42,14 @@ func (p Path) Last() *Node {
 	return p[len(p)-1]
 }
 
+// Pop returns a new Path with the last node removed.
+func (p Path) Pop() Path {
+	if len(p) == 0 {
+		return nil
+	}
+	return p[:len(p)-1]
+}
+
 // String returns a string representation of the path.
 func (p Path) String() string {
 	var s string
