@@ -153,12 +153,13 @@ func (t *Node) Parent() *Node {
 	return t.path.Last()
 }
 
-func (t *Node) SetParent(parent *Node) {
+func (t *Node) SetParent(parent *Node) (out *Node) {
 	if len(t.path) == 0 {
 		t.path = append(t.path, parent)
 	} else {
 		t.path[len(t.path)-1] = parent
 	}
+	return out
 }
 
 func (t *Node) Height() int {
