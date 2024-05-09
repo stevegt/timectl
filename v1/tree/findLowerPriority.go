@@ -12,9 +12,9 @@ import (
 // given duration, and may be longer.  If first is true, then the
 // search starts at minStart and proceeds in order, otherwise the
 // search starts at maxEnd and proceeds in reverse order.
-// XXX this should be refactored to find and return a tree instead of
-// a slice; the common parent of the set will always be a member of
-// the set.
+// XXX this should be refactored to find and return a path to a
+// subtree instead of a slice; the common parent of the set will
+// always be a member of the set.
 func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, duration time.Duration, priority float64) (window []*Node, out Path) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -34,7 +34,10 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 			continue
 		}
 		// search range fits entirely within child
-		return child.FindLowerPriority(first, searchStart, searchEnd, duration, priority)
+		var subPath Path
+		window, subPath = child.FindLowerPriority(first, searchStart, searchEnd, duration, priority)
+		out = out.Append(subPath...)
+		return
 	}
 
 	// manage a sliding window of a candidate node set
