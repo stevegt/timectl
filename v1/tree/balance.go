@@ -5,6 +5,7 @@ import (
 	// . "github.com/stevegt/goadapt"
 )
 
+/*
 // rebalance uses the height and size fields to balance the tree.
 func (t *Node) rebalance() (out *Node) {
 	if t == nil {
@@ -51,6 +52,7 @@ func (t *Node) rebalance() (out *Node) {
 	}
 	return
 }
+*/
 
 // rebalanceDSW performs the DSW (Day/Stout/Warren) algorithm to rebalance the tree.
 func (t *Node) rebalanceDSW() (out *Node) {
