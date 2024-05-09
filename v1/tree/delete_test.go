@@ -138,11 +138,10 @@ func TestFree(t *testing.T) {
 	path := top.FindExact(iv)
 	found := path.Last()
 
-	// free the node. The free() function replaces the interval in the
-	// node with a free interval that spans the same range.  The
-	// function does not merge free nodes.
+	// free the node. The free() method replaces the interval in the
+	// node with a free interval that spans the same range.
 	freed := found.Interval()
-	_ = top.free(found)
+	_ = found.free()
 	Tassert(t, freed.Equal(iv), fmt.Sprintf("Expected %v, got %v", iv, freed))
 
 	// check that the interval is no longer in the tree

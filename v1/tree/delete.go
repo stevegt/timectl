@@ -27,28 +27,13 @@ func (t *Node) deleteNode(node *Node) (out *Node, err error) {
 	// out = t.clone()
 
 	// Free the node, discarding the old interval.
-	_ = t.free(node)
-	// XXX return modified tree instead of old interval
-	// _ = out.free(node)
+	_ = node.free()
 
 	// merge free siblings
 	out = t.mergeFree()
 	// XXX should be:
 	// out = out.mergeFree()
 
-	return
-}
-
-// free sets the interval of the node to a free interval and updates
-// the min/max values.  The node's old interval is still intact, but
-// no longer part of the tree.  We return the old interval so that the
-// caller can decide what to do with it.
-// accept Path instead of Node
-// XXX return modified tree instead of old interval
-func (t *Node) free(node *Node) (old interval.Interval) {
-	old = node.Interval()
-	freeInterval := interval.NewInterval(node.Start(), node.End(), 0)
-	node.SetInterval(freeInterval)
 	return
 }
 
@@ -69,7 +54,7 @@ func (t *Node) RemoveRange(start, end time.Time) (out *Node, removed []interval.
 	freed := make([]interval.Interval, len(nodes))
 	for i, n := range nodes {
 		freed[i] = n.Interval()
-		_ = t.free(n)
+		_ = n.free()
 	}
 
 	// only return non-free intervals

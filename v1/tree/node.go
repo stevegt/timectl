@@ -419,3 +419,18 @@ func (t *Node) RotateRight() (L *Node) {
 	}
 	return
 }
+
+// free sets the interval of the node to a free interval and updates
+// the min/max values.  The node's old interval is still intact, but
+// no longer part of the tree.  We return the old interval so that the
+// caller can decide what to do with it.
+// accept Path instead of Node
+// XXX return modified tree instead of old interval
+func (t *Node) free() (out *Node) {
+	out = t
+	// XXX should be:
+	// out = t.clone()
+	freeInterval := interval.NewInterval(out.Start(), out.End(), 0)
+	out.SetInterval(freeInterval)
+	return
+}
