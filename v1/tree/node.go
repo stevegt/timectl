@@ -271,8 +271,7 @@ func newNodeFromInterval(interval interval.Interval) *Node {
 // relationship before setting the new one.
 // XXX move to Tree
 // XXX return new Tree
-func (t *Node) SetLeft(left *Node) (old *Node) {
-	old = t.left
+func (t *Node) SetLeft(left *Node) {
 	if left != nil && left.Parent() != nil {
 		if left.Parent().left == left {
 			left.Parent().left = nil
@@ -301,8 +300,7 @@ func (t *Node) SetLeft(left *Node) (old *Node) {
 // relationship before setting the new one.
 // XXX move to Tree
 // XXX return new Tree
-func (t *Node) SetRight(right *Node) (old *Node) {
-	old = t.right
+func (t *Node) SetRight(right *Node) {
 	if right != nil && right.Parent() != nil {
 		if right.Parent().left == right {
 			right.Parent().left = nil

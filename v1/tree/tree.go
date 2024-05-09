@@ -128,7 +128,8 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 		// put the third interval in a new right child, moving the old
 		// right child to the right of the new right child
 		newRightNode := newNodeFromInterval(newIntervals[2])
-		oldRight := f.SetRight(newRightNode)
+		oldRight := f.Right()
+		f.SetRight(newRightNode)
 		f.Right().SetRight(oldRight)
 		// XXX return tree
 		return nil, nil
