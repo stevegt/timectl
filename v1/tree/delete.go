@@ -68,7 +68,8 @@ func (t *Node) RemoveRange(start, end time.Time) (out *Node, removed []interval.
 	// XXX refactor FindLowerPriority to return a tree instead of a slice
 	freed := make([]interval.Interval, len(nodes))
 	for i, n := range nodes {
-		freed[i] = t.free(n)
+		freed[i] = n.Interval()
+		_ = t.free(n)
 	}
 
 	// only return non-free intervals
