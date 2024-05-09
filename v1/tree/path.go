@@ -1,6 +1,8 @@
 package tree
 
 import (
+	"slices"
+
 	. "github.com/stevegt/goadapt"
 )
 
@@ -90,4 +92,18 @@ func (p Path) Nav() (nav []string) {
 		parent = node
 	}
 	return nav
+}
+
+// Equal returns true if the paths are the same length and the nav strings
+// are the same.
+func (p Path) Equal(other Path) bool {
+	if len(p) != len(other) {
+		return false
+	}
+	pNav := p.Nav()
+	otherNav := other.Nav()
+	if !slices.Equal(pNav, otherNav) {
+		return false
+	}
+	return true
 }

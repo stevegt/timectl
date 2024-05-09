@@ -56,6 +56,14 @@ func (t *Node) Verify(ckBalance bool) error {
 		}
 		// Pf(" got: %-10s %v\n", path, node.leafInterval)
 
+		/*
+			// the path we got from the iterator should be the same as the
+			// path in the node
+			if !path.Equal(node.path) {
+				return fmt.Errorf("iterator path %v does not match node path %v", path, node.path)
+			}
+		*/
+
 		// the node interval should not be nil
 		if node.Interval() == nil {
 			return fmt.Errorf("node interval is nil")

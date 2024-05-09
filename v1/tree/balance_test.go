@@ -22,6 +22,8 @@ func TestRotate(t *testing.T) {
 	err = Expect(top, "r", "2024-01-01T11:00:00Z", TreeEndStr, 0)
 	Tassert(t, err == nil, err)
 
+	Verify(t, top, false, false)
+
 	// rotate left
 	top = top.RotateLeft()
 	// check the nodes
