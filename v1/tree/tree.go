@@ -106,7 +106,8 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 		// create a new right child for the second interval and make
 		// the old right child the right child of it
 		newNode := newNodeFromInterval(newIntervals[1])
-		oldRight := f.SetRight(newNode)
+		oldRight := f.Right()
+		f.SetRight(newNode)
 		f.Right().SetRight(oldRight)
 		// XXX return tree
 		return nil, nil
@@ -117,7 +118,8 @@ func (t *Node) Insert(newInterval interval.Interval) (out *Node, err error) {
 		// put the first interval in a new left child, moving the old
 		// left child to the left of the new left child
 		newLeftNode := newNodeFromInterval(newIntervals[0])
-		oldLeft := f.SetLeft(newLeftNode)
+		oldLeft := f.Left()
+		f.SetLeft(newLeftNode)
 		f.Left().SetLeft(oldLeft)
 
 		// put the second interval in this node
