@@ -19,6 +19,8 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	out = t.path
+
 	// if the search range fits entirely within the left or right
 	// child, then recurse into that child.
 	for _, child := range []*Node{t.Left(), t.Right()} {
@@ -91,13 +93,12 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	return window, out
 
 	// XXX temporary: keep the window stuff above, but now redo the
-	// search by building a subtree instead.
+	// search by ignoring the window and building a subtree instead.
 
 	/*
 		// If we get here, then we've found the node whose subtree
 		// best fits the search range.  Now we need to trim the subtree,
 		// removing nodes that don't fit in the search range.
-		out = t.clone()
 		// trim first
 		for {
 			firstNode := out.FirstNode()
