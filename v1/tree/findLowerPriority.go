@@ -87,6 +87,9 @@ func (t *Node) FindLowerPriority(first bool, searchStart, searchEnd time.Time, d
 	}
 	return window, out
 
+	// XXX temporary: keep the window stuff above, but now redo the
+	// search by building a subtree instead.
+
 	/*
 		// If we get here, then we've found the node whose subtree
 		// best fits the search range.  Now we need to trim the subtree,
