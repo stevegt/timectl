@@ -205,7 +205,7 @@ func TestDeleteComplex(t *testing.T) {
 		inserted := 0
 		// for i := 0; i < 1000; i++ {
 		// XXX
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 100; i++ {
 			startMonth := time.Month(rand.Intn(12) + 1)
 			startDay := rand.Intn(31) + 1
 			startHour := rand.Intn(24)
