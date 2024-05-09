@@ -37,7 +37,8 @@ func (t *Node) Shuffle(first bool, minStart, maxEnd time.Time, iv interval.Inter
 
 	// remove and hold onto the found intervals
 	for _, node := range lower {
-		iv := t.free(node)
+		iv := node.Interval()
+		_ = t.free(node)
 		removed = append(removed, iv)
 	}
 
