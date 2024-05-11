@@ -187,8 +187,11 @@ func (iter *FindIterator) Next() *interval.Interval {
 		return free
 	}
 
-	// If the interval starts on or after the max end time, we are done.
-	if iv.IsAfterTime(iter.maxEnd) {
+	if iter.fwd && iv.IsAfterTime(iter.maxEnd) {
+		// the interval starts on or after the max end time: we are done.
+		return nil
+	} else if !iter.fwd && iv.IsBeforeTime(iter.minStart) {
+		// the interval ends on or before the min start time: we are done.
 		return nil
 	}
 
