@@ -3,7 +3,6 @@ package db
 import (
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
 )
@@ -26,12 +25,11 @@ func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration tim
 		Ck(err)
 	}
 
-	spew.Dump(candidates)
+	// spew.Dump(candidates)
 
 	var foundDuration time.Duration
 	for _, iv := range candidates {
 		if foundDuration >= minDuration {
-			Pf("found set: %v\n", set)
 			return
 		}
 		if len(set) != 0 {
@@ -40,18 +38,15 @@ func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration tim
 			if first && iv.Start.After(prevIv.End) {
 				set = nil
 				foundDuration = 0
-				Pf("resetting because %v is after %v\n", iv.Start, prevIv.End)
 			}
 			if !first && iv.End.Before(prevIv.Start) {
 				set = nil
 				foundDuration = 0
-				Pf("resetting because %v is before %v\n", iv.End, prevIv.Start)
 			}
 		}
 		if len(set) == 0 {
 			set = append(set, iv)
 			foundDuration = iv.Duration()
-			Pf("foundDuration: %v\n", foundDuration)
 			continue
 		}
 		// we have a contiguous interval; add it to the set
