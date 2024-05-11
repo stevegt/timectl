@@ -17,22 +17,30 @@ import (
 func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) (set []*interval.Interval, err error) {
 	defer Return(&err)
 
-	var candidates []*interval.Interval
+	var candidates Iterator
 	if first {
-		candidates, err = tx.FindFwd(minStart, maxEnd, maxPriority)
+		candidates, err = tx.FindFwdIter(minStart, maxEnd, maxPriority)
 		Ck(err)
 	} else {
-		candidates, err = tx.FindRev(minStart, maxEnd, maxPriority)
+		candidates, err = tx.FindRevIter(minStart, maxEnd, maxPriority)
 		Ck(err)
 	}
 
 	// spew.Dump(candidates)
 
 	var foundDuration time.Duration
-	for _, iv := range candidates {
+	for {
 		if foundDuration >= minDuration {
+			// we have a set that meets the criteria
 			return
 		}
+
+		iv := candidates.Next()
+		if iv == nil {
+			// we didn't find a set that meets the criteria
+			return nil, nil
+		}
+
 		if len(set) != 0 {
 			// if the previous interval is not contiguous, reset
 			prevIv := set[len(set)-1]
@@ -46,6 +54,7 @@ func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration tim
 			}
 		}
 		if len(set) == 0 {
+			// start a new set
 			set = append(set, iv)
 			foundDuration = iv.Duration()
 			continue
@@ -55,6 +64,4 @@ func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration tim
 		foundDuration += iv.Duration()
 	}
 
-	// if we get here, we didn't find a set that meets the criteria
-	return nil, nil
 }
