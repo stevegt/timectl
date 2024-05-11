@@ -62,16 +62,6 @@ type Tx interface {
 	// by descending start time.
 	FindRevIter(minStart, maxEnd time.Time, maxPriority float64) (Iterator, error)
 
-	// FindSet returns a contiguous set of intervals that intersect
-	// with the given start and end time, are lower than the given
-	// priority, and whose total duration is greater than or equal to the
-	// given duration.  The first parameter indicates whether the set
-	// should be the first or last match found within the given time
-	// range.
-	// The results include synthetic free intervals that represent the
-	// time slots between the intervals.
-	FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) ([]*interval.Interval, error)
-
 	// IterateDown returns an iterator that iterates over all intervals
 	// in the database in descending order of priority.
 	// IteratorDown() Iterator

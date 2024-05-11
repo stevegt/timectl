@@ -1,7 +1,6 @@
-package mem
+package storage
 
 import (
-	"github.com/stevegt/timectl/storage"
 	"time"
 
 	. "github.com/stevegt/goadapt"
@@ -15,10 +14,10 @@ import (
 // should be the first or last match found within the given time
 // range. The results include synthetic free intervals that represent
 // the time slots between the intervals.
-func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) (set []*interval.Interval, err error) {
+func FindSet(tx Tx, first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) (set []*interval.Interval, err error) {
 	defer Return(&err)
 
-	var candidates storage.Iterator
+	var candidates Iterator
 	if first {
 		candidates, err = tx.FindFwdIter(minStart, maxEnd, maxPriority)
 		Ck(err)

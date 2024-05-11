@@ -1,9 +1,10 @@
 package mem
 
 import (
-	"github.com/stevegt/timectl/storage"
 	"testing"
 	"time"
+
+	"github.com/stevegt/timectl/storage"
 
 	"github.com/davecgh/go-spew/spew"
 	. "github.com/stevegt/goadapt"
@@ -114,7 +115,7 @@ func TestMemDbFindSet(t *testing.T) {
 	Ck(err)
 	end, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T15:00:00")
 	Ck(err)
-	ivs, err := tx.FindSet(true, start, end, 90*time.Minute, 1.0)
+	ivs, err := storage.FindSet(tx, true, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
 	Tassert(t, len(ivs) == 3, "FindSet() failed: expected 3 intervals, got %v", spew.Sdump(ivs))
 	Tassert(t, i1200_1300.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1200_1300, ivs[0])
@@ -127,7 +128,7 @@ func TestMemDbFindSet(t *testing.T) {
 	// find the last set of intervals that are within a time range,
 	// have a priority less than or equal to 1.0, and have a total
 	// duration of at least 90 minutes
-	ivs, err = tx.FindSet(false, start, end, 90*time.Minute, 1.0)
+	ivs, err = storage.FindSet(tx, false, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
 	// Pf("ivs: %v\n", ivs)
 	Tassert(t, len(ivs) == 2, "FindSet() failed: expected 2 intervals, got %v", spew.Sdump(ivs))
