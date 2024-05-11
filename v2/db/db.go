@@ -22,12 +22,12 @@ type Tx interface {
 
 	// Commit commits the transaction.  If the transaction is a write
 	// transaction, it writes the changes to the database.
-	// Commit() error
+	Commit()
 
 	// Abort aborts the transaction.  If the transaction is a write
 	// transaction, it discards the changes.  If the transaction is a
 	// read transaction, it releases the resources.
-	// Abort()
+	Abort()
 
 	// Add adds an interval to the database.  If the interval
 	// conflicts with an existing interval, it returns an error.

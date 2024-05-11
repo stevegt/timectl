@@ -142,3 +142,13 @@ func (tx *MemTx) FindDescending(minStart, maxEnd time.Time, maxPriority float64)
 func (tx *MemTx) Delete(iv *interval.Interval) error {
 	return tx.tx.Delete("interval", iv)
 }
+
+// Commit commits the transaction.
+func (tx *MemTx) Commit() {
+	tx.tx.Commit()
+}
+
+// Abort aborts the transaction.
+func (tx *MemTx) Abort() {
+	tx.tx.Abort()
+}
