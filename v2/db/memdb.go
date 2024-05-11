@@ -68,6 +68,7 @@ func (m *Mem) NewTx(write bool) *MemTx {
 
 // Add adds an interval to the database.
 func (tx *MemTx) Add(iv *interval.Interval) error {
+	// XXX ensure that the interval does not conflict with any existing intervals
 	return tx.tx.Insert("interval", iv)
 }
 
@@ -75,7 +76,7 @@ func (tx *MemTx) Add(iv *interval.Interval) error {
 // given start and end time and are lower than the given priority.
 func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	defer Return(&err)
-	iter, err := tx.tx.LowerBound("interval", "start", minStart)
+	iter, err := tx.tx.LowerBound("interval", "end", minStart)
 	Ck(err)
 	for {
 		obj := iter.Next()
@@ -85,7 +86,7 @@ func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*i
 		iv := obj.(*interval.Interval)
 		// If the interval ends on or before the min start time, skip it.
 		// We need this check because the LowerBound function returns the
-		// first interval that starts on or after the min start time.
+		// first interval that ends on or after the min start time.
 		if iv.IsBeforeTime(minStart) {
 			continue
 		}
