@@ -217,11 +217,8 @@ func (iter *FindIterator) Next() *interval.Interval {
 	}
 }
 
-// FindFwd returns all intervals that intersect with the given
-// given start and end time and are at or lower than the given
-// priority.  The results are sorted in ascending order by end time.
-// The results include synthetic free intervals that represent the
-// time slots between the intervals.
+// FindFwd is a convenience method that returns the results of
+// FindFwdIter as a slice.
 func (tx *MemTx) FindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.FindFwdIter(minStart, maxEnd, maxPriority)
 	Ck(err)
@@ -235,8 +232,8 @@ func (tx *MemTx) FindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs [
 	return
 }
 
-// FindRev is the same as FindFwd, but it returns the results in
-// descending order by start time.
+// FindRev is a convenience method that returns the results of
+// FindRevIter as a slice.
 func (tx *MemTx) FindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.FindRevIter(minStart, maxEnd, maxPriority)
 	Ck(err)

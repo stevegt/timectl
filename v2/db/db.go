@@ -43,19 +43,23 @@ type Tx interface {
 	// interval does not exist, it returns an error.
 	Delete(iv *interval.Interval) error
 
-	// FindFwd returns all intervals that intersect with the given
-	// given start and end time and are lower than the given priority.
-	// The results are ordered by ascending end time. The results
-	// include synthetic free intervals that represent the time slots
-	// between the intervals.
+	// FindFwd is a convenience method that returns the results of
+	// FindFwdIter as a slice.
 	FindFwd(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
 
+	// FindFwdIter returns an iterator that iterates over all intervals
+	// that intersect with the given start and end time and are lower
+	// than the given priority.  The results are ordered by ascending end
+	// time.  The results include synthetic free intervals that represent
+	// the time slots between the intervals.
 	FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (Iterator, error)
 
-	// FindRev is the same as FindFwd, but the results are ordered by
-	// descending start time.
+	// FindRev is a convenience method that returns the results of
+	// FindRevIter as a slice.
 	FindRev(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
 
+	// FindRevIter is the same as FindFwdIter, but the results are ordered
+	// by descending start time.
 	FindRevIter(minStart, maxEnd time.Time, maxPriority float64) (Iterator, error)
 
 	// FindSet returns a contiguous set of intervals that intersect
