@@ -10,6 +10,8 @@ import (
 
 // An Interval represents a time interval with a start and end time.
 type Interval interface {
+	// Id returns the unique identifier of the interval.
+	Id() uint64
 	// Start returns the start time of the interval.
 	Start() time.Time
 	// End returns the end time of the interval.
@@ -19,7 +21,7 @@ type Interval interface {
 	// Equal checks if the current interval is equal to the given interval.
 	Equal(other Interval) bool
 	// Intersection returns an interval that is the intersection of two intervals.
-	Intersection(other Interval) Interval
+	// Intersection(other Interval) Interval
 	// Wraps returns true if the current interval completely contains the other interval.
 	Wraps(other Interval) bool
 	// OverlapDuration returns the duration of the overlap between the current interval and the given range.
@@ -33,7 +35,7 @@ type Interval interface {
 	// Busy returns true if the interval is busy.  The interval is busy if the priority is greater than zero.
 	Busy() bool
 	// Punch creates one to three new intervals by punching a hole in the current interval.
-	Punch(hole Interval) []Interval
+	// Punch(hole Interval) []Interval
 	// Priority returns the priority of the interval.  Priority zero
 	// is the lowest priority, and means that the interval is free.
 	Priority() float64
@@ -44,22 +46,24 @@ type Interval interface {
 	// SetPriority sets the priority of the interval.
 	SetPriority(float64)
 	// Clone returns a deep copy of the interval.
-	Clone() Interval
+	// Clone() Interval
 }
 
 // IntervalBase is the base type for all interval types.
 type IntervalBase struct {
+	id       uint64
 	start    time.Time
 	end      time.Time
 	priority float64
 }
 
 // NewInterval creates and returns a new Interval with the specified start and end times.
-func NewInterval(start, end time.Time, priority float64) Interval {
+func NewInterval(id uint64, start, end time.Time, priority float64) Interval {
 	if end.Sub(start) <= 0 {
 		return nil
 	}
 	return &IntervalBase{
+		id:       id,
 		start:    start,
 		end:      end,
 		priority: priority,
@@ -70,7 +74,12 @@ func NewInterval(start, end time.Time, priority float64) Interval {
 func (i *IntervalBase) String() string {
 	startStr := i.Start().Format(time.RFC3339)
 	endStr := i.End().Format(time.RFC3339)
-	return fmt.Sprintf("%v - %v %v", startStr, endStr, i.Priority())
+	return fmt.Sprintf("%v %v - %v %v", i.Id(), startStr, endStr, i.Priority())
+}
+
+// Id returns the unique identifier of the interval.
+func (i *IntervalBase) Id() uint64 {
+	return i.id
 }
 
 // Start returns the start time of the interval.
@@ -150,6 +159,7 @@ func (i *IntervalBase) Busy() bool {
 	return true
 }
 
+/*
 // Punch creates one to three new intervals by punching a hole in the
 // current interval.  The current interval must not be busy and must
 // completely contain the hole interval.  The hole interval must be
@@ -167,6 +177,7 @@ func (i *IntervalBase) Punch(hole Interval) (intervals []Interval) {
 	}
 	return intervals
 }
+*/
 
 // Priority returns the priority of the interval.  Priority zero is the
 // lowest priority, and means that the interval is free.
@@ -174,6 +185,7 @@ func (i *IntervalBase) Priority() float64 {
 	return i.priority
 }
 
+/*
 // Intersection returns an interval that is the intersection of two
 // intervals.  The intersection is the interval that overlaps both
 // intervals.
@@ -185,6 +197,7 @@ func (i *IntervalBase) Intersection(other Interval) Interval {
 	}
 	return nil
 }
+*/
 
 // SetStart sets the start time of the interval.
 func (i *IntervalBase) SetStart(start time.Time) {
@@ -201,10 +214,12 @@ func (i *IntervalBase) SetPriority(priority float64) {
 	i.priority = priority
 }
 
+/*
 // Clone returns a deep copy of the interval.
 func (i *IntervalBase) Clone() Interval {
 	return NewInterval(i.Start(), i.End(), i.Priority())
 }
+*/
 
 // Overlaps returns true if the current interval intersects with the given interval.
 func (i *IntervalBase) Overlaps(other Interval) bool {
