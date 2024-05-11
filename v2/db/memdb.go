@@ -250,58 +250,6 @@ func (tx *MemTx) FindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs [
 	return
 }
 
-func (tx *MemTx) XXXFindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
-	iter, err := tx.tx.ReverseLowerBound("interval", "start", maxEnd)
-	Ck(err)
-	prevStart := maxEnd
-	for {
-		obj := iter.Next()
-		if obj == nil {
-			break
-		}
-		iv := obj.(*interval.Interval)
-
-		// create a free interval between the previous interval and the current interval
-		// (remember that we are iterating in descending order, so
-		// "previous" means later in time)
-		if iv.End.Before(prevStart) {
-			free := &interval.Interval{
-				// free start time is the current interval's end time
-				// or the min start time, whichever is later
-				Start: util.MaxTime(iv.End, minStart),
-				// free end time is the previous interval's start time
-				End:      prevStart,
-				Priority: 0,
-			}
-			// ensure the free interval has a positive duration --
-			// it could be zero if the previous interval starts at the
-			// same time as iv.End
-			if free.End.After(free.Start) {
-				ivs = append(ivs, free)
-			}
-		}
-		prevStart = iv.Start
-
-		// if the interval has a higher priority than the max priority, skip it
-		if iv.Priority > maxPriority {
-			continue
-		}
-		// If the interval ends on or before the min start time, we are done.
-		// We need this check because the ReverseLowerBound function returns the
-		// first interval that starts on or after the max end time.
-		if iv.IsBeforeTime(minStart) {
-			break
-		}
-		// If the interval starts on or after the max end time, skip it.
-		if iv.IsAfterTime(maxEnd) {
-			continue
-		}
-
-		ivs = append(ivs, iv)
-	}
-	return
-}
-
 // Delete removes an interval from the database.  If the interval
 // interval does not exist, it returns an error.
 func (tx *MemTx) Delete(iv *interval.Interval) error {
