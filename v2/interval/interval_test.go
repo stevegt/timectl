@@ -20,8 +20,8 @@ func TestInterval(t *testing.T) {
 	end, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T11:00:00")
 	Ck(err)
 	interval := NewInterval(1, start, end, 0)
-	Tassert(t, interval.Start() == start, "start time: expected %v, got %v", start, interval.Start())
-	Tassert(t, interval.End() == end, "end time: expected %v, got %v", end, interval.End())
+	Tassert(t, interval.Start == start, "start time: expected %v, got %v", start, interval.Start)
+	Tassert(t, interval.End == end, "end time: expected %v, got %v", end, interval.End)
 }
 
 // TestConflict tests two intervals for conflict.  Two intervals conflict
@@ -177,8 +177,8 @@ func TestIntersection(t *testing.T) {
 	i1000_1100 := NewInterval(1, t1000, t1100, 1)
 	i1030_1130 := NewInterval(2, t1030, t1130, 1)
 	i1030_1100 := i1000_1100.Intersection(i1030_1130)
-	Tassert(t, i1030_1100.Start() == t1030, "expected start time %v, got %v", t1030, i1030_1100.Start())
-	Tassert(t, i1030_1100.End() == t1100, "expected end time %v, got %v", t1100, i1030_1100.End())
+	Tassert(t, i1030_1100.Start == t1030, "expected start time %v, got %v", t1030, i1030_1100.Start)
+	Tassert(t, i1030_1100.End == t1100, "expected end time %v, got %v", t1100, i1030_1100.End)
 
 	i1130_1200 := NewInterval(3, t1130, t1200, 1)
 	iNil := i1000_1100.Intersection(i1130_1200)
