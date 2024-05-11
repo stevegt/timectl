@@ -113,4 +113,14 @@ func TestMemDbFindSet(t *testing.T) {
 	Tassert(t, i1200_1300.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1200_1300, ivs[0])
 	Tassert(t, i1300_1400.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1300_1400, ivs[1])
 
+	// find the last set of intervals that are within a time range,
+	// have a priority less than or equal to 1.0, and have a total
+	// duration of at least 90 minutes
+	ivs, err = tx.FindSet(false, start, end, 90*time.Minute, 1.0)
+	Tassert(t, err == nil, "FindSet() failed: %v", err)
+	Tassert(t, len(ivs) == 2, "FindSet() failed: expected 2 intervals, got %d", len(ivs))
+	Pf("ivs: %v\n", ivs)
+	Tassert(t, i1400_1500.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1400_1500, ivs[0])
+	Tassert(t, i1300_1400.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1300_1400, ivs[1])
+
 }
