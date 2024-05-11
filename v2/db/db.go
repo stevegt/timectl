@@ -49,11 +49,13 @@ type Tx interface {
 	// include synthetic free intervals that represent the time slots
 	// between the intervals.
 	FindFwd(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
+
 	FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (Iterator, error)
 
 	// FindRev is the same as FindFwd, but the results are ordered by
 	// descending start time.
 	FindRev(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
+
 	FindRevIter(minStart, maxEnd time.Time, maxPriority float64) (Iterator, error)
 
 	// FindSet returns a contiguous set of intervals that intersect
