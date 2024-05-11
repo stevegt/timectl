@@ -89,7 +89,6 @@ func TestMemDbFindSet(t *testing.T) {
 	i1000_1100 := Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
 	i1100_1200 := Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
 	i1200_1300 := Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T12:45:00", 1.0)
-	i1245_1300 := Tadd(tx, 45, "2024-01-01T12:45:00", "2024-01-01T13:00:00", 0.0)
 	i1300_1400 := Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
 	i1400_1500 := Tadd(tx, 60, "2024-01-01T14:00:00", "2024-01-01T15:00:00", 1.0)
 	_ = i0800_0900
@@ -99,6 +98,12 @@ func TestMemDbFindSet(t *testing.T) {
 	_ = i1200_1300
 	_ = i1300_1400
 	_ = i1400_1500
+
+	// create a free interval that spans the gap between 12:45 and
+	// 13:00 but don't add it to the db
+	freeStart := time.Date(2024, 1, 1, 12, 45, 0, 0, time.UTC)
+	freeEnd := time.Date(2024, 1, 1, 13, 0, 0, 0, time.UTC)
+	i1245_1300 := interval.NewInterval(0, freeStart, freeEnd, 0.0)
 
 	// find the first set of intervals that are within a time range,
 	// have a priority less than or equal to 1.0, and have a total
