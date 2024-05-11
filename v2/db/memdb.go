@@ -82,6 +82,12 @@ func (tx *MemTx) FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (i
 	return NewFindIterator(tx, true, minStart, maxEnd, maxPriority)
 }
 
+// FindRevIter is the same as FindFwdIter, but it returns the results
+// in descending order by start time.
+func (tx *MemTx) FindRevIter(minStart, maxEnd time.Time, maxPriority float64) (ivs Iterator, err error) {
+	return NewFindIterator(tx, false, minStart, maxEnd, maxPriority)
+}
+
 // FindIterator is an iterator for the Find* functions.
 type FindIterator struct {
 	boundsIter  memdb.ResultIterator
@@ -229,59 +235,22 @@ func (tx *MemTx) FindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs [
 	return
 }
 
-func (tx *MemTx) XXXFindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
-	iter, err := tx.tx.LowerBound("interval", "end", minStart)
+// FindRev is the same as FindFwd, but it returns the results in
+// descending order by start time.
+func (tx *MemTx) FindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+	iter, err := tx.FindRevIter(minStart, maxEnd, maxPriority)
 	Ck(err)
-	prevEnd := minStart
 	for {
-		obj := iter.Next()
-		if obj == nil {
+		iv := iter.Next()
+		if iv == nil {
 			break
 		}
-		iv := obj.(*interval.Interval)
-
-		// create a free interval between the previous interval and the current interval
-		if iv.Start.After(prevEnd) {
-			free := &interval.Interval{
-				// free start time is the previous interval's end time
-				Start: prevEnd,
-				// free end time is the current interval's start time
-				// or the max end time, whichever is earlier
-				End:      util.MinTime(iv.Start, maxEnd),
-				Priority: 0,
-			}
-			// ensure the free interval has a positive duration --
-			// it could be zero if the previous interval ends at the
-			// same time as iv.Start
-			if free.End.After(free.Start) {
-				ivs = append(ivs, free)
-			}
-		}
-		prevEnd = iv.End
-
-		// if the interval has a higher priority than the max priority, skip it
-		if iv.Priority > maxPriority {
-			continue
-		}
-		// If the interval ends on or before the min start time, skip it.
-		// We need this check because the LowerBound function returns the
-		// first interval that ends on or after the min start time.
-		if iv.IsBeforeTime(minStart) {
-			continue
-		}
-		// If the interval starts on or after the max end time, we are done.
-		if iv.IsAfterTime(maxEnd) {
-			break
-		}
-
 		ivs = append(ivs, iv)
 	}
 	return
 }
 
-// FindRev is the same as FindFwd, but it returns the results in
-// descending order by start time.
-func (tx *MemTx) FindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+func (tx *MemTx) XXXFindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.ReverseLowerBound("interval", "start", maxEnd)
 	Ck(err)
 	prevStart := maxEnd
