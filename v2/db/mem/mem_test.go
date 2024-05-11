@@ -12,7 +12,7 @@ import (
 )
 
 func TestMemDb(t *testing.T) {
-	// test go-memdb implementation of Storage interface
+	// test go-memdb implementation of Db interface
 
 	// open a new memdb
 	memdb, err := NewMem()
