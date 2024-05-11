@@ -51,7 +51,7 @@ type Tx interface {
 	// given duration.  The first parameter indicates whether the set
 	// should be the first or last match found within the given time
 	// range.
-	// FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) ([]*interval.Interval, error)
+	FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) ([]*interval.Interval, error)
 
 	// IterateDown returns an iterator that iterates over all intervals
 	// in the database in descending order of priority.
