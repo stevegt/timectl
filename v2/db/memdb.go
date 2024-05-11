@@ -71,9 +71,9 @@ func (tx *MemTx) Add(iv *interval.Interval) error {
 	return tx.tx.Insert("interval", iv)
 }
 
-// Get returns all intervals that intersect with the given
+// Find returns all intervals that intersect with the given
 // given start and end time and are lower than the given priority.
-func (tx *MemTx) Get(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	defer Return(&err)
 	iter, err := tx.tx.LowerBound("interval", "start", minStart)
 	Ck(err)

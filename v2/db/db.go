@@ -31,7 +31,7 @@ type Tx interface {
 
 	// Add adds an interval to the database.  If the interval
 	// conflicts with an existing interval, it returns an error.
-	Add(iv interval.Interval) (interval.Interval, error)
+	Add(iv *interval.Interval) error
 
 	// SetPriority sets the priority of an interval in the database.  If
 	// the interval does not exist, it returns an error.
@@ -41,17 +41,17 @@ type Tx interface {
 	// interval does not exist, it returns an error.
 	// Delete(iv interval.Interval) error
 
-	// Get returns all intervals that intersect with the given
+	// Find returns all intervals that intersect with the given
 	// given start and end time and are lower than the given priority.
-	Get(minStart, maxEnd time.Time, maxPriority float64) []interval.Interval
+	Find(minStart, maxEnd time.Time, maxPriority float64) []interval.Interval
 
-	// GetSet returns a contiguous set of intervals that intersect
+	// FindSet returns a contiguous set of intervals that intersect
 	// with the given start and end time, are lower than the given
 	// priority, and whose total duration is greater than or equal to the
 	// given duration.  The first parameter indicates whether the set
 	// should be the first or last match found within the given time
 	// range.
-	// GetSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) []interval.Interval
+	FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) []interval.Interval
 
 	// IterateDown returns an iterator that iterates over all intervals
 	// in the database in descending order of priority.
