@@ -88,7 +88,8 @@ func TestMemDbFindSet(t *testing.T) {
 	i0900_1000 := Tadd(tx, 10, "2024-01-01T09:00:00", "2024-01-01T10:00:00", 2.0)
 	i1000_1100 := Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
 	i1100_1200 := Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
-	i1200_1300 := Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T13:00:00", 1.0)
+	i1200_1300 := Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T12:45:00", 1.0)
+	i1245_1300 := Tadd(tx, 45, "2024-01-01T12:45:00", "2024-01-01T13:00:00", 0.0)
 	i1300_1400 := Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
 	i1400_1500 := Tadd(tx, 60, "2024-01-01T14:00:00", "2024-01-01T15:00:00", 1.0)
 	_ = i0800_0900
@@ -108,10 +109,14 @@ func TestMemDbFindSet(t *testing.T) {
 	Ck(err)
 	ivs, err := tx.FindSet(true, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
-	Tassert(t, len(ivs) == 2, "FindSet() failed: expected 2 intervals, got %d", len(ivs))
+	Tassert(t, len(ivs) == 3, "FindSet() failed: expected 3 intervals, got %d", len(ivs))
 	Pf("ivs: %v\n", ivs)
 	Tassert(t, i1200_1300.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1200_1300, ivs[0])
-	Tassert(t, i1300_1400.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1300_1400, ivs[1])
+	Tassert(t, ivs[0].Priority == 1.0, "FindSet() failed: expected priority == 1.0, got %f", ivs[0].Priority)
+	Tassert(t, i1245_1300.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1245_1300, ivs[1])
+	Tassert(t, ivs[1].Priority == 0.0, "FindSet() failed: expected priority == 0.0, got %f", ivs[1].Priority)
+	Tassert(t, i1300_1400.Equal(ivs[2]), "FindSet() failed: expected interval %v, got %v", i1300_1400, ivs[2])
+	Tassert(t, ivs[2].Priority == 1.0, "FindSet() failed: expected priority == 1.0, got %f", ivs[2].Priority)
 
 	// find the last set of intervals that are within a time range,
 	// have a priority less than or equal to 1.0, and have a total
