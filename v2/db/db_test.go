@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
 )
@@ -71,6 +72,7 @@ func TestMemDbFind(t *testing.T) {
 	// now try it again with a lower max priority
 	gots, err = tx.FindFwd(start, end, 2.0)
 	Tassert(t, err == nil, "Find() failed: %v", err)
+	spew.Dump(gots)
 	Tassert(t, len(gots) == 2, "Find() failed: expected 2 intervals, got %d", len(gots))
 	Tassert(t, i0900_1000.Equal(gots[0]), "Find() failed: expected interval %v, got %v", i0900_1000, gots[0])
 	Tassert(t, i1100_1200.Equal(gots[1]), "Find() failed: expected interval %v, got %v", i1100_1200, gots[1])
