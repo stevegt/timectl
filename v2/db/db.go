@@ -47,6 +47,7 @@ type Tx interface {
 	// include synthetic free intervals that represent the time slots
 	// between the intervals.
 	FindFwd(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
+	FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (Iterator, error)
 
 	// FindRev is the same as FindFwd, but the results are ordered by
 	// descending start time.
@@ -74,6 +75,6 @@ type Tx interface {
 // Iterator is an interface for iterating over intervals in a database.
 type Iterator interface {
 	// Next returns the next interval in the iteration.  If there are no
-	// more intervals, it returns false.
-	Next() (interval.Interval, bool)
+	// more intervals, it returns nil.
+	Next() *interval.Interval
 }

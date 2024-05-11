@@ -73,6 +73,128 @@ func (tx *MemTx) Add(iv *interval.Interval) error {
 	return tx.tx.Insert("interval", iv)
 }
 
+// FindFwdIter returns an iterator for the intervals that intersect
+// with the given start and end time and are at or lower than the
+// given priority.  The results are sorted in ascending order by end
+// time.  The results include synthetic free intervals that represent
+// the time slots between the intervals.
+func (tx *MemTx) FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (iter Iterator, err error) {
+	return NewFindIterator(tx, true, minStart, maxEnd, maxPriority)
+}
+
+// FindIterator is an iterator for the Find* functions.
+type FindIterator struct {
+	filterIter memdb.ResultIterator
+	fwd        bool
+	minStart   time.Time
+	maxEnd     time.Time
+	mark       time.Time
+	queue      []*interval.Interval
+}
+
+// NewFindIterator creates a new FindIterator.
+func NewFindIterator(tx *MemTx, fwd bool, minStart, maxEnd time.Time, maxPriority float64) (iter *FindIterator, err error) {
+	defer Return(&err)
+	// filter function returns true if the interval should be skipped
+	filter := func(obj interface{}) bool {
+		iv := obj.(*interval.Interval)
+		// if the interval has a higher priority than the max priority, skip it
+		if iv.Priority > maxPriority {
+			return true
+		}
+		// If the interval ends on or before the min start time, skip it.
+		// We need this check because the LowerBound function returns the
+		// first interval that ends on or after the min start time.
+		if iv.IsBeforeTime(minStart) {
+			return true
+		}
+		return false
+	}
+
+	var resIter memdb.ResultIterator
+	if fwd {
+		resIter, err = tx.tx.LowerBound("interval", "end", minStart)
+		Ck(err)
+	} else {
+		resIter, err = tx.tx.ReverseLowerBound("interval", "start", maxEnd)
+		Ck(err)
+	}
+
+	filterIter := memdb.NewFilterIterator(resIter, filter)
+
+	var mark time.Time
+	if fwd {
+		mark = minStart
+	} else {
+		mark = maxEnd
+	}
+
+	iter = &FindIterator{
+		filterIter: filterIter,
+		fwd:        fwd,
+		minStart:   minStart,
+		maxEnd:     maxEnd,
+		mark:       mark,
+	}
+
+	return
+}
+
+// Next returns the next interval.
+func (iter *FindIterator) Next() *interval.Interval {
+	// return any queued intervals
+	if len(iter.queue) > 0 {
+		iv := iter.queue[0]
+		iter.queue = iter.queue[1:]
+		return iv
+	}
+
+	// get the next interval from the filter iterator
+	obj := iter.filterIter.Next()
+	if obj == nil {
+		return nil
+	}
+	iv := obj.(*interval.Interval)
+
+	// create a free interval between the last-visited interval and the current interval
+	var freeStart, freeEnd time.Time
+	if iter.fwd && iv.Start.After(iter.mark) {
+		// iv starts after the last-visited interval ends
+		// free start time is the previous interval's end time
+		freeStart = iter.mark
+		// free end time is the current interval's start time or the max end time, whichever is earlier
+		// XXX simplify to iter.mark?
+		freeEnd = util.MinTime(iv.Start, iter.maxEnd)
+		iter.mark = iv.End
+	} else if !iter.fwd && iv.End.Before(iter.mark) {
+		// iv ends before the last-visited interval starts
+		// free start time is the current interval's end time or the min start time, whichever is later
+		// XXX simplify to iter.mark?
+		freeStart = util.MaxTime(iv.End, iter.minStart)
+		// free end time is the previous interval's start time
+		freeEnd = iter.mark
+		iter.mark = iv.Start
+	}
+	free := &interval.Interval{
+		Start:    freeStart,
+		End:      freeEnd,
+		Priority: 0,
+	}
+	// ensure the free interval has a positive duration -- it could be zero if the previous interval ends at the same time as iv.Start
+	if free.End.After(free.Start) {
+		// add iv to the queue 'cause we're returning free this time
+		iter.queue = append(iter.queue, iv)
+		return free
+	}
+
+	// If the interval starts on or after the max end time, we are done.
+	if iv.IsAfterTime(iter.maxEnd) {
+		return nil
+	}
+
+	return iv
+}
+
 // FindFwd returns all intervals that intersect with the given
 // given start and end time and are at or lower than the given
 // priority.  The results are sorted in ascending order by end time.
@@ -128,11 +250,8 @@ func (tx *MemTx) FindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs [
 	return
 }
 
-// FindRev returns all intervals that intersect with the given
-// given start and end time and are at or lower than the given
-// priority.  The results are sorted in descending order by start time.
-// The results include synthetic free intervals that represent the
-// time slots between the intervals.
+// FindRev is the same as FindFwd, but it returns the results in
+// descending order by start time.
 func (tx *MemTx) FindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.ReverseLowerBound("interval", "start", maxEnd)
 	Ck(err)

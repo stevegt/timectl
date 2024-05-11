@@ -133,3 +133,5 @@ func TestMemDbFindSet(t *testing.T) {
 	Tassert(t, i1300_1400.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1300_1400, ivs[1])
 
 }
+
+// XXX test payload preservation
