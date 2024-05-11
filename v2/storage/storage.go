@@ -6,9 +6,9 @@ import (
 	"github.com/stevegt/timectl/interval"
 )
 
-// Db is an interface for an interval data storage system.  It
+// Storage is an interface for an interval data storage system.  It
 // abstracts the underlying storage system.
-type Db interface {
+type Storage interface {
 	// Close closes the database by saving any remaining changes (if
 	// the database is persistent) and releasing any resources.
 	Close() error
