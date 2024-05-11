@@ -9,7 +9,9 @@ import (
 // Db is an interface for an interval data storage system.  It
 // abstracts the underlying storage system.
 type Db interface {
-	// Close() error
+	// Close closes the database by saving any remaining changes (if
+	// the database is persistent) and releasing any resources.
+	Close() error
 
 	// NewTx returns a transaction for the database.  If the write
 	// parameter is true, the transaction is a write transaction.

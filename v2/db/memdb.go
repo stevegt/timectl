@@ -317,3 +317,9 @@ func (tx *MemTx) Commit() {
 func (tx *MemTx) Abort() {
 	tx.tx.Abort()
 }
+
+// Close closes the database.  In the case of an in-memory database,
+// this just releases the resources.
+func (m *Mem) Close() {
+	*m = Mem{}
+}
