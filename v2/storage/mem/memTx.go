@@ -1,6 +1,7 @@
-package storage
+package mem
 
 import (
+	"github.com/stevegt/timectl/storage"
 	"time"
 
 	"github.com/hashicorp/go-memdb"
@@ -24,13 +25,13 @@ func (tx *MemTx) Add(iv *interval.Interval) error {
 // given priority.  The results are sorted in ascending order by end
 // time.  The results include synthetic free intervals that represent
 // the time slots between the intervals.
-func (tx *MemTx) FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (iter Iterator, err error) {
+func (tx *MemTx) FindFwdIter(minStart, maxEnd time.Time, maxPriority float64) (iter storage.Iterator, err error) {
 	return NewFindIterator(tx, true, minStart, maxEnd, maxPriority)
 }
 
 // FindRevIter is the same as FindFwdIter, but it returns the results
 // in descending order by start time.
-func (tx *MemTx) FindRevIter(minStart, maxEnd time.Time, maxPriority float64) (ivs Iterator, err error) {
+func (tx *MemTx) FindRevIter(minStart, maxEnd time.Time, maxPriority float64) (ivs storage.Iterator, err error) {
 	return NewFindIterator(tx, false, minStart, maxEnd, maxPriority)
 }
 

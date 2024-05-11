@@ -1,6 +1,7 @@
-package storage
+package mem
 
 import (
+	"github.com/stevegt/timectl/storage"
 	"time"
 
 	. "github.com/stevegt/goadapt"
@@ -17,7 +18,7 @@ import (
 func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) (set []*interval.Interval, err error) {
 	defer Return(&err)
 
-	var candidates Iterator
+	var candidates storage.Iterator
 	if first {
 		candidates, err = tx.FindFwdIter(minStart, maxEnd, maxPriority)
 		Ck(err)
