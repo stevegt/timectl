@@ -14,12 +14,6 @@ type MemTx struct {
 	tx *memdb.Txn
 }
 
-// NewTx returns a transaction for the database.  If the write
-// parameter is true, the transaction is a write transaction.
-func (m *Mem) NewTx(write bool) *MemTx {
-	return &MemTx{tx: m.memdb.Txn(write)}
-}
-
 // Add adds an interval to the database.
 func (tx *MemTx) Add(iv *interval.Interval) error {
 	// XXX ensure that the interval does not conflict with any existing intervals
@@ -214,10 +208,4 @@ func (tx *MemTx) Commit() {
 // Abort aborts the transaction.
 func (tx *MemTx) Abort() {
 	tx.tx.Abort()
-}
-
-// Close closes the database.  In the case of an in-memory database,
-// this just releases the resources.
-func (m *Mem) Close() {
-	*m = Mem{}
 }

@@ -51,3 +51,15 @@ func NewMem() (mem *Mem, err error) {
 	mem = &Mem{memdb: hdb}
 	return
 }
+
+// NewTx returns a transaction for the database.  If the write
+// parameter is true, the transaction is a write transaction.
+func (m *Mem) NewTx(write bool) *MemTx {
+	return &MemTx{tx: m.memdb.Txn(write)}
+}
+
+// Close closes the database.  In the case of an in-memory database,
+// this just releases the resources.
+func (m *Mem) Close() {
+	*m = Mem{}
+}
