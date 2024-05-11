@@ -48,12 +48,9 @@ type Tx interface {
 	// between the intervals.
 	FindFwd(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
 
-	// FindBack returns all intervals that intersect with the given
-	// given start and end time and are lower than the given priority.
-	// The results are ordered by descending start time. The results
-	// include synthetic free intervals that represent the time slots
-	// between the intervals.
-	FindBack(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
+	// FindRev is the same as FindFwd, but the results are ordered by
+	// descending start time.
+	FindRev(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
 
 	// FindSet returns a contiguous set of intervals that intersect
 	// with the given start and end time, are lower than the given

@@ -128,12 +128,12 @@ func (tx *MemTx) FindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs [
 	return
 }
 
-// FindBack returns all intervals that intersect with the given
+// FindRev returns all intervals that intersect with the given
 // given start and end time and are at or lower than the given
 // priority.  The results are sorted in descending order by start time.
 // The results include synthetic free intervals that represent the
 // time slots between the intervals.
-func (tx *MemTx) FindBack(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+func (tx *MemTx) FindRev(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.ReverseLowerBound("interval", "start", maxEnd)
 	Ck(err)
 	prevStart := maxEnd
