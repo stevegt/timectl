@@ -73,23 +73,12 @@ func (tx *MemTx) Add(iv *interval.Interval) error {
 	return tx.tx.Insert("interval", iv)
 }
 
-// Find returns all intervals that intersect with the given
+// FindFwd returns all intervals that intersect with the given
 // given start and end time and are at or lower than the given
 // priority.  The results are sorted in ascending order by end time.
 // The results include synthetic free intervals that represent the
 // time slots between the intervals.
-func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
-	defer Return(&err)
-
-	return tx.FindAscending(minStart, maxEnd, maxPriority)
-}
-
-// FindAscending returns all intervals that intersect with the given
-// given start and end time and are at or lower than the given
-// priority.  The results are sorted in ascending order by end time.
-// The results include synthetic free intervals that represent the
-// time slots between the intervals.
-func (tx *MemTx) FindAscending(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+func (tx *MemTx) FindFwd(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.LowerBound("interval", "end", minStart)
 	Ck(err)
 	prevEnd := minStart
@@ -139,12 +128,12 @@ func (tx *MemTx) FindAscending(minStart, maxEnd time.Time, maxPriority float64) 
 	return
 }
 
-// FindDescending returns all intervals that intersect with the given
+// FindBack returns all intervals that intersect with the given
 // given start and end time and are at or lower than the given
 // priority.  The results are sorted in descending order by start time.
 // The results include synthetic free intervals that represent the
 // time slots between the intervals.
-func (tx *MemTx) FindDescending(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+func (tx *MemTx) FindBack(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.ReverseLowerBound("interval", "start", maxEnd)
 	Ck(err)
 	prevStart := maxEnd

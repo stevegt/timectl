@@ -19,10 +19,10 @@ func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration tim
 
 	var candidates []*interval.Interval
 	if first {
-		candidates, err = tx.FindAscending(minStart, maxEnd, maxPriority)
+		candidates, err = tx.FindFwd(minStart, maxEnd, maxPriority)
 		Ck(err)
 	} else {
-		candidates, err = tx.FindDescending(minStart, maxEnd, maxPriority)
+		candidates, err = tx.FindBack(minStart, maxEnd, maxPriority)
 		Ck(err)
 	}
 
