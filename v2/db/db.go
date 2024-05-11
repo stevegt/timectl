@@ -39,7 +39,7 @@ type Tx interface {
 
 	// Delete deletes an interval from the database.  If the
 	// interval does not exist, it returns an error.
-	// Delete(iv interval.Interval) error
+	Delete(iv *interval.Interval) error
 
 	// Find returns all intervals that intersect with the given
 	// given start and end time and are lower than the given priority.

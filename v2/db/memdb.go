@@ -136,3 +136,9 @@ func (tx *MemTx) FindDescending(minStart, maxEnd time.Time, maxPriority float64)
 	}
 	return
 }
+
+// Delete removes an interval from the database.  If the interval
+// interval does not exist, it returns an error.
+func (tx *MemTx) Delete(iv *interval.Interval) error {
+	return tx.tx.Delete("interval", iv)
+}
