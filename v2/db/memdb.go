@@ -73,9 +73,18 @@ func (tx *MemTx) Add(iv *interval.Interval) error {
 }
 
 // Find returns all intervals that intersect with the given
-// given start and end time and are at or lower than the given priority.
+// given start and end time and are at or lower than the given
+// priority.  The results are sorted in ascending order by end time.
 func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	defer Return(&err)
+
+	return tx.FindAscending(minStart, maxEnd, maxPriority)
+}
+
+// FindAscending returns all intervals that intersect with the given
+// given start and end time and are at or lower than the given
+// priority.  The results are sorted in ascending order by end time.
+func (tx *MemTx) FindAscending(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.LowerBound("interval", "end", minStart)
 	Ck(err)
 	for {
@@ -93,6 +102,33 @@ func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*i
 		// If the interval starts on or after the max end time, we are done.
 		if iv.IsAfterTime(maxEnd) {
 			break
+		}
+		if iv.Priority <= maxPriority {
+			ivs = append(ivs, iv)
+		}
+	}
+	return
+}
+
+// FindDescending returns all intervals that intersect with the given
+// given start and end time and are at or lower than the given
+// priority.  The results are sorted in descending order by start time.
+func (tx *MemTx) FindDescending(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
+	iter, err := tx.tx.ReverseLowerBound("interval", "start", maxEnd)
+	Ck(err)
+	for {
+		obj := iter.Next()
+		if obj == nil {
+			break
+		}
+		iv := obj.(*interval.Interval)
+		// If the interval ends on or before the min start time, we are done.
+		if iv.IsBeforeTime(minStart) {
+			break
+		}
+		// If the interval starts on or after the max end time, skip it.
+		if iv.IsAfterTime(maxEnd) {
+			continue
 		}
 		if iv.Priority <= maxPriority {
 			ivs = append(ivs, iv)

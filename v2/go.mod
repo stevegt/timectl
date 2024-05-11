@@ -3,6 +3,7 @@ module github.com/stevegt/timectl
 go 1.21
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/hashicorp/go-memdb v1.3.4
 	github.com/stevegt/goadapt v0.7.0
 )
