@@ -26,17 +26,17 @@ func NewMem() (mem *Mem, err error) {
 					"id": &memdb.IndexSchema{
 						Name:    "id",
 						Unique:  true,
-						Indexer: &memdb.UintFieldIndex{Field: "XXXId"},
+						Indexer: &memdb.UintFieldIndex{Field: "Id"},
 					},
 					"start": &memdb.IndexSchema{
 						Name:    "start",
 						Unique:  true,
-						Indexer: &memdb.UintFieldIndex{Field: "Start"},
+						Indexer: &TimeFieldIndex{Field: "Start"},
 					},
 					"end": &memdb.IndexSchema{
 						Name:    "end",
 						Unique:  true,
-						Indexer: &memdb.UintFieldIndex{Field: "End"},
+						Indexer: &TimeFieldIndex{Field: "End"},
 					},
 					"priority": &memdb.IndexSchema{
 						Name:    "priority",
@@ -67,12 +67,13 @@ func (m *Mem) NewTx(write bool) *MemTx {
 }
 
 // Add adds an interval to the database.
-func (tx *MemTx) Add(iv interval.Interval) error {
+func (tx *MemTx) Add(iv *interval.Interval) error {
 	return tx.tx.Insert("interval", iv)
 }
 
-// Get returns an interval from the database.
-func (tx *MemTx) Get(minStart, maxEnd time.Time, maxPriority float64) (ivs []interval.Interval, err error) {
+// Get returns all intervals that intersect with the given
+// given start and end time and are lower than the given priority.
+func (tx *MemTx) Get(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	defer Return(&err)
 	iter, err := tx.tx.LowerBound("interval", "start", minStart)
 	Ck(err)
@@ -81,8 +82,18 @@ func (tx *MemTx) Get(minStart, maxEnd time.Time, maxPriority float64) (ivs []int
 		if obj == nil {
 			break
 		}
-		iv := obj.(interval.Interval)
-		if iv.End().Before(maxEnd) && iv.Priority() <= maxPriority {
+		iv := obj.(*interval.Interval)
+		// If the interval ends on or before the min start time, skip it.
+		// We need this check because the LowerBound function returns the
+		// first interval that starts on or after the min start time.
+		if iv.IsBeforeTime(minStart) {
+			continue
+		}
+		// If the interval starts on or after the max end time, we are done.
+		if iv.IsAfterTime(maxEnd) {
+			break
+		}
+		if iv.Priority < maxPriority {
 			ivs = append(ivs, iv)
 		}
 	}

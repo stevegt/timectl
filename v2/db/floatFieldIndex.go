@@ -13,6 +13,7 @@ type FloatFieldIndex struct {
 	Field string
 }
 
+// FromObject satisfies the go-memdb SingleIndexer interface.
 func (f *FloatFieldIndex) FromObject(obj interface{}) (bool, []byte, error) {
 	v := reflect.ValueOf(obj)
 	v = reflect.Indirect(v) // Dereference the pointer if any
@@ -31,6 +32,7 @@ func (f *FloatFieldIndex) FromObject(obj interface{}) (bool, []byte, error) {
 	return true, buf, nil
 }
 
+// FromArgs satisfies the go-memdb Indexer interface.
 func (f *FloatFieldIndex) FromArgs(args ...interface{}) ([]byte, error) {
 	if len(args) != 1 {
 		return nil, fmt.Errorf("must provide only a single argument")

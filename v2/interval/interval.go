@@ -180,3 +180,21 @@ func (i *Interval) OverlapDuration(start, end time.Time) time.Duration {
 	}
 	return duration
 }
+
+// ContainsTime returns true if the given time is after the start time and
+// before the end time of the interval.
+func (i *Interval) ContainsTime(t time.Time) bool {
+	return t.After(i.Start) && t.Before(i.End)
+}
+
+// IsBeforeTime returns true if the end time of the interval is on or before
+// the given time.
+func (i *Interval) IsBeforeTime(t time.Time) bool {
+	return !i.End.After(t)
+}
+
+// IsAfterTime returns true if the start time of the interval is on or after
+// the given time.
+func (i *Interval) IsAfterTime(t time.Time) bool {
+	return !i.Start.Before(t)
+}

@@ -33,5 +33,5 @@ func TestMemDb(t *testing.T) {
 	Tassert(t, len(gots) == 1, "Get() failed: expected 1 interval, got %d", len(gots))
 	got := gots[0]
 	Tassert(t, expect.Equal(got), "Get() failed: expected interval %v, got %v", expect, got)
-	Tassert(t, expect.Priority() == got.Priority(), "Get() failed: expected priority %f, got %f", expect.Priority(), got.Priority())
+	Tassert(t, expect.Priority == got.Priority, "Get() failed: expected priority %f, got %f", expect.Priority, got.Priority)
 }
