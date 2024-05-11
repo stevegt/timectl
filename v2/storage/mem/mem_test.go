@@ -15,11 +15,11 @@ func TestMemDb(t *testing.T) {
 	// test go-memdb implementation of Storage interface
 
 	// open a new memdb
-	d, err := NewMem()
+	memdb, err := NewMem()
 	Tassert(t, err == nil, "NewMemDb() failed: %v", err)
 
 	// get a write transaction
-	tx := d.NewTx(true)
+	tx := memdb.NewTx(true)
 
 	// test Add
 	start, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T10:00:00")
@@ -41,11 +41,11 @@ func TestMemDb(t *testing.T) {
 
 func TestMemDbFind(t *testing.T) {
 	// open a new memdb
-	d, err := NewMem()
+	memdb, err := NewMem()
 	Tassert(t, err == nil, "NewMemDb() failed: %v", err)
 
 	// get a write transaction
-	tx := d.NewTx(true)
+	tx := memdb.NewTx(true)
 
 	// add several intervals
 	i0800_0900 := storage.Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
@@ -82,9 +82,9 @@ func TestMemDbFind(t *testing.T) {
 
 // test FindSet
 func TestMemDbFindSet(t *testing.T) {
-	d, err := NewMem()
+	memdb, err := NewMem()
 	Tassert(t, err == nil, "NewMemDb() failed: %v", err)
-	tx := d.NewTx(true)
+	tx := memdb.NewTx(true)
 
 	// add several intervals
 	i0800_0900 := storage.Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
