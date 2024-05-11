@@ -47,7 +47,7 @@ func TestMemDbFind(t *testing.T) {
 	// add several intervals
 	i0800_0900 := Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
 	i0900_1000 := Tadd(tx, 10, "2024-01-01T09:00:00", "2024-01-01T10:00:00", 2.0)
-	i1000_1100 := Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 1.0)
+	i1000_1100 := Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
 	i1100_1200 := Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
 	i1200_1300 := Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T13:00:00", 1.0)
 	i1300_1400 := Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
@@ -67,6 +67,13 @@ func TestMemDbFind(t *testing.T) {
 	Tassert(t, i0900_1000.Equal(gots[0]), "Find() failed: expected interval %v, got %v", i0900_1000, gots[0])
 	Tassert(t, i1000_1100.Equal(gots[1]), "Find() failed: expected interval %v, got %v", i1000_1100, gots[1])
 	Tassert(t, i1100_1200.Equal(gots[2]), "Find() failed: expected interval %v, got %v", i1100_1200, gots[2])
+
+	// now try it again with a lower max priority
+	gots, err = tx.Find(start, end, 2.0)
+	Tassert(t, err == nil, "Find() failed: %v", err)
+	Tassert(t, len(gots) == 2, "Find() failed: expected 2 intervals, got %d", len(gots))
+	Tassert(t, i0900_1000.Equal(gots[0]), "Find() failed: expected interval %v, got %v", i0900_1000, gots[0])
+	Tassert(t, i1100_1200.Equal(gots[1]), "Find() failed: expected interval %v, got %v", i1100_1200, gots[1])
 
 }
 
