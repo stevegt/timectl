@@ -29,10 +29,10 @@ func TestMemDb(t *testing.T) {
 	Tassert(t, err == nil, "Add() failed: %v", err)
 
 	// test Get
-	gots, err := tx.FindFwd(start, end, 99.0)
+	ivs, err := tx.FindFwd(start, end, 99.0)
 	Tassert(t, err == nil, "Get() failed: %v", err)
-	Tassert(t, len(gots) == 1, "Get() failed: expected 1 interval, got %d", len(gots))
-	got := gots[0]
+	Tassert(t, len(ivs) == 1, "Get() failed: expected 1 interval, got %v", len(ivs))
+	got := ivs[0]
 	Tassert(t, expect.Equal(got), "Get() failed: expected interval %v, got %v", expect, got)
 	Tassert(t, expect.Priority == got.Priority, "Get() failed: expected priority %f, got %f", expect.Priority, got.Priority)
 }
@@ -64,7 +64,7 @@ func TestMemDbFind(t *testing.T) {
 	Ck(err)
 	ivs, err := tx.FindFwd(start, end, 99.0)
 	Tassert(t, err == nil, "Find() failed: %v", err)
-	Tassert(t, len(ivs) == 3, "Find() failed: expected 3 intervals, got %d", len(ivs))
+	Tassert(t, len(ivs) == 3, "Find() failed: expected 3 intervals, got %v", spew.Sdump(ivs))
 	Tassert(t, i0900_1000.Equal(ivs[0]), "Find() failed: expected interval %v, got %v", i0900_1000, ivs[0])
 	Tassert(t, i1000_1100.Equal(ivs[1]), "Find() failed: expected interval %v, got %v", i1000_1100, ivs[1])
 	Tassert(t, i1100_1200.Equal(ivs[2]), "Find() failed: expected interval %v, got %v", i1100_1200, ivs[2])
@@ -72,7 +72,6 @@ func TestMemDbFind(t *testing.T) {
 	// now try it again with a lower max priority
 	ivs, err = tx.FindFwd(start, end, 2.0)
 	Tassert(t, err == nil, "Find() failed: %v", err)
-	// spew.Dump(gots)
 	Tassert(t, len(ivs) == 2, "Find() failed: expected 2 intervals, got %v", spew.Sdump(ivs))
 	Tassert(t, i0900_1000.Equal(ivs[0]), "Find() failed: expected interval %v, got %v", i0900_1000, ivs[0])
 	Tassert(t, i1100_1200.Equal(ivs[1]), "Find() failed: expected interval %v, got %v", i1100_1200, ivs[1])
@@ -116,7 +115,7 @@ func TestMemDbFindSet(t *testing.T) {
 	Ck(err)
 	ivs, err := tx.FindSet(true, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
-	Tassert(t, len(ivs) == 3, "FindSet() failed: expected 3 intervals, got %d", len(ivs))
+	Tassert(t, len(ivs) == 3, "FindSet() failed: expected 3 intervals, got %v", spew.Sdump(ivs))
 	Tassert(t, i1200_1300.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1200_1300, ivs[0])
 	Tassert(t, ivs[0].Priority == 1.0, "FindSet() failed: expected priority == 1.0, got %f", ivs[0].Priority)
 	Tassert(t, i1245_1300.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1245_1300, ivs[1])
@@ -130,7 +129,7 @@ func TestMemDbFindSet(t *testing.T) {
 	ivs, err = tx.FindSet(false, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
 	// Pf("ivs: %v\n", ivs)
-	Tassert(t, len(ivs) == 2, "FindSet() failed: expected 2 intervals, got %d", len(ivs))
+	Tassert(t, len(ivs) == 2, "FindSet() failed: expected 2 intervals, got %v", spew.Sdump(ivs))
 	Tassert(t, i1400_1500.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1400_1500, ivs[0])
 	Tassert(t, i1300_1400.Equal(ivs[1]), "FindSet() failed: expected interval %v, got %v", i1300_1400, ivs[1])
 
