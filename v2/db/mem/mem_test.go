@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stevegt/timectl/storage"
+	"github.com/stevegt/timectl/db"
 
 	"github.com/davecgh/go-spew/spew"
 	. "github.com/stevegt/goadapt"
@@ -48,12 +48,12 @@ func TestMemDbFind(t *testing.T) {
 	tx := memdb.NewTx(true)
 
 	// add several intervals
-	i0800_0900 := storage.Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
-	i0900_1000 := storage.Tadd(tx, 10, "2024-01-01T09:00:00", "2024-01-01T10:00:00", 2.0)
-	i1000_1100 := storage.Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
-	i1100_1200 := storage.Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
-	i1200_1300 := storage.Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T13:00:00", 1.0)
-	i1300_1400 := storage.Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
+	i0800_0900 := db.Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
+	i0900_1000 := db.Tadd(tx, 10, "2024-01-01T09:00:00", "2024-01-01T10:00:00", 2.0)
+	i1000_1100 := db.Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
+	i1100_1200 := db.Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
+	i1200_1300 := db.Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T13:00:00", 1.0)
+	i1300_1400 := db.Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
 	_ = i0800_0900
 	_ = i1100_1200
 	_ = i1200_1300
@@ -87,13 +87,13 @@ func TestMemDbFindSet(t *testing.T) {
 	tx := memdb.NewTx(true)
 
 	// add several intervals
-	i0800_0900 := storage.Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
-	i0900_1000 := storage.Tadd(tx, 10, "2024-01-01T09:00:00", "2024-01-01T10:00:00", 2.0)
-	i1000_1100 := storage.Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
-	i1100_1200 := storage.Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
-	i1200_1300 := storage.Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T12:45:00", 1.0)
-	i1300_1400 := storage.Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
-	i1400_1500 := storage.Tadd(tx, 60, "2024-01-01T14:00:00", "2024-01-01T15:00:00", 1.0)
+	i0800_0900 := db.Tadd(tx, 5, "2024-01-01T08:00:00", "2024-01-01T09:00:00", 1.0)
+	i0900_1000 := db.Tadd(tx, 10, "2024-01-01T09:00:00", "2024-01-01T10:00:00", 2.0)
+	i1000_1100 := db.Tadd(tx, 20, "2024-01-01T10:00:00", "2024-01-01T11:00:00", 3.0)
+	i1100_1200 := db.Tadd(tx, 30, "2024-01-01T11:00:00", "2024-01-01T12:00:00", 2.0)
+	i1200_1300 := db.Tadd(tx, 40, "2024-01-01T12:00:00", "2024-01-01T12:45:00", 1.0)
+	i1300_1400 := db.Tadd(tx, 50, "2024-01-01T13:00:00", "2024-01-01T14:00:00", 1.0)
+	i1400_1500 := db.Tadd(tx, 60, "2024-01-01T14:00:00", "2024-01-01T15:00:00", 1.0)
 	_ = i0800_0900
 	_ = i0900_1000
 	_ = i1000_1100
@@ -115,7 +115,7 @@ func TestMemDbFindSet(t *testing.T) {
 	Ck(err)
 	end, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T15:00:00")
 	Ck(err)
-	ivs, err := storage.FindSet(tx, true, start, end, 90*time.Minute, 1.0)
+	ivs, err := db.FindSet(tx, true, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
 	Tassert(t, len(ivs) == 3, "FindSet() failed: expected 3 intervals, got %v", spew.Sdump(ivs))
 	Tassert(t, i1200_1300.Equal(ivs[0]), "FindSet() failed: expected interval %v, got %v", i1200_1300, ivs[0])
@@ -128,7 +128,7 @@ func TestMemDbFindSet(t *testing.T) {
 	// find the last set of intervals that are within a time range,
 	// have a priority less than or equal to 1.0, and have a total
 	// duration of at least 90 minutes
-	ivs, err = storage.FindSet(tx, false, start, end, 90*time.Minute, 1.0)
+	ivs, err = db.FindSet(tx, false, start, end, 90*time.Minute, 1.0)
 	Tassert(t, err == nil, "FindSet() failed: %v", err)
 	// Pf("ivs: %v\n", ivs)
 	Tassert(t, len(ivs) == 2, "FindSet() failed: expected 2 intervals, got %v", spew.Sdump(ivs))
