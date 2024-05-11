@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-memdb"
 	. "github.com/stevegt/goadapt"
 	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/util"
 )
 
 // Mem is an in-memory database.
@@ -84,15 +85,36 @@ func (tx *MemTx) Find(minStart, maxEnd time.Time, maxPriority float64) (ivs []*i
 // FindAscending returns all intervals that intersect with the given
 // given start and end time and are at or lower than the given
 // priority.  The results are sorted in ascending order by end time.
+// The results include synthetic free intervals that represent the
+// time slots between the intervals.
 func (tx *MemTx) FindAscending(minStart, maxEnd time.Time, maxPriority float64) (ivs []*interval.Interval, err error) {
 	iter, err := tx.tx.LowerBound("interval", "end", minStart)
 	Ck(err)
+	prevEnd := minStart
 	for {
 		obj := iter.Next()
 		if obj == nil {
 			break
 		}
 		iv := obj.(*interval.Interval)
+
+		// create a free interval between the previous interval and the current interval
+		if iv.Start.After(prevEnd) {
+			free := &interval.Interval{
+				Start:    prevEnd,
+				End:      util.MinTime(iv.Start, maxEnd),
+				Priority: 0,
+			}
+			if free.End.After(free.Start) {
+				ivs = append(ivs, free)
+			}
+		}
+		prevEnd = iv.End
+
+		// if the interval has a higher priority than the max priority, skip it
+		if iv.Priority > maxPriority {
+			continue
+		}
 		// If the interval ends on or before the min start time, skip it.
 		// We need this check because the LowerBound function returns the
 		// first interval that ends on or after the min start time.
@@ -103,9 +125,8 @@ func (tx *MemTx) FindAscending(minStart, maxEnd time.Time, maxPriority float64) 
 		if iv.IsAfterTime(maxEnd) {
 			break
 		}
-		if iv.Priority <= maxPriority {
-			ivs = append(ivs, iv)
-		}
+
+		ivs = append(ivs, iv)
 	}
 	return
 }

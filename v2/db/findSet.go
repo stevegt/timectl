@@ -12,7 +12,8 @@ import (
 // priority, and whose total duration is greater than or equal to the
 // given duration.  The first parameter indicates whether the set
 // should be the first or last match found within the given time
-// range.
+// range. The results include synthetic free intervals that represent
+// the time slots between the intervals.
 func (tx *MemTx) FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) (set []*interval.Interval, err error) {
 	defer Return(&err)
 
