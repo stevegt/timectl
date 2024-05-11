@@ -43,6 +43,8 @@ type Tx interface {
 
 	// Find returns all intervals that intersect with the given
 	// given start and end time and are lower than the given priority.
+	// The results include synthetic free intervals that represent the
+	// time slots between the intervals.
 	Find(minStart, maxEnd time.Time, maxPriority float64) ([]*interval.Interval, error)
 
 	// FindSet returns a contiguous set of intervals that intersect
@@ -51,6 +53,8 @@ type Tx interface {
 	// given duration.  The first parameter indicates whether the set
 	// should be the first or last match found within the given time
 	// range.
+	// The results include synthetic free intervals that represent the
+	// time slots between the intervals.
 	FindSet(first bool, minStart, maxEnd time.Time, minDuration time.Duration, maxPriority float64) ([]*interval.Interval, error)
 
 	// IterateDown returns an iterator that iterates over all intervals
