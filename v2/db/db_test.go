@@ -97,6 +97,7 @@ func ExampleFindSet() {
 	end, err := time.Parse("2006-01-02T15:04:05", "2024-01-01T15:00:00")
 	Ck(err)
 	ivs, err := db.FindSet(tx, true, start, end, 90*time.Minute, 1.0)
+	Pf("FindSet() fwd returned %v intervals\n", len(ivs))
 	for _, iv := range ivs {
 		Pf("interval: %v\n", iv)
 	}
@@ -105,8 +106,18 @@ func ExampleFindSet() {
 	// have a priority less than or equal to 1.0, and have a total
 	// duration of at least 90 minutes
 	ivs, err = db.FindSet(tx, false, start, end, 90*time.Minute, 1.0)
+	Pf("FindSet() rev returned %v intervals\n", len(ivs))
 	for _, iv := range ivs {
 		Pf("interval: %v\n", iv)
 	}
+
+	// Output:
+	// FindSet() fwd returned 3 intervals
+	// interval: 40 2024-01-01T12:00:00Z - 2024-01-01T12:45:00Z 1
+	// interval: 0 2024-01-01T12:45:00Z - 2024-01-01T13:00:00Z 0
+	// interval: 50 2024-01-01T13:00:00Z - 2024-01-01T14:00:00Z 1
+	// FindSet() rev returned 2 intervals
+	// interval: 60 2024-01-01T14:00:00Z - 2024-01-01T15:00:00Z 1
+	// interval: 50 2024-01-01T13:00:00Z - 2024-01-01T14:00:00Z 1
 
 }
