@@ -36,3 +36,13 @@ func AbsDuration(d time.Duration) time.Duration {
 	}
 	return d
 }
+
+// OnOrBefore returns true if the first time is on or before the second time.
+func OnOrBefore(a, b time.Time) bool {
+	return !a.After(b)
+}
+
+// OnOrAfter returns true if the first time is on or after the second time.
+func OnOrAfter(a, b time.Time) bool {
+	return !a.Before(b)
+}
