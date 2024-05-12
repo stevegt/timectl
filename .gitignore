@@ -22,3 +22,8 @@ go.work
 
 # jetbrains
 .idea/
+
+# allow us to have older versions cloned into subdirs to ease development
+v1
+
+
