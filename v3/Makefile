@@ -29,7 +29,8 @@ tag: commit
 	[ -n "$(MINOR)" ] || (echo "Set minor version in .version_minor"; exit 1)
 	# throw error if uncommitted changes
 	git diff-index --quiet HEAD -- || (echo "Commit or stash changes before tagging"; exit 1)
-	git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)"
+	# git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)"
+	git tag $(NEW_VERSION) 
 
 # Extract version number from the latest git tag that looks like a version.  Falls back to v0.0.0 if no tag is found.
 VERSION = $(shell git describe --tags --always --dirty --match="v[0-9]*\.[0-9]*\.[0-9]*" 2> /dev/null || echo "v0.0.0")
