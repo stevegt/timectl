@@ -64,11 +64,11 @@ type Tx interface {
 
 	// IterateDown returns an iterator that iterates over all intervals
 	// in the database in descending order of priority.
-	// IteratorDown() Iterator
+	// IterateDown() Iterator
 
 	// IterateForward returns an iterator that iterates over all intervals
 	// in the database in ascending order of start time.
-	// IteratorForward() Iterator
+	// IterateForward() Iterator
 }
 
 // Iterator is an interface for iterating over intervals in a database.
