@@ -8,7 +8,7 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v1/interval"
 )
 
 // . "github.com/stevegt/goadapt"

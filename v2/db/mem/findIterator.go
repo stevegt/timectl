@@ -5,8 +5,8 @@ import (
 
 	"github.com/hashicorp/go-memdb"
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
-	"github.com/stevegt/timectl/util"
+	"github.com/stevegt/timectl/v2/interval"
+	"github.com/stevegt/timectl/v2/util"
 )
 
 // FindIterator is an iterator for the Find* functions.

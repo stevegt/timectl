@@ -4,7 +4,7 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v2/interval"
 )
 
 // Tadd is a test helper function that add an interval to the db

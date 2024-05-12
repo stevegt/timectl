@@ -1,12 +1,13 @@
 package mem
 
 import (
-	"github.com/stevegt/timectl/db"
 	"time"
+
+	"github.com/stevegt/timectl/v2/db"
 
 	"github.com/hashicorp/go-memdb"
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v2/interval"
 )
 
 // MemTx is a transaction for the in-memory database.

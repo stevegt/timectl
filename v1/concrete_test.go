@@ -6,8 +6,8 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
-	"github.com/stevegt/timectl/tree"
+	"github.com/stevegt/timectl/v1/interval"
+	"github.com/stevegt/timectl/v1/tree"
 )
 
 // ConcreteInterval tests the interval.Interval interface and interval.IntervalBase type.

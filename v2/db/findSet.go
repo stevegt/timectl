@@ -4,7 +4,7 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v2/interval"
 )
 
 // FindSet returns a contiguous set of intervals that intersect

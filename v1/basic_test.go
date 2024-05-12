@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/tree"
+	"github.com/stevegt/timectl/v1/tree"
 )
 
 // Test a tree node with children.

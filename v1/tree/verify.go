@@ -4,7 +4,7 @@ import (
 	"fmt" // Import the fmt package to use for formatting errors.
 	"time"
 
-	"github.com/stevegt/timectl/util"
+	"github.com/stevegt/timectl/v1/util"
 	// . "github.com/stevegt/goadapt"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stevegt/timectl/util"
+	"github.com/stevegt/timectl/v2/util"
 	// . "github.com/stevegt/goadapt"
 )
 

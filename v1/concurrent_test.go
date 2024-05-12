@@ -3,8 +3,8 @@ package v1
 import (
 	"fmt"
 	"github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
-	tree2 "github.com/stevegt/timectl/tree"
+	"github.com/stevegt/timectl/v1/interval"
+	tree2 "github.com/stevegt/timectl/v1/tree"
 	"math/rand"
 	"sync"
 	"testing"

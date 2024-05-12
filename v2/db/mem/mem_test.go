@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stevegt/timectl/db"
+	"github.com/stevegt/timectl/v2/db"
 
 	"github.com/davecgh/go-spew/spew"
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v2/interval"
 )
 
 func TestMemDb(t *testing.T) {

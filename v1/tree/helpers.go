@@ -11,7 +11,7 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v1/interval"
 )
 
 // Get is a test helper function that returns the tree node at the

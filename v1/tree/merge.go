@@ -1,6 +1,6 @@
 package tree
 
-import "github.com/stevegt/timectl/interval"
+import "github.com/stevegt/timectl/v1/interval"
 
 // mergeFree merges adjacent free intervals in the tree and returns a
 // vine with the merged intervals.

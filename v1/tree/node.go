@@ -5,8 +5,8 @@ import (
 
 	"github.com/reugn/async"
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
-	"github.com/stevegt/timectl/util"
+	"github.com/stevegt/timectl/v1/interval"
+	"github.com/stevegt/timectl/v1/util"
 )
 
 // Node represents a node in an interval tree.

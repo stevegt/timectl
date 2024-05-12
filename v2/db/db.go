@@ -3,7 +3,7 @@ package db
 import (
 	"time"
 
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v2/interval"
 )
 
 // Db is an interface for an interval data storage system.  It

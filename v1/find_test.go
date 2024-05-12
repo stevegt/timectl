@@ -8,9 +8,9 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
-	"github.com/stevegt/timectl/tree"
-	"github.com/stevegt/timectl/util"
+	"github.com/stevegt/timectl/v1/interval"
+	"github.com/stevegt/timectl/v1/tree"
+	"github.com/stevegt/timectl/v1/util"
 )
 
 func TestFindFree(t *testing.T) {

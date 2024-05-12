@@ -5,7 +5,7 @@ import (
 	"time"
 
 	. "github.com/stevegt/goadapt"
-	"github.com/stevegt/timectl/interval"
+	"github.com/stevegt/timectl/v1/interval"
 )
 
 // Delete removes an interval from the tree
