@@ -1,4 +1,4 @@
-module github.com/stevegt/timectl/v0
+module github.com/stevegt/timectl
 
 go 1.21
 
