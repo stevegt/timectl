@@ -71,6 +71,7 @@ build:
 	go build -ldflags "-X main.Version=$(VERSION)" -o $(BINARY_NAME) .
 
 push: 
+	git push
 	git push --tags
 
 
