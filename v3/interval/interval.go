@@ -35,6 +35,21 @@ func NewInterval(id uint64, start, end time.Time, priority float64) *Interval {
 	}
 }
 
+// NewIntervalStr creates and returns a new Interval with the
+// start and end times parsed from the given strings. The time strings
+// must be in RFC3339 format.
+func NewIntervalStr(id uint64, startStr, endStr string, priority float64) (*Interval, error) {
+	start, err := time.Parse(time.RFC3339, startStr)
+	if err != nil {
+		return nil, err
+	}
+	end, err := time.Parse(time.RFC3339, endStr)
+	if err != nil {
+		return nil, err
+	}
+	return NewInterval(id, start, end, priority), nil
+}
+
 // String returns a string representation of the interval.
 func (i *Interval) String() string {
 	startStr := i.Start.Format(time.RFC3339)

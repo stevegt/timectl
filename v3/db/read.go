@@ -1,6 +1,7 @@
 package db
 
 import (
+	"math"
 	"time"
 
 	. "github.com/stevegt/goadapt"
@@ -64,4 +65,28 @@ func FindSet(tx Tx, first bool, minStart, maxEnd time.Time, minDuration time.Dur
 		foundDuration += iv.Duration()
 	}
 
+}
+
+// Conflicts returns true if the given interval conflicts with any
+// existing intervals in the database.
+func Conflicts(tx Tx, iv *interval.Interval) (conflicts bool, err error) {
+	defer Return(&err)
+
+	// find all intervals that intersect with the given interval
+	iter, err := tx.FindFwdIter(iv.Start, iv.End, math.MaxFloat64)
+	Ck(err)
+
+	// any non-zero priority interval that intersects with the given
+	// interval is a conflict
+	for {
+		found := iter.Next()
+		if found == nil {
+			break
+		}
+		if found.Priority != 0 {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
