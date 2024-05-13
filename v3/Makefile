@@ -1,11 +1,11 @@
 # Workflow:  Develop on main, release on branch.  Release tags go only
 # on branches.  
 
-# For ordinary development, just say 'make release'.  This will test,
-# commit, merge from main to branch, tag the branch, and push.  
+# To push changes without a release:  make sync
 
-# For branch fixes, say 'make fix'.  This will ensure we're on the
-# right branch, test, commit, tag, and push.
+# To merge from main, tag, and push:  make release
+
+# To push a fix to a release branch without merging from main:  make fix
 
 # Get major and minor from files.  
 MAJOR = $(shell cat .version_major)
@@ -26,10 +26,12 @@ BRANCH_TARGET = v$(MAJOR)
 # Extract version number from the latest git tag that looks like a version.  Falls back to v0.0.0 if no tag is found.
 VERSION = $(shell git describe --tags --always --dirty --match="v[0-9]*\.[0-9]*\.[0-9]*" 2> /dev/null || echo "v0.0.0")
 
-.PHONY: build tag release
+.PHONY: release fix test ck-main ck-branch ck-commit commit merge tag build push
 
 # The output binary name -- we derive this from the directory name
 BINARY_NAME = $(shell basename $(PWD))
+
+sync: ck-main test commit push
 
 release: ck-main test commit merge test tag push
 
