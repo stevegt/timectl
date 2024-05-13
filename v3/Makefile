@@ -1,13 +1,11 @@
-.PHONY: build tag release
+# Workflow:  Develop on main, release on branch.  Release tags go only
+# on branches.  
 
-# The output binary name -- we derive this from the directory name
-BINARY_NAME = $(shell basename $(PWD))
+# For ordinary development, just say 'make release'.  This will test,
+# commit, merge from main to branch, tag the branch, and push.  
 
-test:
-	go test ./...
-
-commit: test
-	git add -A && grok commit | git commit -F- || echo "No changes to commit"
+# For branch fixes, say 'make fix'.  This will ensure we're on the
+# right branch, test, commit, tag, and push.
 
 # Get major and minor from files.  
 MAJOR = $(shell cat .version_major)
@@ -23,24 +21,54 @@ PATCH = $(shell git rev-list HEAD --count)
 # Put it all together
 NEW_VERSION = v$(MAJOR).$(MINOR).$(PATCH)
 
-tag: commit
-	# throw error if major or minor version is not set
-	[ -n "$(MAJOR)" ] || (echo "Set major version in .version_major"; exit 1)
-	[ -n "$(MINOR)" ] || (echo "Set minor version in .version_minor"; exit 1)
-	# throw error if uncommitted changes
-	git diff-index --quiet HEAD -- || (echo "Commit or stash changes before tagging"; exit 1)
-	# git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)"
-	git tag $(NEW_VERSION) 
-
+# Branch we'll do the release on
+BRANCH_TARGET = v$(MAJOR)
 # Extract version number from the latest git tag that looks like a version.  Falls back to v0.0.0 if no tag is found.
 VERSION = $(shell git describe --tags --always --dirty --match="v[0-9]*\.[0-9]*\.[0-9]*" 2> /dev/null || echo "v0.0.0")
 
-build: tag
+.PHONY: build tag release
+
+# The output binary name -- we derive this from the directory name
+BINARY_NAME = $(shell basename $(PWD))
+
+release: ck-main test commit merge test tag push
+
+fix: ck-branch test commit tag push
+
+test:
+	go test ./...
+
+ck-main:
+	# fail if we're not on main
+	git branch --show-current | egrep -q "^main$$" || (echo "Not on main branch"; exit 1)
+
+ck-branch:
+	# fail if we're not on the target branch
+	git branch --show-current | egrep -q "^$(BRANCH_TARGET)$$" || (echo "Not on $(BRANCH_TARGET) branch"; exit 1)
+
+ck-commit:
+	# throw error if uncommitted changes
+	git diff-index --quiet HEAD -- || (echo "Commit or stash changes before tagging"; exit 1)
+
+commit: ck-main
+	git add -A && grok commit | git commit -F- || echo "No changes to commit"
+
+merge: ck-commit
+	# switch to branch
+	git switch $(BRANCH_TARGET)
+	git merge --commit main 
+
+tag: ck-branch ck-commit test
+	# throw error if major or minor version is not set
+	[ -n "$(MAJOR)" ] || (echo "Set major version in .version_major"; exit 1)
+	[ -n "$(MINOR)" ] || (echo "Set minor version in .version_minor"; exit 1)
+	git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)"
+
+build: 
 	# XXX maybe use goreleaser here instead
 	go build -ldflags "-X main.Version=$(VERSION)" -o $(BINARY_NAME) .
 
-push: tag
+push: 
 	git push --tags
 
-release: push
 
